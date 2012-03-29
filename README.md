@@ -40,6 +40,12 @@ image is given, losslessly embed JPEG and JPEG2000 files into a PDF container
 without adding more overhead than the PDF structure itself and will save all
 other graphics formats using lossless zip-compression.
 
+Another nifty advantage: Since no re-encoding is done in case of JPEG images,
+the conversion is many (ten to hundred) times faster with img2pdf compared to
+imagemagick. While a run of above convert command with a 2.8MB JPEG takes 27
+seconds (on average) on my machine, conversion using img2pdf takes just a
+fraction of a second.
+
 bugs
 ----
 
