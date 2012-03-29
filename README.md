@@ -46,6 +46,24 @@ imagemagick. While a run of above convert command with a 2.8MB JPEG takes 27
 seconds (on average) on my machine, conversion using img2pdf takes just a
 fraction of a second.
 
+commandline arguments
+---------------------
+
+At least one input file argument must be given as img2pdf needs to seek in the
+file descriptor which would not be possible for stdin.
+
+Specify the dpi with the -d or --dpi options instead of reading it from the
+image or falling back to 96.0.
+
+Specify the output file with -o or --output. By default output will be done to
+stdout.
+
+Specify metadata using the --title, --author, --creator, --producer,
+--creationdate, --moddate, --subject and --keywords options (or their short
+forms).
+
+More help is available with the -h or --help option.
+
 bugs
 ----
 
