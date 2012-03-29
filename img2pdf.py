@@ -4,6 +4,7 @@ import Image
 import sys
 import zlib
 import argparse
+import struct
 from datetime import datetime
 
 def parse(cont, indent=1):
@@ -38,6 +39,8 @@ class obj():
 def main(images, dpi, title=None, author=None, creator=None, producer=None,
     creationdate=None, moddate=None, subject=None, keywords=None):
 
+    version = 3 # default pdf version 1.3
+
     now = datetime.now()
 
     info = dict()
@@ -67,15 +70,32 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
     pagestuples = list()
 
     for im in images:
-        imgdata = Image.open(im)
-        width, height = imgdata.size
-        if dpi:
-            dpi_x, dpi_y = dpi, dpi
+        try:
+            imgdata = Image.open(im)
+        except IOError:
+            # test if it is a jpeg2000 image
+            im.seek(0)
+            if im.read(12) != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+                print "cannot read input image"
+                exit(1)
+            # image is jpeg2000
+            imgformat = "JP2"
+            im.seek(48)
+            height, width = struct.unpack(">II", im.read(8))
+            color = "RGB" # TODO: read real colorspace
+            if dpi:
+                dpi_x, dpi_y = dpi, dpi
+            else:
+                dpi_x, dpi_y = (96, 96) # TODO: read real dpi
         else:
-            dpi_x, dpi_y = imgdata.info.get("dpi", (96, 96))
-        pdf_x, pdf_y = 72.0*width/dpi_x, 72.0*height/dpi_y # pdf units = 1/72 inch
-        imgformat = imgdata.format
-        color = imgdata.mode
+            width, height = imgdata.size
+            if dpi:
+                dpi_x, dpi_y = dpi, dpi
+            else:
+                dpi_x, dpi_y = imgdata.info.get("dpi", (96, 96))
+            imgformat = imgdata.format
+            color = imgdata.mode
+
         if color == 'L':
             color = "/DeviceGray"
         elif color == 'RGB':
@@ -84,11 +104,18 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
             print "unsupported color space:", color
             exit(1)
 
+        pdf_x, pdf_y = 72.0*width/dpi_x, 72.0*height/dpi_y # pdf units = 1/72 inch
+
         # either embed the whole jpeg or deflate the bitmap representation
         if imgformat is "JPEG":
             ofilter = [ "/DCTDecode" ]
             im.seek(0)
             imgdata = im.read()
+        elif imgformat is "JP2":
+            ofilter = [ "/JPXDecode" ]
+            im.seek(0)
+            imgdata = im.read()
+            version = 5 # jpeg2000 needs pdf 1.5
         else:
             ofilter = [ "/FlateDecode" ]
             imgdata = zlib.compress(imgdata.tostring())
@@ -147,7 +174,7 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 
     xreftable = list()
 
-    result  = "%PDF-1.3\n"
+    result  = "%%PDF-1.%d\n"%version
 
     xreftable.append("0000000000 65535 f \n")
     for o in objects:
