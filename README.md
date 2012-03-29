@@ -1,7 +1,11 @@
-== img2pdf ==
+img2pdf
+=======
 
 Lossless conversion of images to PDF without unnecessarily re-encoding JPEG
 files. Thus, no loss of quality and no unnecessary large output file.
+
+background
+----------
 
 PDF is able to embed JPEG images as they are without re-encoding them (and
 hence loosing quality) but I was missing a tool to do this automatically, thus
@@ -10,6 +14,9 @@ I wrote this piece of python code.
 If you know how to embed JPEG images into a PDF container without
 recompression, using existing tools, please contact me so that I can put this
 code into the garbage bin :D
+
+functionality
+-------------
 
 The program will take image filenames from commandline arguments and output a
 PDF file with them embedded into it. If the input image is a JPEG file, it will
@@ -32,6 +39,9 @@ img2pdf is able to output a PDF with multiple pages if more than one input
 image is given, losslessly embed JPEGs into a PDF container without adding more
 overhead than the PDF structure itself and will save all other graphics formats
 using lossless zip-compression.
+
+bugs
+----
 
 If you find a JPEG that, when embedded can not be read by the Adobe Acrobat
 Reader, please contact me.
