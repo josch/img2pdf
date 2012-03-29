@@ -197,7 +197,7 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='lossless conversion/embedding of images (in)to pdf')
     parser.add_argument('images', metavar='infile', type=argparse.FileType('r'),
-                        nargs='*', default=[sys.stdin], help='input file(s) (default: stdin)')
+                        nargs='+', help='input file(s)')
     parser.add_argument('-o', '--output', metavar='out', type=argparse.FileType('w'),
                         default=sys.stdout, help='output file (default: stdout)')
     def positive_float(string):
