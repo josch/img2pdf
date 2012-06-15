@@ -69,6 +69,11 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 
     pagestuples = list()
 
+    # create an incomplete pages object so that a /Parent entry can be added to each page
+    pages = obj({
+        "/Type": "/Pages"
+    })
+
     for im in images:
         try:
             imgdata = Image.open(im)
@@ -140,6 +145,7 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 
         page = obj({
             "/Type": "/Page",
+            "/Parent": pages,
             "/Resources": {
                 "/XObject": {
                     "/Im0": image
@@ -151,11 +157,9 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 
         pagestuples.append((image, content, page))
 
-    pages = obj({
-        "/Type": "/Pages",
-        "/Kids": [ pagetuple[2] for pagetuple in pagestuples ],
-        "/Count": len(pagestuples)
-    })
+    # complete pages object with page information
+    pages.content["/Kids"] = [ pagetuple[2] for pagetuple in pagestuples ]
+    pages.content["/Count"] = len(pagestuples)
 
     catalog = obj({
         "/Pages": pages,
@@ -164,6 +168,7 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 
     objects = list()
     objects.append(info.tostring(3*(len(pagestuples)+1)))
+    pages.identifier = 2 # manually set it because each page references to it
     for i, (image, content, page) in enumerate(reversed(pagestuples)):
         objects.append(image.tostring(3*(len(pagestuples)-i+1)-1))
         objects.append(content.tostring(3*(len(pagestuples)-i+1)-2))
