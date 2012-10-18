@@ -37,7 +37,8 @@ class obj():
         return self.identifier
 
 def main(images, dpi, title=None, author=None, creator=None, producer=None,
-    creationdate=None, moddate=None, subject=None, keywords=None):
+    creationdate=None, moddate=None, subject=None, keywords=None,
+    colorspace=None):
 
     version = 3 # default pdf version 1.3
 
@@ -87,7 +88,10 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
             imgformat = "JP2"
             im.seek(48)
             height, width = struct.unpack(">II", im.read(8))
-            color = "RGB" # TODO: read real colorspace
+            if colorspace:
+                color = colorspace
+            else:
+                color = "RGB" # TODO: read real colorspace
             if dpi:
                 dpi_x, dpi_y = dpi, dpi
             else:
@@ -224,7 +228,8 @@ if __name__ == "__main__":
         type=valid_date, help='modification date for metadata in YYYY-MM-DDTHH:MM:SS format')
     parser.add_argument('-s', '--subject', metavar='subject', type=str, help='subject for metadata')
     parser.add_argument('-k', '--keywords', metavar='kw', type=str, nargs='+', help='keywords for metadata')
+    parser.add_argument('-C', '--colorspace', metavar='colorspace', type=str, help='force PIL colorspace (one of: RGB, L, 1)')
     args = parser.parse_args()
     args.output.write(main(args.images, args.dpi, args.title, args.author,
         args.creator, args.producer, args.creationdate, args.moddate,
-        args.subject, args.keywords))
+        args.subject, args.keywords, args.colorspace))
