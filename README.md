@@ -62,6 +62,9 @@ Specify metadata using the --title, --author, --creator, --producer,
 --creationdate, --moddate, --subject and --keywords options (or their short
 forms).
 
+Specify -C or --colorspace to force a colorspace using PIL short handles like
+'RGB', 'L' or '1'.
+
 More help is available with the -h or --help option.
 
 bugs
@@ -78,3 +81,8 @@ tests, zip/flate encoding performed best. You can verify my findings using the
 test_comp.sh script with any input image given as a commandline argument. If
 you find an input file that is outperformed by another lossless compression,
 contact me.
+
+I have not yet figured out how to read the colorspace from jpeg2000 files.
+Therefor jpeg2000 files use DeviceRGB per default. If your jpeg2000 files are
+of any other colorspace you must force it using the --colorspace option.
+Like -C L for DeviceGray.
