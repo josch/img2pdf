@@ -112,6 +112,10 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
             color = "/DeviceGray"
         elif color == 'RGB':
             color = "/DeviceRGB"
+        elif color == '1':
+            # TODO: /CCITTFaxDecode monochrome images
+            imgdata = imgdata.convert('L')
+            color = "/DeviceGray"
         else:
             print "unsupported color space:", color
             exit(1)
