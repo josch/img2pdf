@@ -103,7 +103,10 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
             else:
                 dpi_x, dpi_y = imgdata.info.get("dpi", (96, 96))
             imgformat = imgdata.format
-            color = imgdata.mode
+            if colorspace:
+                color = colorspace
+            else:
+                color = imgdata.mode
 
         if color == 'L':
             color = "/DeviceGray"
