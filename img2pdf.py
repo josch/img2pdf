@@ -105,7 +105,8 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
                 exit(1)
             # image is jpeg2000
             imgformat = "JP2"
-            im.seek(48)
+            offset, = struct.unpack(">I", im.read(4))
+            im.seek(28+offset)
             height, width = struct.unpack(">II", im.read(8))
             if colorspace:
                 color = colorspace
