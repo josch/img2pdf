@@ -53,11 +53,15 @@ class obj():
 
 def main(images, dpi, title=None, author=None, creator=None, producer=None,
     creationdate=None, moddate=None, subject=None, keywords=None,
-    colorspace=None):
+    colorspace=None, verbose=False):
 
     version = 3 # default pdf version 1.3
 
     now = datetime.now()
+
+    def debug_out(message):
+        if verbose:
+            sys.stderr.write("D: "+message+"\n")
 
     info = dict()
     if title:
@@ -122,6 +126,8 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
                 color = colorspace
             else:
                 color = imgdata.mode
+
+        debug_out("width x height = %d x %d"%(width,height))
 
         if color == 'L':
             color = "/DeviceGray"
@@ -251,7 +257,8 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--subject', metavar='subject', type=str, help='subject for metadata')
     parser.add_argument('-k', '--keywords', metavar='kw', type=str, nargs='+', help='keywords for metadata')
     parser.add_argument('-C', '--colorspace', metavar='colorspace', type=str, help='force PIL colorspace (one of: RGB, L, 1)')
+    parser.add_argument('-v', '--verbose', help='verbose mode', action="store_true")
     args = parser.parse_args()
     args.output.write(main(args.images, args.dpi, args.title, args.author,
         args.creator, args.producer, args.creationdate, args.moddate,
-        args.subject, args.keywords, args.colorspace))
+        args.subject, args.keywords, args.colorspace, args.verbose))
