@@ -97,12 +97,14 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 
     for im in images:
         rawdata = im.read()
+        im.seek(0)
         try:
             imgdata = Image.open(im)
-        except IOError:
+        except IOError as e:
             # test if it is a jpeg2000 image
             if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
-                print "cannot read input image"
+                print "cannot read input image (not jpeg2000)"
+                print "PIL: %s"%e
                 exit(1)
             # image is jpeg2000
             width, height, ics = parsejp2(rawdata)
