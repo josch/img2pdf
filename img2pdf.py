@@ -123,11 +123,13 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
                 dpi_x, dpi_y = dpi, dpi
             else:
                 dpi_x, dpi_y = imgdata.info.get("dpi", (96, 96))
+                debug_out("input dpi = %d x %d"%(dpi_x,dpi_y))
             imgformat = imgdata.format
             if colorspace:
                 color = colorspace
             else:
                 color = imgdata.mode
+                debug_out("input colorspace = %s"%(color))
 
         debug_out("width x height = %d x %d"%(width,height))
 
