@@ -21,6 +21,7 @@ import zlib
 import argparse
 import struct
 from datetime import datetime
+from jp2 import parsejp2
 
 def parse(cont, indent=1):
     if type(cont) is dict:
@@ -95,23 +96,21 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
     })
 
     for im in images:
+        rawdata = im.read()
         try:
             imgdata = Image.open(im)
         except IOError:
             # test if it is a jpeg2000 image
-            im.seek(0)
-            if im.read(12) != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+            if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
                 print "cannot read input image"
                 exit(1)
             # image is jpeg2000
+            width, height, ics = parsejp2(rawdata)
             imgformat = "JP2"
-            offset, = struct.unpack(">I", im.read(4))
-            im.seek(28+offset)
-            height, width = struct.unpack(">II", im.read(8))
             if colorspace:
                 color = colorspace
             else:
-                color = "RGB" # TODO: read real colorspace
+                color = ics
             if dpi:
                 dpi_x, dpi_y = dpi, dpi
             else:
@@ -147,12 +146,10 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
         # either embed the whole jpeg or deflate the bitmap representation
         if imgformat is "JPEG":
             ofilter = [ "/DCTDecode" ]
-            im.seek(0)
-            imgdata = im.read()
+            imgdata = rawdata
         elif imgformat is "JP2":
             ofilter = [ "/JPXDecode" ]
-            im.seek(0)
-            imgdata = im.read()
+            imgdata = rawdata
             version = 5 # jpeg2000 needs pdf 1.5
         else:
             ofilter = [ "/FlateDecode" ]
