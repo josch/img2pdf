@@ -152,6 +152,9 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 
         pdf_x, pdf_y = 72.0*width/dpi_x, 72.0*height/dpi_y # pdf units = 1/72 inch
 
+        if pdf_x < 3.00 or pdf_y < 3.00:
+            warning_out("pdf width or height is below 3.00 - decrease the dpi")
+
         # either embed the whole jpeg or deflate the bitmap representation
         if imgformat is "JPEG":
             ofilter = [ "/DCTDecode" ]
