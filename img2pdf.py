@@ -29,7 +29,7 @@ def parse(cont, indent=1):
     elif type(cont) is int or type(cont) is float:
         return str(cont)
     elif isinstance(cont, obj):
-        return "%d 0 R"%cont.get_identifier()
+        return "%d 0 R"%cont.identifier
     elif type(cont) is str:
         return cont
     elif type(cont) is list:
@@ -40,117 +40,73 @@ class obj():
         self.content = content
         self.stream = stream
 
-    def tostring(self, identifier):
-        self.identifier = identifier
+    def tostring(self):
         if self.stream:
-            return "%d 0 obj "%identifier+parse(self.content)+"\nstream\n"+self.stream+"\nendstream\nendobj\n"
+            return "%d 0 obj "%self.identifier+parse(self.content)+"\nstream\n"+self.stream+"\nendstream\nendobj\n"
         else:
-            return "%d 0 obj "%identifier+parse(self.content)+" endobj\n"
+            return "%d 0 obj "%self.identifier+parse(self.content)+" endobj\n"
 
-    def get_identifier(self):
-        if not hasattr(self, 'identifier'):
-            raise Exception("no id set yet, call tostring() on obj first")
-        return self.identifier
+class pdfdoc():
+    objects = list()
 
-def main(images, dpi, title=None, author=None, creator=None, producer=None,
-    creationdate=None, moddate=None, subject=None, keywords=None,
-    colorspace=None, verbose=False):
+    def __init__(self, version=3, title=None, author=None, creator=None, producer=None,
+                 creationdate=None, moddate=None, subject=None, keywords=None):
+        self.version = version # default pdf version 1.3
+        now = datetime.now()
 
-    version = 3 # default pdf version 1.3
-
-    now = datetime.now()
-
-    def debug_out(message):
-        if verbose:
-            sys.stderr.write("D: "+message+"\n")
-    def error_out(message):
-        sys.stderr.write("E: "+message+"\n")
-    def warning_out(message):
-        sys.stderr.write("W: "+message+"\n")
-
-    info = dict()
-    if title:
-        info["/Title"] = "("+title+")"
-    if author:
-        info["/Author"] = "("+author+")"
-    if creator:
-        info["/Creator"] = "("+creator+")"
-    if producer:
-        info["/Producer"] = "("+producer+")"
-    if creationdate:
-        info["/CreationDate"] = "(D:"+creationdate.strftime("%Y%m%d%H%M%S")+")"
-    else:
-        info["/CreationDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
-    if moddate:
-        info["/ModDate"] = "(D:"+moddate.strftime("%Y%m%d%H%M%S")+")"
-    else:
-        info["/ModDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
-    if subject:
-        info["/Subject"] = "("+subject+")"
-    if keywords:
-        info["/Keywords"] = "("+",".join(keywords)+")"
-
-    info = obj(info)
-
-    pagestuples = list()
-
-    # create an incomplete pages object so that a /Parent entry can be added to each page
-    pages = obj({
-        "/Type": "/Pages"
-    })
-
-    for im in images:
-        rawdata = im.read()
-        im.seek(0)
-        try:
-            imgdata = Image.open(im)
-        except IOError as e:
-            # test if it is a jpeg2000 image
-            if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
-                error_out("cannot read input image (not jpeg2000)")
-                error_out("PIL: %s"%e)
-                exit(1)
-            # image is jpeg2000
-            width, height, ics = parsejp2(rawdata)
-            imgformat = "JP2"
-            if colorspace:
-                color = colorspace
-            else:
-                color = ics
-                debug_out("input colorspace = %s"%(ics))
-            if dpi:
-                dpi_x, dpi_y = dpi, dpi
-            else:
-                dpi_x, dpi_y = (96, 96) # TODO: read real dpi
+        info = dict()
+        if title:
+            info["/Title"] = "("+title+")"
+        if author:
+            info["/Author"] = "("+author+")"
+        if creator:
+            info["/Creator"] = "("+creator+")"
+        if producer:
+            info["/Producer"] = "("+producer+")"
+        if creationdate:
+            info["/CreationDate"] = "(D:"+creationdate.strftime("%Y%m%d%H%M%S")+")"
         else:
-            width, height = imgdata.size
-            if dpi:
-                dpi_x, dpi_y = dpi, dpi
-            else:
-                dpi_x, dpi_y = imgdata.info.get("dpi", (96, 96))
-                debug_out("input dpi = %d x %d"%(dpi_x,dpi_y))
-            imgformat = imgdata.format
-            if colorspace:
-                color = colorspace
-            else:
-                color = imgdata.mode
-                debug_out("input colorspace = %s"%(color))
+            info["/CreationDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
+        if moddate:
+            info["/ModDate"] = "(D:"+moddate.strftime("%Y%m%d%H%M%S")+")"
+        else:
+            info["/ModDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
+        if subject:
+            info["/Subject"] = "("+subject+")"
+        if keywords:
+            info["/Keywords"] = "("+",".join(keywords)+")"
 
-        debug_out("width x height = %d x %d"%(width,height))
+        self.info = obj(info)
 
+        # create an incomplete pages object so that a /Parent entry can be added to each page
+        self.pages = obj({
+            "/Type": "/Pages",
+            "/Kids": [],
+            "/Count": 0
+        })
+
+        self.catalog = obj({
+            "/Pages": self.pages,
+            "/Type": "/Catalog"
+        })
+        self.addobj(self.catalog)
+        self.addobj(self.pages)
+
+    def addobj(self, obj):
+        newid = len(self.objects)+1
+        obj.identifier = newid
+        self.objects.append(obj)
+
+    def addimage(self, color, width, height, dpi, imgformat, imgdata):
         if color == 'L':
             color = "/DeviceGray"
         elif color == 'RGB':
             color = "/DeviceRGB"
-        elif color == '1':
-            # TODO: /CCITTFaxDecode monochrome images
-            imgdata = imgdata.convert('L')
-            color = "/DeviceGray"
         else:
             error_out("unsupported color space: %s"%color)
             exit(1)
 
-        pdf_x, pdf_y = 72.0*width/dpi_x, 72.0*height/dpi_y # pdf units = 1/72 inch
+        pdf_x, pdf_y = 72.0*width/dpi[0], 72.0*height/dpi[1] # pdf units = 1/72 inch
 
         if pdf_x < 3.00 or pdf_y < 3.00:
             warning_out("pdf width or height is below 3.00 - decrease the dpi")
@@ -158,16 +114,11 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
         # either embed the whole jpeg or deflate the bitmap representation
         if imgformat is "JPEG":
             ofilter = [ "/DCTDecode" ]
-            imgdata = rawdata
         elif imgformat is "JP2":
             ofilter = [ "/JPXDecode" ]
-            imgdata = rawdata
-            version = 5 # jpeg2000 needs pdf 1.5
+            self.version = 5 # jpeg2000 needs pdf 1.5
         else:
             ofilter = [ "/FlateDecode" ]
-            imgdata = zlib.compress(imgdata.tostring())
-        im.close()
-
         image = obj({
             "/Type": "/XObject",
             "/Subtype": "/Image",
@@ -187,7 +138,7 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 
         page = obj({
             "/Type": "/Page",
-            "/Parent": pages,
+            "/Parent": self.pages,
             "/Resources": {
                 "/XObject": {
                     "/Im0": image
@@ -196,50 +147,119 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
             "/MediaBox": [0, 0, pdf_x, pdf_y],
             "/Contents": content
         })
+        self.pages.content["/Kids"].append(page)
+        self.pages.content["/Count"] += 1
+        self.addobj(page)
+        self.addobj(content)
+        self.addobj(image)
 
-        pagestuples.append((image, content, page))
+    def tostring(self):
+        # add info as last object
+        self.addobj(self.info)
 
-    # complete pages object with page information
-    pages.content["/Kids"] = [ pagetuple[2] for pagetuple in pagestuples ]
-    pages.content["/Count"] = len(pagestuples)
+        xreftable = list()
 
-    catalog = obj({
-        "/Pages": pages,
-        "/Type": "/Catalog"
-    })
+        result = "%%PDF-1.%d\n"%self.version
 
-    objects = list()
-    objects.append(info.tostring(3*(len(pagestuples)+1)))
-    pages.identifier = 2 # manually set it because each page references to it
-    for i, (image, content, page) in enumerate(reversed(pagestuples)):
-        objects.append(image.tostring(3*(len(pagestuples)-i+1)-1))
-        objects.append(content.tostring(3*(len(pagestuples)-i+1)-2))
-        objects.append(page.tostring(3*(len(pagestuples)-i+1)-3))
-    objects.append(pages.tostring(2))
-    objects.append(catalog.tostring(1))
-    objects.reverse()
+        xreftable.append("0000000000 65535 f \n")
+        for o in self.objects:
+            xreftable.append("%010d 00000 n \n"%len(result))
+            result += o.tostring()
 
-    xreftable = list()
+        xrefoffset = len(result)
+        result += "xref\n"
+        result += "0 %d\n"%len(xreftable)
+        for x in xreftable:
+            result += x
+        result += "trailer\n"
+        result += parse({"/Size": len(xreftable), "/Info": self.info, "/Root": self.catalog})+"\n"
+        result += "startxref\n"
+        result += "%d\n"%xrefoffset
+        result += "%%EOF\n"
+        return result
 
-    result  = "%%PDF-1.%d\n"%version
+def main(images, dpi, title=None, author=None, creator=None, producer=None,
+    creationdate=None, moddate=None, subject=None, keywords=None,
+    colorspace=None, verbose=False):
 
-    xreftable.append("0000000000 65535 f \n")
-    for o in objects:
-        xreftable.append("%010d 00000 n \n"%len(result))
-        result += o
+    def debug_out(message):
+        if verbose:
+            sys.stderr.write("D: "+message+"\n")
+    def error_out(message):
+        sys.stderr.write("E: "+message+"\n")
+    def warning_out(message):
+        sys.stderr.write("W: "+message+"\n")
 
-    xrefoffset = len(result)
-    result += "xref\n"
-    result += "0 %d\n"%len(xreftable)
-    for x in xreftable:
-        result += x
-    result += "trailer\n"
-    result += parse({"/Size": len(xreftable), "/Info": info, "/Root": catalog})+"\n"
-    result += "startxref\n"
-    result += "%d\n"%xrefoffset
-    result += "%%EOF\n"
+    pdf = pdfdoc()
 
-    return result
+    for im in images:
+        rawdata = im.read()
+        im.seek(0)
+        try:
+            imgdata = Image.open(im)
+        except IOError as e:
+            # test if it is a jpeg2000 image
+            if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+                error_out("cannot read input image (not jpeg2000)")
+                error_out("PIL: %s"%e)
+                exit(1)
+            # image is jpeg2000
+            width, height, ics = parsejp2(rawdata)
+            imgformat = "JP2"
+
+            if dpi:
+                dpi = dpi, dpi
+                debug_out("input dpi (forced) = %d x %d"%dpi)
+            else:
+                dpi = (96, 96) # TODO: read real dpi
+                debug_out("input dpi = %d x %d"%dpi)
+
+            if colorspace:
+                color = colorspace
+                debug_out("input colorspace (forced) = %s"%(ics))
+            else:
+                color = ics
+                debug_out("input colorspace = %s"%(ics))
+        else:
+            width, height = imgdata.size
+            imgformat = imgdata.format
+
+            if dpi:
+                dpi = dpi, dpi
+                debug_out("input dpi (forced) = %d x %d"%dpi)
+            else:
+                dpi = imgdata.info.get("dpi", (96, 96))
+                debug_out("input dpi = %d x %d"%dpi)
+
+            if colorspace:
+                color = colorspace
+                debug_out("input colorspace (forced) = %s"%(color))
+            else:
+                color = imgdata.mode
+                debug_out("input colorspace = %s"%(color))
+
+        debug_out("width x height = %d x %d"%(width,height))
+        debug_out("imgformat = %s"%imgformat)
+
+        # depending on the input format, determine whether to pass the raw
+        # image or the zlib compressed color information
+        if imgformat is "JPEG" or imgformat is "JP2":
+            if color == '1':
+                error_out("jpeg can't be monochrome")
+                exit(1)
+            imgdata = rawdata
+        else:
+            # because we do not support /CCITTFaxDecode
+            if color == '1':
+                imgdata = imgdata.convert('L')
+                color = 'L'
+            imgdata = zlib.compress(imgdata.tostring())
+
+        pdf.addimage(color, width, height, dpi, imgformat, imgdata)
+
+        im.close()
+
+    return pdf.tostring()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='lossless conversion/embedding of images (in)to pdf')
