@@ -63,6 +63,10 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
     def debug_out(message):
         if verbose:
             sys.stderr.write("D: "+message+"\n")
+    def error_out(message):
+        sys.stderr.write("E: "+message+"\n")
+    def warning_out(message):
+        sys.stderr.write("W: "+message+"\n")
 
     info = dict()
     if title:
@@ -103,8 +107,8 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
         except IOError as e:
             # test if it is a jpeg2000 image
             if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
-                print "cannot read input image (not jpeg2000)"
-                print "PIL: %s"%e
+                error_out("cannot read input image (not jpeg2000)")
+                error_out("PIL: %s"%e)
                 exit(1)
             # image is jpeg2000
             width, height, ics = parsejp2(rawdata)
@@ -113,6 +117,7 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
                 color = colorspace
             else:
                 color = ics
+                debug_out("input colorspace = %s"%(ics))
             if dpi:
                 dpi_x, dpi_y = dpi, dpi
             else:
@@ -142,7 +147,7 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
             imgdata = imgdata.convert('L')
             color = "/DeviceGray"
         else:
-            print "unsupported color space:", color
+            error_out("unsupported color space: %s"%color)
             exit(1)
 
         pdf_x, pdf_y = 72.0*width/dpi_x, 72.0*height/dpi_y # pdf units = 1/72 inch
