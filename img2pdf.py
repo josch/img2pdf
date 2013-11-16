@@ -208,11 +208,11 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
             imgformat = "JP2"
 
             if dpi:
-                dpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%dpi)
+                ndpi = dpi, dpi
+                debug_out("input dpi (forced) = %d x %d"%ndpi)
             else:
-                dpi = (96, 96) # TODO: read real dpi
-                debug_out("input dpi = %d x %d"%dpi)
+                ndpi = (96, 96) # TODO: read real dpi
+                debug_out("input dpi = %d x %d"%ndpi)
 
             if colorspace:
                 color = colorspace
@@ -225,11 +225,11 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
             imgformat = imgdata.format
 
             if dpi:
-                dpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%dpi)
+                ndpi = dpi, dpi
+                debug_out("input dpi (forced) = %d x %d"%ndpi)
             else:
-                dpi = imgdata.info.get("dpi", (96, 96))
-                debug_out("input dpi = %d x %d"%dpi)
+                ndpi = imgdata.info.get("dpi", (96, 96))
+                debug_out("input dpi = %d x %d"%ndpi)
 
             if colorspace:
                 color = colorspace
@@ -255,7 +255,7 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
                 color = 'L'
             imgdata = zlib.compress(imgdata.tostring())
 
-        pdf.addimage(color, width, height, dpi, imgformat, imgdata)
+        pdf.addimage(color, width, height, ndpi, imgformat, imgdata)
 
         im.close()
 
