@@ -190,7 +190,7 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
     def warning_out(message):
         sys.stderr.write("W: "+message+"\n")
 
-    pdf = pdfdoc()
+    pdf = pdfdoc(3, title, author, creator, producer, creationdate, moddate, subject, keywords)
 
     for im in images:
         rawdata = im.read()
