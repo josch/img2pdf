@@ -17,9 +17,20 @@ import sys
 import zlib
 import argparse
 import struct
-from Pillow import Image
+from PIL import Image
 from datetime import datetime
 from jp2 import parsejp2
+
+# XXX: Switch to use logging module.
+def debug_out(message, verbose=True):
+    if verbose:
+        sys.stderr.write("D: "+message+"\n")
+
+def error_out(message):
+    sys.stderr.write("E: "+message+"\n")
+
+def warning_out(message):
+    sys.stderr.write("W: "+message+"\n")
 
 def parse(cont, indent=1):
     if type(cont) is dict:
@@ -42,8 +53,9 @@ class obj(object):
 
     def tostring(self):
         if self.stream:
-            return "%d 0 obj " % (
-                self.identifier+parse(self.content) +
+            return (
+                "%d 0 obj " % self.identifier +
+                parse(self.content) +
                 "\nstream\n" + self.stream + "\nendstream\nendobj\n")
         else:
             return "%d 0 obj "%self.identifier+parse(self.content)+" endobj\n"
@@ -55,7 +67,7 @@ class pdfdoc(object):
                  keywords=None):
         self.version = version # default pdf version 1.3
         now = datetime.now()
-        objects = []
+        self.objects = []
 
         info = {}
         if title:
@@ -188,14 +200,6 @@ def convert(images, dpi, title=None, author=None, creator=None, producer=None,
             creationdate=None, moddate=None, subject=None, keywords=None,
             colorspace=None, verbose=False):
 
-    def debug_out(message):
-        if verbose:
-            sys.stderr.write("D: "+message+"\n")
-    def error_out(message):
-        sys.stderr.write("E: "+message+"\n")
-    def warning_out(message):
-        sys.stderr.write("W: "+message+"\n")
-
     pdf = pdfdoc(3, title, author, creator, producer, creationdate,
                  moddate, subject, keywords)
 
@@ -216,37 +220,37 @@ def convert(images, dpi, title=None, author=None, creator=None, producer=None,
 
             if dpi:
                 ndpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%ndpi)
+                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
             else:
                 ndpi = (96, 96) # TODO: read real dpi
-                debug_out("input dpi = %d x %d"%ndpi)
+                debug_out("input dpi = %d x %d"%ndpi, verbose)
 
             if colorspace:
                 color = colorspace
                 debug_out("input colorspace (forced) = %s"%(ics))
             else:
                 color = ics
-                debug_out("input colorspace = %s"%(ics))
+                debug_out("input colorspace = %s"%(ics), verbose)
         else:
             width, height = imgdata.size
             imgformat = imgdata.format
 
             if dpi:
                 ndpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%ndpi)
+                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
             else:
                 ndpi = imgdata.info.get("dpi", (96, 96))
-                debug_out("input dpi = %d x %d"%ndpi)
+                debug_out("input dpi = %d x %d"%ndpi, verbose)
 
             if colorspace:
                 color = colorspace
-                debug_out("input colorspace (forced) = %s"%(color))
+                debug_out("input colorspace (forced) = %s"%(color), verbose)
             else:
                 color = imgdata.mode
-                debug_out("input colorspace = %s"%(color))
+                debug_out("input colorspace = %s"%(color), verbose)
 
-        debug_out("width x height = %d x %d"%(width,height))
-        debug_out("imgformat = %s"%imgformat)
+        debug_out("width x height = %d x %d"%(width,height), verbose)
+        debug_out("imgformat = %s"%imgformat, verbose)
 
         # depending on the input format, determine whether to pass the raw
         # image or the zlib compressed color information
