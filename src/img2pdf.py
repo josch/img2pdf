@@ -328,6 +328,8 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
     args = parser.parse_args(args)
-    args.output.write(main(args.images, args.dpi, args.title, args.author,
-        args.creator, args.producer, args.creationdate, args.moddate,
-        args.subject, args.keywords, args.colorspace, args.verbose))
+    args.output.write(
+        convert(
+            args.images, args.dpi, args.title, args.author,
+            args.creator, args.producer, args.creationdate, args.moddate,
+            args.subject, args.keywords, args.colorspace, args.verbose))
