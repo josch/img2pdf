@@ -4,7 +4,7 @@ img2pdf
 Lossless conversion of images to PDF without unnecessarily re-encoding JPEG and
 JPEG2000 files. Thus, no loss of quality and no unnecessary large output file.
 
-background
+Background
 ----------
 
 PDF is able to embed JPEG and JPEG2000 images as they are without re-encoding
@@ -15,7 +15,7 @@ If you know how to embed JPEG and JPEG2000 images into a PDF container without
 recompression, using existing tools, please contact me so that I can put this
 code into the garbage bin :D
 
-functionality
+Functionality
 -------------
 
 The program will take image filenames from commandline arguments and output a
@@ -46,7 +46,7 @@ imagemagick. While a run of above convert command with a 2.8MB JPEG takes 27
 seconds (on average) on my machine, conversion using img2pdf takes just a
 fraction of a second.
 
-commandline arguments
+Commandline Arguments
 ---------------------
 
 At least one input file argument must be given as img2pdf needs to seek in the
@@ -67,7 +67,7 @@ Specify -C or --colorspace to force a colorspace using PIL short handles like
 
 More help is available with the -h or --help option.
 
-bugs
+Bugs
 ----
 
 If you find a JPEG or JPEG2000 file that, when embedded can not be read by the
@@ -86,3 +86,31 @@ I have not yet figured out how to read the colorspace from jpeg2000 files.
 Therefor jpeg2000 files use DeviceRGB per default. If your jpeg2000 files are
 of any other colorspace you must force it using the --colorspace option.
 Like -C L for DeviceGray.
+
+Installation
+------------
+
+You can install the package using:
+
+  $ pip install img2pdf
+
+If you want to install from source code simply use:
+
+  $ cd img2pdf/
+  $ pip install .
+
+To test the console script without installing the package on your system,
+simply use virtualenv:
+
+  $ cd img2pdf/
+  $ virtualenv ve
+  $ ve/bin/pip install .
+
+You can then test the converter using:
+
+  $ ve/bin/img2pdf -o test.pdf src/tests/test.jpg
+
+Note that the package can also be used as a library as follows:
+
+  import img2pdf
+  pdf_bytes = img2pdf('test.jpg', dpi=150)

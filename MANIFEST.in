@@ -1,0 +1,6 @@
+include README.md
+include test_comp.sh
+recursive-include src *.jpg
+recursive-include src *.pdf
+recursive-include src *.png
+recursive-include src *.py
