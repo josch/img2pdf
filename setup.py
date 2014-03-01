@@ -16,7 +16,7 @@ setup (
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: Implementation :: CPython',
-        'License :: OSI Approved :: General Public License',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python',
         'Natural Language :: English',
         'Operating System :: OS Independent'],
