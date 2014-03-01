@@ -109,3 +109,8 @@ simply use virtualenv:
 You can then test the converter using:
 
   $ ve/bin/img2pdf -o test.pdf src/tests/test.jpg
+
+Note that the package can also be used as a library as follows:
+
+  import img2pdf
+  pdf_bytes = img2pdf('test.jpg', dpi=150)
