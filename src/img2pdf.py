@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2012-2013 Johannes 'josch' Schauer <j.schauer at email.de>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,17 +13,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import Image
 import sys
 import zlib
 import argparse
 import struct
+from Pillow import Image
 from datetime import datetime
 from jp2 import parsejp2
 
 def parse(cont, indent=1):
     if type(cont) is dict:
-        return "<<\n"+"\n".join([4*indent*" "+"%s %s"%(k, parse(v, indent+1)) for k, v in cont.items()])+"\n"+4*(indent-1)*" "+">>"
+        return "<<\n"+"\n".join(
+            [4 * indent * " " + "%s %s" % (k, parse(v, indent+1))
+             for k, v in cont.items()])+"\n"+4*(indent-1)*" "+">>"
     elif type(cont) is int or type(cont) is float:
         return str(cont)
     elif isinstance(cont, obj):
@@ -35,26 +35,29 @@ def parse(cont, indent=1):
     elif type(cont) is list:
         return "[ "+" ".join([parse(c, indent) for c in cont])+" ]"
 
-class obj():
+class obj(object):
     def __init__(self, content, stream=None):
         self.content = content
         self.stream = stream
 
     def tostring(self):
         if self.stream:
-            return "%d 0 obj "%self.identifier+parse(self.content)+"\nstream\n"+self.stream+"\nendstream\nendobj\n"
+            return "%d 0 obj " % (
+                self.identifier+parse(self.content) +
+                "\nstream\n" + self.stream + "\nendstream\nendobj\n")
         else:
             return "%d 0 obj "%self.identifier+parse(self.content)+" endobj\n"
 
-class pdfdoc():
-    objects = list()
+class pdfdoc(object):
 
-    def __init__(self, version=3, title=None, author=None, creator=None, producer=None,
-                 creationdate=None, moddate=None, subject=None, keywords=None):
+    def __init__(self, version=3, title=None, author=None, creator=None,
+                 producer=None, creationdate=None, moddate=None, subject=None,
+                 keywords=None):
         self.version = version # default pdf version 1.3
         now = datetime.now()
+        objects = []
 
-        info = dict()
+        info = {}
         if title:
             info["/Title"] = "("+title+")"
         if author:
@@ -78,7 +81,8 @@ class pdfdoc():
 
         self.info = obj(info)
 
-        # create an incomplete pages object so that a /Parent entry can be added to each page
+        # create an incomplete pages object so that a /Parent entry can be
+        # added to each page
         self.pages = obj({
             "/Type": "/Pages",
             "/Kids": [],
@@ -106,7 +110,8 @@ class pdfdoc():
             error_out("unsupported color space: %s"%color)
             exit(1)
 
-        pdf_x, pdf_y = 72.0*width/dpi[0], 72.0*height/dpi[1] # pdf units = 1/72 inch
+        # pdf units = 1/72 inch
+        pdf_x, pdf_y = 72.0*width/dpi[0], 72.0*height/dpi[1]
 
         if pdf_x < 3.00 or pdf_y < 3.00:
             warning_out("pdf width or height is below 3.00 - decrease the dpi")
@@ -126,7 +131,8 @@ class pdfdoc():
             "/Width": width,
             "/Height": height,
             "/ColorSpace": color,
-            "/BitsPerComponent": 8, # hardcoded as PIL doesnt provide bits for non-jpeg formats
+            # hardcoded as PIL doesnt provide bits for non-jpeg formats
+            "/BitsPerComponent": 8,
             "/Length": len(imgdata)
         }, imgdata)
 
@@ -178,9 +184,9 @@ class pdfdoc():
         result += "%%EOF\n"
         return result
 
-def main(images, dpi, title=None, author=None, creator=None, producer=None,
-    creationdate=None, moddate=None, subject=None, keywords=None,
-    colorspace=None, verbose=False):
+def convert(images, dpi, title=None, author=None, creator=None, producer=None,
+            creationdate=None, moddate=None, subject=None, keywords=None,
+            colorspace=None, verbose=False):
 
     def debug_out(message):
         if verbose:
@@ -190,7 +196,8 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
     def warning_out(message):
         sys.stderr.write("W: "+message+"\n")
 
-    pdf = pdfdoc(3, title, author, creator, producer, creationdate, moddate, subject, keywords)
+    pdf = pdfdoc(3, title, author, creator, producer, creationdate,
+                 moddate, subject, keywords)
 
     for im in images:
         rawdata = im.read()
@@ -261,34 +268,64 @@ def main(images, dpi, title=None, author=None, creator=None, producer=None,
 
     return pdf.tostring()
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='lossless conversion/embedding of images (in)to pdf')
-    parser.add_argument('images', metavar='infile', type=argparse.FileType('rb'),
-                        nargs='+', help='input file(s)')
-    parser.add_argument('-o', '--output', metavar='out', type=argparse.FileType('wb'),
-                        default=sys.stdout, help='output file (default: stdout)')
-    def positive_float(string):
-        value = float(string)
-        if value <= 0:
-            msg = "%r is not positive"%string
-            raise argparse.ArgumentTypeError(msg)
-        return value
-    parser.add_argument('-d', '--dpi', metavar='dpi', type=positive_float, help='dpi for pdf output (default: 96.0)')
-    parser.add_argument('-t', '--title', metavar='title', type=str, help='title for metadata')
-    parser.add_argument('-a', '--author', metavar='author', type=str, help='author for metadata')
-    parser.add_argument('-c', '--creator', metavar='creator', type=str, help='creator for metadata')
-    parser.add_argument('-p', '--producer', metavar='producer', type=str, help='producer for metadata')
-    def valid_date(string):
-        return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
-    parser.add_argument('-r', '--creationdate', metavar='creationdate',
-        type=valid_date, help='creation date for metadata in YYYY-MM-DDTHH:MM:SS format')
-    parser.add_argument('-m', '--moddate', metavar='moddate',
-        type=valid_date, help='modification date for metadata in YYYY-MM-DDTHH:MM:SS format')
-    parser.add_argument('-s', '--subject', metavar='subject', type=str, help='subject for metadata')
-    parser.add_argument('-k', '--keywords', metavar='kw', type=str, nargs='+', help='keywords for metadata')
-    parser.add_argument('-C', '--colorspace', metavar='colorspace', type=str, help='force PIL colorspace (one of: RGB, L, 1)')
-    parser.add_argument('-v', '--verbose', help='verbose mode', action="store_true")
-    args = parser.parse_args()
-    args.output.write(main(args.images, args.dpi, args.title, args.author,
-        args.creator, args.producer, args.creationdate, args.moddate,
-        args.subject, args.keywords, args.colorspace, args.verbose))
+
+def positive_float(string):
+    value = float(string)
+    if value <= 0:
+        msg = "%r is not positive"%string
+        raise argparse.ArgumentTypeError(msg)
+    return value
+
+def valid_date(string):
+    return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
+
+parser = argparse.ArgumentParser(
+    description='Lossless conversion/embedding of images (in)to pdf')
+parser.add_argument(
+    'images', metavar='infile', type=argparse.FileType('rb'),
+    nargs='+', help='input file(s)')
+parser.add_argument(
+    '-o', '--output', metavar='out', type=argparse.FileType('wb'),
+    default=sys.stdout, help='output file (default: stdout)')
+parser.add_argument(
+    '-d', '--dpi', metavar='dpi', type=positive_float,
+    help='dpi for pdf output (default: 96.0)')
+parser.add_argument(
+    '-t', '--title', metavar='title', type=str,
+    help='title for metadata')
+parser.add_argument(
+    '-a', '--author', metavar='author', type=str,
+    help='author for metadata')
+parser.add_argument(
+    '-c', '--creator', metavar='creator', type=str,
+    help='creator for metadata')
+parser.add_argument(
+    '-p', '--producer', metavar='producer', type=str,
+    help='producer for metadata')
+parser.add_argument(
+    '-r', '--creationdate', metavar='creationdate', type=valid_date,
+    help='creation date for metadata in YYYY-MM-DDTHH:MM:SS format')
+parser.add_argument(
+    '-m', '--moddate', metavar='moddate', type=valid_date,
+    help='modification date for metadata in YYYY-MM-DDTHH:MM:SS format')
+parser.add_argument(
+    '-s', '--subject', metavar='subject', type=str,
+    help='subject for metadata')
+parser.add_argument(
+    '-k', '--keywords', metavar='kw', type=str, nargs='+',
+    help='keywords for metadata')
+parser.add_argument(
+    '-C', '--colorspace', metavar='colorspace', type=str,
+    help='force PIL colorspace (one of: RGB, L, 1)')
+parser.add_argument(
+    '-v', '--verbose', help='verbose mode', action="store_true")
+
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
+    args = parser.parse_args(args)
+    args.output.write(
+        convert(
+            args.images, args.dpi, args.title, args.author,
+            args.creator, args.producer, args.creationdate, args.moddate,
+            args.subject, args.keywords, args.colorspace, args.verbose))
