@@ -333,3 +333,6 @@ def main(args=None):
             args.images, args.dpi, args.title, args.author,
             args.creator, args.producer, args.creationdate, args.moddate,
             args.subject, args.keywords, args.colorspace, args.verbose))
+
+if __name__ == '__main__':
+    main()
