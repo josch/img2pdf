@@ -26,10 +26,21 @@ will be able to lossless wrap any image into a PDF container while performing
 better (in terms of quality/filesize ratio) than existing tools in case the
 input image is a JPEG or JPEG2000 file.
 
-For the record, the imagemagick command to lossless convert any image to
-PDF using zip-encoding, is:
+For example, imagemagick will re-encode the input JPEG image and thus change
+its content:
 
-	convert input.jpg -compress Zip output.pdf
+	$ convert img.jpg img.pdf
+	$ pdfimages img.pdf img.extr # not using -j to be extra sure there is no recompression
+	$ compare -metric AE img.jpg img.extr-000.ppm null:
+	1.6301e+06
+
+If one wants to do a lossless conversion from any format to PDF with
+imagemagick then one has to use zip-encoding:
+
+	$ convert input.jpg -compress Zip output.pdf
+	$ pdfimages img.pdf img.extr # not using -j to be extra sure there is no recompression
+	$ compare -metric AE img.jpg img.extr-000.ppm null:
+	0
 
 The downside is, that using imagemagick like this will make the resulting PDF
 files a few times bigger than the input JPEG or JPEG2000 file and can also not

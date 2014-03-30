@@ -6,7 +6,7 @@ setup (
     author = "Johannes 'josch' Schauer",
     description = "Convert images to PDF via direct JPEG inclusion.",
     long_description = open('README.md').read(),
-    license = "GPL",
+    license = "LGPL",
     keywords = "jpeg pdf converter",
     classifiers = [
         'Development Status :: 4 - Beta',
@@ -16,7 +16,7 @@ setup (
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: Implementation :: CPython',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
         'Programming Language :: Python',
         'Natural Language :: English',
         'Operating System :: OS Independent'],
