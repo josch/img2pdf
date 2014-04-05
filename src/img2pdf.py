@@ -133,7 +133,7 @@ class pdfdoc(object):
         # either embed the whole jpeg or deflate the bitmap representation
         if imgformat is "JPEG":
             ofilter = [ "/DCTDecode" ]
-        elif imgformat is "JP2":
+        elif imgformat is "JPEG2000":
             ofilter = [ "/JPXDecode" ]
             self.version = 5 # jpeg2000 needs pdf 1.5
         else:
@@ -218,7 +218,7 @@ def convert(images, dpi, title=None, author=None, creator=None, producer=None,
                 exit(1)
             # image is jpeg2000
             width, height, ics = parsejp2(rawdata)
-            imgformat = "JP2"
+            imgformat = "JPEG2000"
 
             if dpi:
                 ndpi = dpi, dpi
@@ -256,7 +256,7 @@ def convert(images, dpi, title=None, author=None, creator=None, producer=None,
 
         # depending on the input format, determine whether to pass the raw
         # image or the zlib compressed color information
-        if imgformat is "JPEG" or imgformat is "JP2":
+        if imgformat is "JPEG" or imgformat is "JPEG2000":
             if color == '1':
                 error_out("jpeg can't be monochrome")
                 exit(1)
