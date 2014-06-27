@@ -103,25 +103,25 @@ Installation
 
 You can install the package using:
 
-  $ pip install img2pdf
+	$ pip install img2pdf
 
 If you want to install from source code simply use:
 
-  $ cd img2pdf/
-  $ pip install .
+	$ cd img2pdf/
+	$ pip install .
 
 To test the console script without installing the package on your system,
 simply use virtualenv:
 
-  $ cd img2pdf/
-  $ virtualenv ve
-  $ ve/bin/pip install .
+	$ cd img2pdf/
+	$ virtualenv ve
+	$ ve/bin/pip install .
 
 You can then test the converter using:
 
-  $ ve/bin/img2pdf -o test.pdf src/tests/test.jpg
+	$ ve/bin/img2pdf -o test.pdf src/tests/test.jpg
 
 Note that the package can also be used as a library as follows:
 
-  import img2pdf
-  pdf_bytes = img2pdf('test.jpg', dpi=150)
+	import img2pdf
+	pdf_bytes = img2pdf('test.jpg', dpi=150)
