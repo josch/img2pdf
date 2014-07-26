@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 # Copyright (C) 2012-2014 Johannes 'josch' Schauer <j.schauer at email.de>
 #
 # This program is free software: you can redistribute it and/or
