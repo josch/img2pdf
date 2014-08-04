@@ -117,7 +117,7 @@ class pdfdoc(object):
         obj.identifier = newid
         self.objects.append(obj)
 
-    def addimage(self, color, width, height, dpi, imgformat, imgdata):
+    def addimage(self, color, width, height, imgformat, imgdata, pdf_x, pdf_y):
         if color == 'L':
             color = "/DeviceGray"
         elif color == 'RGB':
@@ -125,9 +125,6 @@ class pdfdoc(object):
         else:
             error_out("unsupported color space: %s"%color)
             exit(1)
-
-        # pdf units = 1/72 inch
-        pdf_x, pdf_y = 72.0*width/dpi[0], 72.0*height/dpi[1]
 
         if pdf_x < 3.00 or pdf_y < 3.00:
             warning_out("pdf width or height is below 3.00 - decrease the dpi")
@@ -200,7 +197,7 @@ class pdfdoc(object):
         result += "%%EOF\n"
         return result
 
-def convert(images, dpi, title=None, author=None, creator=None, producer=None,
+def convert(images, dpi, pdf_x, pdf_y, title=None, author=None, creator=None, producer=None,
             creationdate=None, moddate=None, subject=None, keywords=None,
             colorspace=None, verbose=False):
 
@@ -270,7 +267,15 @@ def convert(images, dpi, title=None, author=None, creator=None, producer=None,
                 color = 'L'
             imgdata = zlib.compress(imgdata.tostring())
 
-        pdf.addimage(color, width, height, ndpi, imgformat, imgdata)
+        # pdf units = 1/72 inch
+        if not pdf_x and not pdf_y:
+            pdf_x, pdf_y = 72.0*width/ndpi[0], 72.0*height/ndpi[1]
+        elif not pdf_y:
+            pdf_y = pdf_x*height/width
+        elif not pdf_x:
+            pdf_x = pdf_y*width/height
+
+        pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
 
         im.close()
 
@@ -298,6 +303,12 @@ parser.add_argument(
 parser.add_argument(
     '-d', '--dpi', metavar='dpi', type=positive_float,
     help='dpi for pdf output (default: 96.0)')
+parser.add_argument(
+    '-x', metavar='pdf_x', type=positive_float,
+    help='output width in points')
+parser.add_argument(
+    '-y', metavar='pdf_y', type=positive_float,
+    help='output height in points')
 parser.add_argument(
     '-t', '--title', metavar='title', type=str,
     help='title for metadata')
@@ -332,9 +343,10 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
     args = parser.parse_args(args)
+
     args.output.write(
         convert(
-            args.images, args.dpi, args.title, args.author,
+            args.images, args.dpi, args.x, args.y, args.title, args.author,
             args.creator, args.producer, args.creationdate, args.moddate,
             args.subject, args.keywords, args.colorspace, args.verbose))
 
