@@ -197,7 +197,7 @@ class pdfdoc(object):
         result += "%%EOF\n"
         return result
 
-def convert(images, dpi, pdf_x, pdf_y, title=None, author=None, creator=None, producer=None,
+def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=None,
             creationdate=None, moddate=None, subject=None, keywords=None,
             colorspace=None, verbose=False):
 
@@ -268,12 +268,12 @@ def convert(images, dpi, pdf_x, pdf_y, title=None, author=None, creator=None, pr
             imgdata = zlib.compress(imgdata.tostring())
 
         # pdf units = 1/72 inch
-        if not pdf_x and not pdf_y:
+        if not x and not y:
             pdf_x, pdf_y = 72.0*width/ndpi[0], 72.0*height/ndpi[1]
-        elif not pdf_y:
-            pdf_y = pdf_x*height/width
-        elif not pdf_x:
-            pdf_x = pdf_y*width/height
+        elif not y:
+            pdf_x, pdf_y = x, x*height/width
+        elif not x:
+            pdf_x, pdf_y = y*width/height, y
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
 
