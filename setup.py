@@ -4,7 +4,7 @@ setup (
     name='img2pdf',
     version='0.1.1',
     author = "Johannes 'josch' Schauer",
-    author_email = 'j.schauer@email.de'
+    author_email = 'j.schauer@email.de',
     description = "Convert images to PDF via direct JPEG inclusion.",
     long_description = open('README.md').read(),
     license = "LGPL",
