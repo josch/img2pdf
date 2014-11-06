@@ -206,51 +206,51 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
 
     for imfilename in images:
         debug_out("Reading %s"%imfilename, verbose)
-        im = open(imfilename, "rb")
-        rawdata = im.read()
-        im.seek(0)
-        try:
-            imgdata = Image.open(im)
-        except IOError as e:
-            # test if it is a jpeg2000 image
-            if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
-                error_out("cannot read input image (not jpeg2000)")
-                error_out("PIL: %s"%e)
-                exit(1)
-            # image is jpeg2000
-            width, height, ics = parsejp2(rawdata)
-            imgformat = "JPEG2000"
+        with open(imfilename, "rb") as im:
+            rawdata = im.read()
+            im.seek(0)
+            try:
+                imgdata = Image.open(im)
+            except IOError as e:
+                # test if it is a jpeg2000 image
+                if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+                    error_out("cannot read input image (not jpeg2000)")
+                    error_out("PIL: %s"%e)
+                    exit(1)
+                # image is jpeg2000
+                width, height, ics = parsejp2(rawdata)
+                imgformat = "JPEG2000"
 
-            if dpi:
-                ndpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
-            else:
-                ndpi = (96, 96) # TODO: read real dpi
-                debug_out("input dpi = %d x %d"%ndpi, verbose)
+                if dpi:
+                    ndpi = dpi, dpi
+                    debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
+                else:
+                    ndpi = (96, 96) # TODO: read real dpi
+                    debug_out("input dpi = %d x %d"%ndpi, verbose)
 
-            if colorspace:
-                color = colorspace
-                debug_out("input colorspace (forced) = %s"%(ics))
+                if colorspace:
+                    color = colorspace
+                    debug_out("input colorspace (forced) = %s"%(ics))
+                else:
+                    color = ics
+                    debug_out("input colorspace = %s"%(ics), verbose)
             else:
-                color = ics
-                debug_out("input colorspace = %s"%(ics), verbose)
-        else:
-            width, height = imgdata.size
-            imgformat = imgdata.format
+                width, height = imgdata.size
+                imgformat = imgdata.format
 
-            if dpi:
-                ndpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
-            else:
-                ndpi = imgdata.info.get("dpi", (96, 96))
-                debug_out("input dpi = %d x %d"%ndpi, verbose)
+                if dpi:
+                    ndpi = dpi, dpi
+                    debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
+                else:
+                    ndpi = imgdata.info.get("dpi", (96, 96))
+                    debug_out("input dpi = %d x %d"%ndpi, verbose)
 
-            if colorspace:
-                color = colorspace
-                debug_out("input colorspace (forced) = %s"%(color), verbose)
-            else:
-                color = imgdata.mode
-                debug_out("input colorspace = %s"%(color), verbose)
+                if colorspace:
+                    color = colorspace
+                    debug_out("input colorspace (forced) = %s"%(color), verbose)
+                else:
+                    color = imgdata.mode
+                    debug_out("input colorspace = %s"%(color), verbose)
 
         debug_out("width x height = %d x %d"%(width,height), verbose)
         debug_out("imgformat = %s"%imgformat, verbose)
@@ -285,8 +285,6 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
             pdf_x, pdf_y = y*width/height, y
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
-
-        im.close()
 
     return pdf.tostring()
 
