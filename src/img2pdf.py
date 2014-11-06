@@ -265,8 +265,15 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
         else:
             # because we do not support /CCITTFaxDecode
             if color == '1':
+                debug_out("Converting colorspace 1 to L", verbose)
                 imgdata = imgdata.convert('L')
                 color = 'L'
+            elif color in ("RGB", "L"):
+                debug_out("Colorspace is OK: %s"%color, verbose)
+            else:
+                debug_out("Converting colorspace %s to RGB"%color, verbose)
+                imgdata = imgdata.convert('RGB')
+                color = imgdata.mode
             imgdata = zlib.compress(imgdata.tostring())
 
         # pdf units = 1/72 inch
