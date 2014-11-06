@@ -204,7 +204,9 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
     pdf = pdfdoc(3, title, author, creator, producer, creationdate,
                  moddate, subject, keywords)
 
-    for im in images:
+    for imfilename in images:
+        debug_out("Reading %s"%imfilename, verbose)
+        im = open(imfilename, "rb")
         rawdata = im.read()
         im.seek(0)
         try:
@@ -295,7 +297,7 @@ def valid_date(string):
 parser = argparse.ArgumentParser(
     description='Lossless conversion/embedding of images (in)to pdf')
 parser.add_argument(
-    'images', metavar='infile', type=argparse.FileType('rb'),
+    'images', metavar='infile', type=str,
     nargs='+', help='input file(s)')
 parser.add_argument(
     '-o', '--output', metavar='out', type=argparse.FileType('wb'),
