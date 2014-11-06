@@ -204,51 +204,53 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
     pdf = pdfdoc(3, title, author, creator, producer, creationdate,
                  moddate, subject, keywords)
 
-    for im in images:
-        rawdata = im.read()
-        im.seek(0)
-        try:
-            imgdata = Image.open(im)
-        except IOError as e:
-            # test if it is a jpeg2000 image
-            if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
-                error_out("cannot read input image (not jpeg2000)")
-                error_out("PIL: %s"%e)
-                exit(1)
-            # image is jpeg2000
-            width, height, ics = parsejp2(rawdata)
-            imgformat = "JPEG2000"
+    for imfilename in images:
+        debug_out("Reading %s"%imfilename, verbose)
+        with open(imfilename, "rb") as im:
+            rawdata = im.read()
+            im.seek(0)
+            try:
+                imgdata = Image.open(im)
+            except IOError as e:
+                # test if it is a jpeg2000 image
+                if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+                    error_out("cannot read input image (not jpeg2000)")
+                    error_out("PIL: %s"%e)
+                    exit(1)
+                # image is jpeg2000
+                width, height, ics = parsejp2(rawdata)
+                imgformat = "JPEG2000"
 
-            if dpi:
-                ndpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
-            else:
-                ndpi = (96, 96) # TODO: read real dpi
-                debug_out("input dpi = %d x %d"%ndpi, verbose)
+                if dpi:
+                    ndpi = dpi, dpi
+                    debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
+                else:
+                    ndpi = (96, 96) # TODO: read real dpi
+                    debug_out("input dpi = %d x %d"%ndpi, verbose)
 
-            if colorspace:
-                color = colorspace
-                debug_out("input colorspace (forced) = %s"%(ics))
+                if colorspace:
+                    color = colorspace
+                    debug_out("input colorspace (forced) = %s"%(ics))
+                else:
+                    color = ics
+                    debug_out("input colorspace = %s"%(ics), verbose)
             else:
-                color = ics
-                debug_out("input colorspace = %s"%(ics), verbose)
-        else:
-            width, height = imgdata.size
-            imgformat = imgdata.format
+                width, height = imgdata.size
+                imgformat = imgdata.format
 
-            if dpi:
-                ndpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
-            else:
-                ndpi = imgdata.info.get("dpi", (96, 96))
-                debug_out("input dpi = %d x %d"%ndpi, verbose)
+                if dpi:
+                    ndpi = dpi, dpi
+                    debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
+                else:
+                    ndpi = imgdata.info.get("dpi", (96, 96))
+                    debug_out("input dpi = %d x %d"%ndpi, verbose)
 
-            if colorspace:
-                color = colorspace
-                debug_out("input colorspace (forced) = %s"%(color), verbose)
-            else:
-                color = imgdata.mode
-                debug_out("input colorspace = %s"%(color), verbose)
+                if colorspace:
+                    color = colorspace
+                    debug_out("input colorspace (forced) = %s"%(color), verbose)
+                else:
+                    color = imgdata.mode
+                    debug_out("input colorspace = %s"%(color), verbose)
 
         debug_out("width x height = %d x %d"%(width,height), verbose)
         debug_out("imgformat = %s"%imgformat, verbose)
@@ -263,8 +265,15 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
         else:
             # because we do not support /CCITTFaxDecode
             if color == '1':
+                debug_out("Converting colorspace 1 to L", verbose)
                 imgdata = imgdata.convert('L')
                 color = 'L'
+            elif color in ("RGB", "L"):
+                debug_out("Colorspace is OK: %s"%color, verbose)
+            else:
+                debug_out("Converting colorspace %s to RGB"%color, verbose)
+                imgdata = imgdata.convert('RGB')
+                color = imgdata.mode
             imgdata = zlib.compress(imgdata.tostring())
 
         # pdf units = 1/72 inch
@@ -276,8 +285,6 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
             pdf_x, pdf_y = y*width/height, y
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
-
-        im.close()
 
     return pdf.tostring()
 
@@ -295,7 +302,7 @@ def valid_date(string):
 parser = argparse.ArgumentParser(
     description='Lossless conversion/embedding of images (in)to pdf')
 parser.add_argument(
-    'images', metavar='infile', type=argparse.FileType('rb'),
+    'images', metavar='infile', type=str,
     nargs='+', help='input file(s)')
 parser.add_argument(
     '-o', '--output', metavar='out', type=argparse.FileType('wb'),
