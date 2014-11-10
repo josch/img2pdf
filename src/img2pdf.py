@@ -252,29 +252,29 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
                     color = imgdata.mode
                     debug_out("input colorspace = %s"%(color), verbose)
 
-        debug_out("width x height = %d x %d"%(width,height), verbose)
-        debug_out("imgformat = %s"%imgformat, verbose)
+            debug_out("width x height = %d x %d"%(width,height), verbose)
+            debug_out("imgformat = %s"%imgformat, verbose)
 
-        # depending on the input format, determine whether to pass the raw
-        # image or the zlib compressed color information
-        if imgformat is "JPEG" or imgformat is "JPEG2000":
-            if color == '1':
-                error_out("jpeg can't be monochrome")
-                exit(1)
-            imgdata = rawdata
-        else:
-            # because we do not support /CCITTFaxDecode
-            if color == '1':
-                debug_out("Converting colorspace 1 to L", verbose)
-                imgdata = imgdata.convert('L')
-                color = 'L'
-            elif color in ("RGB", "L"):
-                debug_out("Colorspace is OK: %s"%color, verbose)
+            # depending on the input format, determine whether to pass the raw
+            # image or the zlib compressed color information
+            if imgformat is "JPEG" or imgformat is "JPEG2000":
+                if color == '1':
+                    error_out("jpeg can't be monochrome")
+                    exit(1)
+                imgdata = rawdata
             else:
-                debug_out("Converting colorspace %s to RGB"%color, verbose)
-                imgdata = imgdata.convert('RGB')
-                color = imgdata.mode
-            imgdata = zlib.compress(imgdata.tostring())
+                # because we do not support /CCITTFaxDecode
+                if color == '1':
+                    debug_out("Converting colorspace 1 to L", verbose)
+                    imgdata = imgdata.convert('L')
+                    color = 'L'
+                elif color in ("RGB", "L"):
+                    debug_out("Colorspace is OK: %s"%color, verbose)
+                else:
+                    debug_out("Converting colorspace %s to RGB"%color, verbose)
+                    imgdata = imgdata.convert('RGB')
+                    color = imgdata.mode
+                imgdata = zlib.compress(imgdata.tostring())
 
         # pdf units = 1/72 inch
         if not x and not y:
