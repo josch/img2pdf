@@ -40,7 +40,7 @@ def parse(cont, indent=1):
     if type(cont) is dict:
         return b"<<\n"+b"\n".join(
             [4 * indent * b" " + k.encode("utf8") + b" " + parse(v, indent+1)
-             for k, v in cont.items()])+b"\n"+4*(indent-1)*b" "+b">>"
+             for k, v in sorted(cont.items())])+b"\n"+4*(indent-1)*b" "+b">>"
     elif type(cont) is int or type(cont) is float:
         return str(cont).encode("utf8")
     elif isinstance(cont, obj):
@@ -70,7 +70,7 @@ class pdfdoc(object):
 
     def __init__(self, version=3, title=None, author=None, creator=None,
                  producer=None, creationdate=None, moddate=None, subject=None,
-                 keywords=None):
+                 keywords=None, nodate=False):
         self.version = version # default pdf version 1.3
         now = datetime.now()
         self.objects = []
@@ -86,11 +86,11 @@ class pdfdoc(object):
             info["/Producer"] = "("+producer+")"
         if creationdate:
             info["/CreationDate"] = "(D:"+creationdate.strftime("%Y%m%d%H%M%S")+")"
-        else:
+        elif not nodate:
             info["/CreationDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
         if moddate:
             info["/ModDate"] = "(D:"+moddate.strftime("%Y%m%d%H%M%S")+")"
-        else:
+        elif not nodate:
             info["/ModDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
         if subject:
             info["/Subject"] = "("+subject+")"
@@ -345,6 +345,8 @@ parser.add_argument(
 parser.add_argument(
     '-C', '--colorspace', metavar='colorspace', type=str,
     help='force PIL colorspace (one of: RGB, L, 1)')
+parser.add_argument(
+    '-D', '--nodate', help='do not add timestamps', action="store_true")
 parser.add_argument(
     '-v', '--verbose', help='verbose mode', action="store_true")
 
