@@ -38,17 +38,19 @@ def warning_out(message):
 
 def parse(cont, indent=1):
     if type(cont) is dict:
-        return "<<\n"+"\n".join(
-            [4 * indent * " " + "%s %s" % (k, parse(v, indent+1))
-             for k, v in cont.items()])+"\n"+4*(indent-1)*" "+">>"
+        return b"<<\n"+b"\n".join(
+            [4 * indent * b" " + k.encode("utf8") + b" " + parse(v, indent+1)
+             for k, v in cont.items()])+b"\n"+4*(indent-1)*b" "+b">>"
     elif type(cont) is int or type(cont) is float:
-        return str(cont)
+        return str(cont).encode("utf8")
     elif isinstance(cont, obj):
-        return "%d 0 R"%cont.identifier
+        return ("%d 0 R"%cont.identifier).encode("utf8")
     elif type(cont) is str:
+        return cont.encode("utf8")
+    elif type(cont) is bytes:
         return cont
     elif type(cont) is list:
-        return "[ "+" ".join([parse(c, indent) for c in cont])+" ]"
+        return b"[ "+b" ".join([parse(c, indent) for c in cont])+b" ]"
 
 class obj(object):
     def __init__(self, content, stream=None):
@@ -58,11 +60,11 @@ class obj(object):
     def tostring(self):
         if self.stream:
             return (
-                "%d 0 obj " % self.identifier +
+                ("%d 0 obj " % self.identifier).encode("utf8") +
                 parse(self.content) +
-                "\nstream\n" + self.stream + "\nendstream\nendobj\n")
+                b"\nstream\n" + self.stream + b"\nendstream\nendobj\n")
         else:
-            return "%d 0 obj "%self.identifier+parse(self.content)+" endobj\n"
+            return ("%d 0 obj "%self.identifier).encode("utf8")+parse(self.content)+b" endobj\n"
 
 class pdfdoc(object):
 
@@ -149,7 +151,7 @@ class pdfdoc(object):
             "/Length": len(imgdata)
         }, imgdata)
 
-        text = "q\n%f 0 0 %f 0 0 cm\n/Im0 Do\nQ"%(pdf_x, pdf_y)
+        text = ("q\n%f 0 0 %f 0 0 cm\n/Im0 Do\nQ"%(pdf_x, pdf_y)).encode('utf8')
 
         content = obj({
             "/Length": len(text)
@@ -178,23 +180,23 @@ class pdfdoc(object):
 
         xreftable = list()
 
-        result = "%%PDF-1.%d\n"%self.version
+        result = ("%%PDF-1.%d\n"%self.version).encode("utf8")
 
-        xreftable.append("0000000000 65535 f \n")
+        xreftable.append(b"0000000000 65535 f \n")
         for o in self.objects:
-            xreftable.append("%010d 00000 n \n"%len(result))
+            xreftable.append(("%010d 00000 n \n"%len(result)).encode("utf8"))
             result += o.tostring()
 
         xrefoffset = len(result)
-        result += "xref\n"
-        result += "0 %d\n"%len(xreftable)
+        result += b"xref\n"
+        result += ("0 %d\n"%len(xreftable)).encode("utf8")
         for x in xreftable:
             result += x
-        result += "trailer\n"
-        result += parse({"/Size": len(xreftable), "/Info": self.info, "/Root": self.catalog})+"\n"
-        result += "startxref\n"
-        result += "%d\n"%xrefoffset
-        result += "%%EOF\n"
+        result += b"trailer\n"
+        result += parse({"/Size": len(xreftable), "/Info": self.info, "/Root": self.catalog})+b"\n"
+        result += b"startxref\n"
+        result += ("%d\n"%xrefoffset).encode("utf8")
+        result += b"%%EOF\n"
         return result
 
 def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=None,

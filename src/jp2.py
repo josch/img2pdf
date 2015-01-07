@@ -20,6 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import struct
+import sys
 
 def getBox(data, byteStart, noBytes):
     boxLengthValue = struct.unpack(">I", data[byteStart:byteStart+4])[0]
@@ -85,6 +86,6 @@ def parsejp2(data):
 if __name__ == "__main__":
     import sys
     width, height, colorspace = parsejp2(open(sys.argv[1]).read())
-    print "width = %d"%width
-    print "height = %d"%height
-    print "colorspace = %s"%colorspace
+    sys.stdout.write("width = %d"%width)
+    sys.stdout.write("height = %d"%height)
+    sys.stdout.write("colorspace = %s"%colorspace)
