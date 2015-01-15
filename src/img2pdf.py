@@ -285,6 +285,9 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
             pdf_x, pdf_y = x, x*height/width
         elif not x:
             pdf_x, pdf_y = y*width/height, y
+        else:
+            pdf_x = x
+            pdf_y = y
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
 
