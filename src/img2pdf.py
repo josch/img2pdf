@@ -121,9 +121,11 @@ class pdfdoc(object):
 
     def addimage(self, color, width, height, imgformat, imgdata, pdf_x, pdf_y):
         if color == 'L':
-            color = "/DeviceGray"
+            colorspace = "/DeviceGray"
         elif color == 'RGB':
-            color = "/DeviceRGB"
+            colorspace = "/DeviceRGB"
+        elif color == 'CMYK' or color == 'CMYK;I':
+            colorspace = "/DeviceCMYK"
         else:
             error_out("unsupported color space: %s"%color)
             exit(1)
@@ -145,11 +147,15 @@ class pdfdoc(object):
             "/Filter": ofilter,
             "/Width": width,
             "/Height": height,
-            "/ColorSpace": color,
+            "/ColorSpace": colorspace,
             # hardcoded as PIL doesnt provide bits for non-jpeg formats
             "/BitsPerComponent": 8,
             "/Length": len(imgdata)
         }, imgdata)
+
+        if color == 'CMYK;I':
+            # Inverts all four channels
+            image.content['/Decode'] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 
         text = ("q\n%f 0 0 %f 0 0 cm\n/Im0 Do\nQ"%(pdf_x, pdf_y)).encode('utf8')
 
@@ -252,6 +258,16 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
                     debug_out("input colorspace (forced) = %s"%(color), verbose)
                 else:
                     color = imgdata.mode
+                    if color == "CMYK" and imgformat == "JPEG":
+                        # Adobe inverts CMYK JPEGs for some reason, and others
+                        # have followed suit as well. Some software assumes the
+                        # JPEG is inverted if the Adobe tag (APP14), while other
+                        # software assumes all CMYK JPEGs are inverted. I don't
+                        # have enough experience with these to know which is
+                        # better for images currently in the wild, so I'm going
+                        # with the first approach for now.
+                        if "adobe" in imgdata.info:
+                            color = "CMYK;I"
                     debug_out("input colorspace = %s"%(color), verbose)
 
             debug_out("width x height = %d x %d"%(width,height), verbose)
@@ -270,7 +286,7 @@ def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=N
                     debug_out("Converting colorspace 1 to L", verbose)
                     imgdata = imgdata.convert('L')
                     color = 'L'
-                elif color in ("RGB", "L"):
+                elif color in ("RGB", "L", "CMYK", "CMYK;I"):
                     debug_out("Colorspace is OK: %s"%color, verbose)
                 else:
                     debug_out("Converting colorspace %s to RGB"%color, verbose)
@@ -347,7 +363,7 @@ parser.add_argument(
     help='keywords for metadata')
 parser.add_argument(
     '-C', '--colorspace', metavar='colorspace', type=str,
-    help='force PIL colorspace (one of: RGB, L, 1)')
+    help='force PIL colorspace (one of: RGB, L, 1, CMYK, CMYK;I)')
 parser.add_argument(
     '-D', '--nodate', help='do not add timestamps', action="store_true")
 parser.add_argument(
