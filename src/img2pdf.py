@@ -347,7 +347,7 @@ parser.add_argument(
     nargs='+', help='input file(s)')
 parser.add_argument(
     '-o', '--output', metavar='out', type=argparse.FileType('wb'),
-    default=sys.stdout, help='output file (default: stdout)')
+    default=getattr(sys.stdout, "buffer", sys.stdout), help='output file (default: stdout)')
 parser.add_argument(
     '-d', '--dpi', metavar='dpi', type=positive_float,
     help='dpi for pdf output (default: 96.0)')
