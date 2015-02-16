@@ -24,6 +24,10 @@ import struct
 from PIL import Image
 from datetime import datetime
 from jp2 import parsejp2
+try:
+    from cStringIO import cStringIO
+except ImportError:
+    from io import BytesIO as cStringIO
 
 # XXX: Switch to use logging module.
 def debug_out(message, verbose=True):
@@ -214,85 +218,89 @@ def convert(images, dpi=None, x=None, y=None, title=None, author=None,
 
     for imfilename in images:
         debug_out("Reading %s"%imfilename, verbose)
-        with open(imfilename, "rb") as im:
-            rawdata = im.read()
-            im.seek(0)
-            try:
-                imgdata = Image.open(im)
-            except IOError as e:
-                # test if it is a jpeg2000 image
-                if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
-                    error_out("cannot read input image (not jpeg2000)")
-                    error_out("PIL: %s"%e)
-                    exit(1)
-                # image is jpeg2000
-                width, height, ics = parsejp2(rawdata)
-                imgformat = "JPEG2000"
+        try:
+            rawdata = imfilename.read()
+            im = cStringIO(rawdata)
+        except:
+            with open(imfilename, "rb") as im:
+                rawdata = im.read()
+                im = cStringIO(rawdata)
+        try:
+            imgdata = Image.open(im)
+        except IOError as e:
+            # test if it is a jpeg2000 image
+            if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+                error_out("cannot read input image (not jpeg2000)")
+                error_out("PIL: %s"%e)
+                exit(1)
+            # image is jpeg2000
+            width, height, ics = parsejp2(rawdata)
+            imgformat = "JPEG2000"
 
-                if dpi:
-                    ndpi = dpi, dpi
-                    debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
-                else:
-                    ndpi = (96, 96) # TODO: read real dpi
-                    debug_out("input dpi = %d x %d"%ndpi, verbose)
-
-                if colorspace:
-                    color = colorspace
-                    debug_out("input colorspace (forced) = %s"%(ics))
-                else:
-                    color = ics
-                    debug_out("input colorspace = %s"%(ics), verbose)
+            if dpi:
+                ndpi = dpi, dpi
+                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
             else:
-                width, height = imgdata.size
-                imgformat = imgdata.format
+                ndpi = (96, 96) # TODO: read real dpi
+                debug_out("input dpi = %d x %d"%ndpi, verbose)
 
-                if dpi:
-                    ndpi = dpi, dpi
-                    debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
-                else:
-                    ndpi = imgdata.info.get("dpi", (96, 96))
-                    debug_out("input dpi = %d x %d"%ndpi, verbose)
-
-                if colorspace:
-                    color = colorspace
-                    debug_out("input colorspace (forced) = %s"%(color), verbose)
-                else:
-                    color = imgdata.mode
-                    if color == "CMYK" and imgformat == "JPEG":
-                        # Adobe inverts CMYK JPEGs for some reason, and others
-                        # have followed suit as well. Some software assumes the
-                        # JPEG is inverted if the Adobe tag (APP14), while other
-                        # software assumes all CMYK JPEGs are inverted. I don't
-                        # have enough experience with these to know which is
-                        # better for images currently in the wild, so I'm going
-                        # with the first approach for now.
-                        if "adobe" in imgdata.info:
-                            color = "CMYK;I"
-                    debug_out("input colorspace = %s"%(color), verbose)
-
-            debug_out("width x height = %d x %d"%(width,height), verbose)
-            debug_out("imgformat = %s"%imgformat, verbose)
-
-            # depending on the input format, determine whether to pass the raw
-            # image or the zlib compressed color information
-            if imgformat is "JPEG" or imgformat is "JPEG2000":
-                if color == '1':
-                    error_out("jpeg can't be monochrome")
-                    exit(1)
-                imgdata = rawdata
+            if colorspace:
+                color = colorspace
+                debug_out("input colorspace (forced) = %s"%(ics))
             else:
-                # because we do not support /CCITTFaxDecode
-                if color == '1':
-                    debug_out("Converting colorspace 1 to L", verbose)
-                    imgdata = imgdata.convert('L')
-                    color = 'L'
-                elif color in ("RGB", "L", "CMYK", "CMYK;I"):
-                    debug_out("Colorspace is OK: %s"%color, verbose)
-                else:
-                    debug_out("Converting colorspace %s to RGB"%color, verbose)
-                    imgdata = imgdata.convert('RGB')
-                    color = imgdata.mode
-                imgdata = zlib.compress(imgdata.tostring())
+                color = ics
+                debug_out("input colorspace = %s"%(ics), verbose)
+        else:
+            width, height = imgdata.size
+            imgformat = imgdata.format
+
+            if dpi:
+                ndpi = dpi, dpi
+                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
+            else:
+                ndpi = imgdata.info.get("dpi", (96, 96))
+                debug_out("input dpi = %d x %d"%ndpi, verbose)
+
+            if colorspace:
+                color = colorspace
+                debug_out("input colorspace (forced) = %s"%(color), verbose)
+            else:
+                color = imgdata.mode
+                if color == "CMYK" and imgformat == "JPEG":
+                    # Adobe inverts CMYK JPEGs for some reason, and others
+                    # have followed suit as well. Some software assumes the
+                    # JPEG is inverted if the Adobe tag (APP14), while other
+                    # software assumes all CMYK JPEGs are inverted. I don't
+                    # have enough experience with these to know which is
+                    # better for images currently in the wild, so I'm going
+                    # with the first approach for now.
+                    if "adobe" in imgdata.info:
+                        color = "CMYK;I"
+                debug_out("input colorspace = %s"%(color), verbose)
+
+        debug_out("width x height = %d x %d"%(width,height), verbose)
+        debug_out("imgformat = %s"%imgformat, verbose)
+
+        # depending on the input format, determine whether to pass the raw
+        # image or the zlib compressed color information
+        if imgformat is "JPEG" or imgformat is "JPEG2000":
+            if color == '1':
+                error_out("jpeg can't be monochrome")
+                exit(1)
+            imgdata = rawdata
+        else:
+            # because we do not support /CCITTFaxDecode
+            if color == '1':
+                debug_out("Converting colorspace 1 to L", verbose)
+                imgdata = imgdata.convert('L')
+                color = 'L'
+            elif color in ("RGB", "L", "CMYK", "CMYK;I"):
+                debug_out("Colorspace is OK: %s"%color, verbose)
+            else:
+                debug_out("Converting colorspace %s to RGB"%color, verbose)
+                imgdata = imgdata.convert('RGB')
+                color = imgdata.mode
+            imgdata = zlib.compress(imgdata.tostring())
 
         # pdf units = 1/72 inch
         if not x and not y:
