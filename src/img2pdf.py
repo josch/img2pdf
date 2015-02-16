@@ -211,10 +211,11 @@ class pdfdoc(object):
 
 def convert(images, dpi=None, x=None, y=None, title=None, author=None,
             creator=None, producer=None, creationdate=None, moddate=None,
-            subject=None, keywords=None, colorspace=None, verbose=False):
+            subject=None, keywords=None, colorspace=None, nodate=False,
+            verbose=False):
 
     pdf = pdfdoc(3, title, author, creator, producer, creationdate,
-                 moddate, subject, keywords)
+                 moddate, subject, keywords, nodate)
 
     for imfilename in images:
         debug_out("Reading %s"%imfilename, verbose)
@@ -386,7 +387,8 @@ def main(args=None):
         convert(
             args.images, args.dpi, args.x, args.y, args.title, args.author,
             args.creator, args.producer, args.creationdate, args.moddate,
-            args.subject, args.keywords, args.colorspace, args.verbose))
+            args.subject, args.keywords, args.colorspace, args.nodate,
+            args.verbose))
 
 if __name__ == '__main__':
     main()
