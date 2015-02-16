@@ -309,7 +309,10 @@ def convert(images, dpi=None, x=None, y=None, title=None, author=None,
                 debug_out("Converting colorspace %s to RGB"%color, verbose)
                 imgdata = imgdata.convert('RGB')
                 color = imgdata.mode
-            imgdata = zlib.compress(imgdata.tostring())
+            img = imgdata.tobytes()
+            imgdata.close()
+            imgdata = zlib.compress(img)
+        im.close()
 
         # pdf units = 1/72 inch
         if not x and not y:
