@@ -262,6 +262,12 @@ def convert(images, dpi=None, x=None, y=None, title=None, author=None,
                 debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
             else:
                 ndpi = imgdata.info.get("dpi", (96, 96))
+                # in python3, the returned dpi value for some tiff images will
+                # not be an integer but a float. To make the behaviour of
+                # img2pdf the same between python2 and python3, we convert that
+                # float into an integer by rounding
+                # search online for the 72.009 dpi problem for more info
+                ndpi = (int(round(ndpi[0])),int(round(ndpi[1])))
                 debug_out("input dpi = %d x %d"%ndpi, verbose)
 
             if colorspace:
@@ -307,11 +313,11 @@ def convert(images, dpi=None, x=None, y=None, title=None, author=None,
 
         # pdf units = 1/72 inch
         if not x and not y:
-            pdf_x, pdf_y = 72.0*width/ndpi[0], 72.0*height/ndpi[1]
+            pdf_x, pdf_y = 72.0*width/float(ndpi[0]), 72.0*height/float(ndpi[1])
         elif not y:
-            pdf_x, pdf_y = x, x*height/width
+            pdf_x, pdf_y = x, x*height/float(width)
         elif not x:
-            pdf_x, pdf_y = y*width/height, y
+            pdf_x, pdf_y = y*width/float(height), y
         else:
             pdf_x = x
             pdf_y = y
