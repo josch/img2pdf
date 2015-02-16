@@ -45,8 +45,10 @@ def parse(cont, indent=1):
         return b"<<\n"+b"\n".join(
             [4 * indent * b" " + k.encode("utf8") + b" " + parse(v, indent+1)
              for k, v in sorted(cont.items())])+b"\n"+4*(indent-1)*b" "+b">>"
-    elif type(cont) is int or type(cont) is float:
+    elif type(cont) is int:
         return str(cont).encode("utf8")
+    elif type(cont) is float:
+        return ("%0.4f"%cont).encode("utf8")
     elif isinstance(cont, obj):
         return ("%d 0 R"%cont.identifier).encode("utf8")
     elif type(cont) is str:
