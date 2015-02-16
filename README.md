@@ -124,7 +124,7 @@ You can then test the converter using:
 Note that the package can also be used as a library as follows:
 
 	import img2pdf
-	pdf_bytes = img2pdf.convert(['test.jpg'], dpi=150, x=0, y=0)
+	pdf_bytes = img2pdf.convert(['test.jpg'])
 
 	file = open("name.pdf","wb")
 	file.write(pdf_bytes)

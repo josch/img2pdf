@@ -205,9 +205,9 @@ class pdfdoc(object):
         result += b"%%EOF\n"
         return result
 
-def convert(images, dpi, x, y, title=None, author=None, creator=None, producer=None,
-            creationdate=None, moddate=None, subject=None, keywords=None,
-            colorspace=None, verbose=False):
+def convert(images, dpi=None, x=None, y=None, title=None, author=None,
+            creator=None, producer=None, creationdate=None, moddate=None,
+            subject=None, keywords=None, colorspace=None, verbose=False):
 
     pdf = pdfdoc(3, title, author, creator, producer, creationdate,
                  moddate, subject, keywords)
