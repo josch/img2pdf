@@ -8,7 +8,7 @@ Background
 ----------
 
 PDF is able to embed JPEG and JPEG2000 images as they are without re-encoding
-them (and hence loosing quality) but I was missing a tool to do this
+them (and hence losing quality) but I was missing a tool to do this
 automatically, thus I wrote this piece of python code.
 
 If you know how to embed JPEG and JPEG2000 images into a PDF container without
