@@ -1,8 +1,6 @@
 import unittest
 
-import datetime
 import os
-import unittest
 import img2pdf
 import zlib
 from PIL import Image

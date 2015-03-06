@@ -20,7 +20,6 @@
 import sys
 import zlib
 import argparse
-import struct
 from PIL import Image
 from datetime import datetime
 from jp2 import parsejp2
