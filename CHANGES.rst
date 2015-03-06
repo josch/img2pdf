@@ -2,6 +2,12 @@
 CHANGES
 =======
 
+0.1.6
+-----
+
+ - replace -x and -y option by combined option -s (or --pagesize) and use -S
+   for --subject
+
 0.1.5
 -----
 

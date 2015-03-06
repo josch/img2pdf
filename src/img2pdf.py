@@ -211,7 +211,7 @@ class pdfdoc(object):
         result += b"%%EOF\n"
         return result
 
-def convert(images, dpi=None, x=None, y=None, title=None, author=None,
+def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
             creator=None, producer=None, creationdate=None, moddate=None,
             subject=None, keywords=None, colorspace=None, nodate=False,
             verbose=False):
@@ -316,15 +316,15 @@ def convert(images, dpi=None, x=None, y=None, title=None, author=None,
         im.close()
 
         # pdf units = 1/72 inch
-        if not x and not y:
+        if not pagesize[0] and not pagesize[1]:
             pdf_x, pdf_y = 72.0*width/float(ndpi[0]), 72.0*height/float(ndpi[1])
-        elif not y:
-            pdf_x, pdf_y = x, x*height/float(width)
-        elif not x:
-            pdf_x, pdf_y = y*width/float(height), y
+        elif not pagesize[1]:
+            pdf_x, pdf_y = pagesize[0], pagesize[0]*height/float(width)
+        elif not pagesize[0]:
+            pdf_x, pdf_y = pagesize[1]*width/float(height), pagesize[1]
         else:
-            pdf_x = x
-            pdf_y = y
+            pdf_x = pagesize[0]
+            pdf_y = pagesize[1]
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
 
@@ -341,6 +341,23 @@ def positive_float(string):
 def valid_date(string):
     return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
 
+def valid_size(string):
+    tokens = string.split('x')
+    if len(tokens) != 2:
+        msg = "input size needs to be of the format Ax, xB or AxB with A and B being integers"
+        raise argparse.ArgumentTypeError(msg)
+    x = tokens[0]
+    y = tokens[1]
+    if x == '':
+        x = None
+    else:
+        x = int(x)
+    if y == '':
+        y = None
+    else:
+        y = int(y)
+    return (x,y)
+
 parser = argparse.ArgumentParser(
     description='Lossless conversion/embedding of images (in)to pdf')
 parser.add_argument(
@@ -349,15 +366,16 @@ parser.add_argument(
 parser.add_argument(
     '-o', '--output', metavar='out', type=argparse.FileType('wb'),
     default=getattr(sys.stdout, "buffer", sys.stdout), help='output file (default: stdout)')
-parser.add_argument(
+
+sizeopts = parser.add_mutually_exclusive_group()
+sizeopts.add_argument(
     '-d', '--dpi', metavar='dpi', type=positive_float,
-    help='dpi for pdf output (default: 96.0)')
-parser.add_argument(
-    '-x', metavar='pdf_x', type=positive_float,
-    help='output width in points')
-parser.add_argument(
-    '-y', metavar='pdf_y', type=positive_float,
-    help='output height in points')
+    help='dpi for pdf output. If input image does not specify dpi the default is 96.0. Must not be specified together with -s/--pagesize.')
+sizeopts.add_argument(
+    '-s', '--pagesize', metavar='size', type=valid_size,
+    default=(None, None),
+    help='size of the pages in the pdf output in format AxB with A and B being width and height of the page in points. You can omit either one of them. Must not be specified together with -d/--dpi.')
+
 parser.add_argument(
     '-t', '--title', metavar='title', type=str,
     help='title for metadata')
@@ -377,7 +395,7 @@ parser.add_argument(
     '-m', '--moddate', metavar='moddate', type=valid_date,
     help='modification date for metadata in YYYY-MM-DDTHH:MM:SS format')
 parser.add_argument(
-    '-s', '--subject', metavar='subject', type=str,
+    '-S', '--subject', metavar='subject', type=str,
     help='subject for metadata')
 parser.add_argument(
     '-k', '--keywords', metavar='kw', type=str, nargs='+',
@@ -397,7 +415,7 @@ def main(args=None):
 
     args.output.write(
         convert(
-            args.images, args.dpi, args.x, args.y, args.title, args.author,
+            args.images, args.dpi, args.pagesize, args.title, args.author,
             args.creator, args.producer, args.creationdate, args.moddate,
             args.subject, args.keywords, args.colorspace, args.nodate,
             args.verbose))
