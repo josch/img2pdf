@@ -244,7 +244,8 @@ def convert(images, dpi=None, x=None, y=None, title=None, author=None,
                 ndpi = dpi, dpi
                 debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
             else:
-                ndpi = (96, 96) # TODO: read real dpi
+                # TODO: read real dpi from input jpeg2000 image
+                ndpi = (96, 96)
                 debug_out("input dpi = %d x %d"%ndpi, verbose)
 
             if colorspace:
