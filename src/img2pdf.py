@@ -163,7 +163,7 @@ class pdfdoc(object):
             # Inverts all four channels
             image.content['/Decode'] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 
-        text = ("q\n%f 0 0 %f 0 0 cm\n/Im0 Do\nQ"%(pdf_x, pdf_y)).encode('utf8')
+        text = ("q\n%0.4f 0 0 %0.4f 0 0 cm\n/Im0 Do\nQ"%(pdf_x, pdf_y)).encode('utf8')
 
         content = obj({
             "/Length": len(text)
