@@ -219,6 +219,8 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
     pdf = pdfdoc(3, title, author, creator, producer, creationdate,
                  moddate, subject, keywords, nodate)
 
+    pdf_orientation = None
+
     for imfilename in images:
         debug_out("Reading %s"%imfilename, verbose)
         try:
@@ -315,16 +317,40 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
             imgdata = zlib.compress(img)
         im.close()
 
+        # determine current page orientation
+        if width < height:
+            page_orientation = 'portrait'
+        else:
+            page_orientation = 'landscape'
+
+        # set pdf orientation based on first page
+        if pdf_orientation == None:
+            pdf_orientation = page_orientation
+
         # pdf units = 1/72 inch
         if not pagesize[0] and not pagesize[1]:
+            # pdf output based on dpi
             pdf_x, pdf_y = 72.0*width/float(ndpi[0]), 72.0*height/float(ndpi[1])
         elif not pagesize[1]:
-            pdf_x, pdf_y = pagesize[0], pagesize[0]*height/float(width)
+            # pdf width provided
+            if pdf_orientation == page_orientation:
+                pdf_x, pdf_y = pagesize[0], pagesize[0]*height/float(width)
+            else:
+                pdf_x, pdf_y = pagesize[0]*width/float(height), pagesize[0]
         elif not pagesize[0]:
-            pdf_x, pdf_y = pagesize[1]*width/float(height), pagesize[1]
+            # pdf height provided
+            if pdf_orientation == page_orientation:
+                pdf_x, pdf_y = pagesize[1]*width/float(height), pagesize[1]
+            else:
+                pdf_x, pdf_y = pagesize[1], pagesize[1]*height/float(width)
         else:
-            pdf_x = pagesize[0]
-            pdf_y = pagesize[1]
+            # output width and height both provided
+            if pdf_orientation == page_orientation:
+                pdf_x = pagesize[0]
+                pdf_y = pagesize[1]
+            else:
+                pdf_x = pagesize[1]
+                pdf_y = pagesize[0]
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
 
