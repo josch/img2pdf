@@ -368,21 +368,46 @@ def valid_date(string):
     return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
 
 def valid_size(string):
-    tokens = string.split('x')
-    if len(tokens) != 2:
-        msg = "input size needs to be of the format Ax, xB or AxB with A and B being integers"
-        raise argparse.ArgumentTypeError(msg)
-    x = tokens[0]
-    y = tokens[1]
-    if x == '':
-        x = None
-    else:
-        x = int(x)
-    if y == '':
-        y = None
-    else:
-        y = int(y)
-    return (x,y)
+    papersizes = {
+        "letter"    : (612,792),
+        "tabloid"   : (792,1224),
+        "ledger"    : (1224,792),
+        "legal"     : (612,1008),
+        "statement" : (396,612),
+        "executive" : (540,720),
+        "a0"        : (2384,3371),
+        "a1"        : (1685,2384),
+        "a2"        : (1190,1684),
+        "a3"        : (842,1190),
+        "a4"        : (595,842),
+        "a5"        : (420,595),
+        "a4"        : (729,1032),
+        "a5"        : (516,729),
+        "folio"     : (612,936),
+        "quarto"    : (610,780)
+    }
+
+    try:
+        return papersizes[string.lower()]
+
+    except KeyError, e:
+        tokens = string.split('x')
+
+        if len(tokens) != 2:
+            msg = "input size needs to be of the format Ax, xB or AxB with A and B being integers"
+            raise argparse.ArgumentTypeError(msg)
+
+        try:
+            x = int(tokens[0])
+        except ValueError, e:
+            x = None
+
+        try:
+            y = int(tokens[1])
+        except ValueError, e:
+            y = None
+
+        return (x,y)
 
 parser = argparse.ArgumentParser(
     description='Lossless conversion/embedding of images (in)to pdf')
