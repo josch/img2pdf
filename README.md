@@ -101,6 +101,14 @@ Like -C L for DeviceGray.
 Installation
 ------------
 
+On a Debian/Ubuntu based OS, the following dependencies are needed:
+
+	apt-get install python python-pil python-setuptools
+
+Or for Python 3:
+
+	apt-get install python3 python3-pil python3-setuptools
+
 You can install the package using:
 
 	$ pip install img2pdf

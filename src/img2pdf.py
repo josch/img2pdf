@@ -313,7 +313,11 @@ def convert(images, dpi=None, pagesize=(None, None, None), title=None, author=No
                 imgdata = imgdata.convert('RGB')
                 color = imgdata.mode
             img = imgdata.tobytes()
-            imgdata.close()
+            # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the close() method
+            try:
+                imgdata.close()
+            except AttributeError:
+                pass
             imgdata = zlib.compress(img)
         im.close()
 
