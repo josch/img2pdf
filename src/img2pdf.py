@@ -20,6 +20,7 @@
 import sys
 import zlib
 import argparse
+import struct
 from PIL import Image
 from datetime import datetime
 from jp2 import parsejp2
@@ -210,13 +211,15 @@ class pdfdoc(object):
         result += b"%%EOF\n"
         return result
 
-def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
+def convert(images, dpi=None, pagesize=(None, None, None), title=None, author=None,
             creator=None, producer=None, creationdate=None, moddate=None,
             subject=None, keywords=None, colorspace=None, nodate=False,
             verbose=False):
 
     pdf = pdfdoc(3, title, author, creator, producer, creationdate,
                  moddate, subject, keywords, nodate)
+
+    pdf_orientation = None
 
     for imfilename in images:
         debug_out("Reading %s"%imfilename, verbose)
@@ -314,16 +317,38 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
             imgdata = zlib.compress(img)
         im.close()
 
-        # pdf units = 1/72 inch
-        if not pagesize[0] and not pagesize[1]:
-            pdf_x, pdf_y = 72.0*width/float(ndpi[0]), 72.0*height/float(ndpi[1])
-        elif not pagesize[1]:
-            pdf_x, pdf_y = pagesize[0], pagesize[0]*height/float(width)
-        elif not pagesize[0]:
-            pdf_x, pdf_y = pagesize[1]*width/float(height), pagesize[1]
+        # determine current page orientation
+        if width < height:
+            page_orientation = 'portrait'
         else:
-            pdf_x = pagesize[0]
-            pdf_y = pagesize[1]
+            page_orientation = 'landscape'
+
+        if pdf_orientation == None:
+            if pagesize[2] == 'orient':
+                if pagesize[0] < pagesize[1]:
+                    pdf_orientation = 'portrait'
+                else:
+                    pdf_orientation = 'landscape'
+
+        if pagesize[2] == 'fit':
+            if width/height < pagesize[0]/pagesize[1]:
+                pdf_x, pdf_y = None, pagesize[1]
+            else:
+                pdf_x, pdf_y = pagesize[0], None
+        else:
+            pdf_x, pdf_y = pagesize[0], pagesize[1]
+
+        # pdf units = 1/72 inch
+        if not pdf_x and not pdf_y:
+            # pdf output based on dpi
+            pdf_x, pdf_y = 72.0*width/float(ndpi[0]), 72.0*height/float(ndpi[1])
+        elif not pdf_y:
+            pdf_x, pdf_y = pdf_x, pdf_x*height/float(width)
+        elif not pdf_x:
+            pdf_x, pdf_y = pdf_y*width/float(height), pdf_y
+
+        if pagesize[2] == 'orient' and pdf_orientation != page_orientation:
+            pdf_x, pdf_y = pdf_y, pdf_x
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
 
@@ -341,21 +366,67 @@ def valid_date(string):
     return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
 
 def valid_size(string):
-    tokens = string.split('x')
-    if len(tokens) != 2:
-        msg = "input size needs to be of the format Ax, xB or AxB with A and B being integers"
-        raise argparse.ArgumentTypeError(msg)
-    x = tokens[0]
-    y = tokens[1]
-    if x == '':
-        x = None
-    else:
-        x = int(x)
-    if y == '':
-        y = None
-    else:
-        y = int(y)
-    return (x,y)
+    papersizes = {
+        "letter"    : [612,792],
+        "tabloid"   : [792,1224],
+        "ledger"    : [1224,792],
+        "legal"     : [612,1008],
+        "statement" : [396,612],
+        "executive" : [540,720],
+        "a0"        : [2384,3371],
+        "a1"        : [1685,2384],
+        "a2"        : [1190,1684],
+        "a3"        : [842,1190],
+        "a4"        : [595,842],
+        "a5"        : [420,595],
+        "a4"        : [729,1032],
+        "a5"        : [516,729],
+        "folio"     : [612,936],
+        "quarto"    : [610,780]
+    }
+
+    extra_option = None
+
+    try:
+        return tuple(papersizes[string.lower()] + ["orient"])
+
+    except KeyError, e:
+        tokens = string.split('x')
+
+        if len(tokens) != 2:
+            msg = "input size needs to be of the format Ax, xB or AxB with A and B being integers"
+            raise argparse.ArgumentTypeError(msg)
+
+        try:
+            x = float(tokens[0])
+        except ValueError, e:
+            x = None
+
+        try:
+            try:
+                if tokens[1][-1] == '^':
+                    extra_option = 'fit'
+                    y = float(tokens[1][0:-1])
+                elif tokens[1][-1] == '+':
+                    extra_option = 'orient'
+                    y = float(tokens[1][0:-1])
+                else:
+                    y = float(tokens[1])
+            except IndexError, e:
+                y = float(tokens[1])
+        except ValueError, e:
+            y = None
+
+        if extra_option:
+            if not x and not y:
+                msg = "cannot auto size or orient pages without specifying width or height"
+                raise argparse.ArgumentTypeError(msg)
+            elif not x:
+                x = y
+            elif not y:
+                y = x
+
+        return (x,y, extra_option)
 
 parser = argparse.ArgumentParser(
     description='Lossless conversion/embedding of images (in)to pdf')
@@ -373,7 +444,7 @@ sizeopts.add_argument(
 sizeopts.add_argument(
     '-s', '--pagesize', metavar='size', type=valid_size,
     default=(None, None),
-    help='size of the pages in the pdf output in format AxB with A and B being width and height of the page in points. You can omit either one of them. Must not be specified together with -d/--dpi.')
+    help="size of the pages in the pdf output in format AxB with A and B being width and height of the page in points. You can omit either one of them.  Auto orientation with AxB+.  Auto-fit with AxB^.  Some common page sizes, such as letter and a4, are recognized.  Must not be used with -d/--dpi.")
 
 parser.add_argument(
     '-t', '--title', metavar='title', type=str,
