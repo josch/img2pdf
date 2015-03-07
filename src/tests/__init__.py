@@ -93,7 +93,11 @@ def test_suite():
             with open(out, "rb") as outf:
                 out = outf.read()
             self.assertEqual(pdf, out)
-            orig_img.close()
+            # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the close() method
+            try:
+                orig_img.close()
+            except AttributeError:
+                pass
         setattr(TestImg2Pdf, "test_%s"%test_name, handle)
 
     return unittest.TestSuite((
