@@ -17,6 +17,8 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+__version__ = "0.1.6~git"
+
 import sys
 import zlib
 import argparse
@@ -481,6 +483,9 @@ parser.add_argument(
     '-D', '--nodate', help='do not add timestamps', action="store_true")
 parser.add_argument(
     '-v', '--verbose', help='verbose mode', action="store_true")
+parser.add_argument(
+    '-V', '--version', action='version', version='%(prog)s '+__version__,
+    help="Print version information and exit")
 
 def main(args=None):
     if args is None:
