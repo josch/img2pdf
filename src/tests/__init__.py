@@ -87,7 +87,11 @@ def test_suite():
                 elif orig_img.mode not in ("RGB", "L", "CMYK", "CMYK;I"):
                     orig_img = orig_img.convert("RGB")
                 self.assertEqual(im.tobytes(), orig_img.tobytes())
-                im.close()
+                # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the close() method
+                try:
+                    im.close()
+                except AttributeError:
+                    pass
             # lastly, make sure that the generated pdf matches bit by bit the
             # expected pdf
             with open(out, "rb") as outf:
