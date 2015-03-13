@@ -162,7 +162,7 @@ class pdfdoc(object):
             b"/Width": width,
             b"/Height": height,
             b"/ColorSpace": colorspace,
-            # hardcoded as PIL doesnt provide bits for non-jpeg formats
+            # hardcoded as PIL doesn't provide bits for non-jpeg formats
             b"/BitsPerComponent": 8,
             b"/Length": len(imgdata)
         }, imgdata)
