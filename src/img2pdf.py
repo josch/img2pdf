@@ -46,20 +46,22 @@ def warning_out(message):
 def parse(cont, indent=1):
     if type(cont) is dict:
         return b"<<\n"+b"\n".join(
-            [4 * indent * b" " + k.encode("utf8") + b" " + parse(v, indent+1)
+            [4 * indent * b" " + k + b" " + parse(v, indent+1)
              for k, v in sorted(cont.items())])+b"\n"+4*(indent-1)*b" "+b">>"
     elif type(cont) is int:
-        return str(cont).encode("utf8")
+        return str(cont).encode()
     elif type(cont) is float:
-        return ("%0.4f"%cont).encode("utf8")
+        return ("%0.4f"%cont).encode()
     elif isinstance(cont, obj):
-        return ("%d 0 R"%cont.identifier).encode("utf8")
-    elif type(cont) is str:
-        return cont.encode("utf8")
-    elif type(cont) is bytes:
+        return ("%d 0 R"%cont.identifier).encode()
+    elif type(cont) is str or type(cont) is bytes:
+        if type(cont) is str and type(cont) is not bytes:
+            raise Exception("parse must be passed a bytes object in py3")
         return cont
     elif type(cont) is list:
         return b"[ "+b" ".join([parse(c, indent) for c in cont])+b" ]"
+    else:
+        raise Exception("cannot handle type %s"%type(cont))
 
 class obj(object):
     def __init__(self, content, stream=None):
@@ -69,11 +71,11 @@ class obj(object):
     def tostring(self):
         if self.stream:
             return (
-                ("%d 0 obj " % self.identifier).encode("utf8") +
+                ("%d 0 obj " % self.identifier).encode() +
                 parse(self.content) +
                 b"\nstream\n" + self.stream + b"\nendstream\nendobj\n")
         else:
-            return ("%d 0 obj "%self.identifier).encode("utf8")+parse(self.content)+b" endobj\n"
+            return ("%d 0 obj "%self.identifier).encode()+parse(self.content)+b" endobj\n"
 
 class pdfdoc(object):
 
@@ -86,39 +88,39 @@ class pdfdoc(object):
 
         info = {}
         if title:
-            info["/Title"] = "("+title+")"
+            info[b"/Title"] = b"("+title+b")"
         if author:
-            info["/Author"] = "("+author+")"
+            info[b"/Author"] = b"("+author+b")"
         if creator:
-            info["/Creator"] = "("+creator+")"
+            info[b"/Creator"] = b"("+creator+b")"
         if producer:
-            info["/Producer"] = "("+producer+")"
+            info[b"/Producer"] = b"("+producer+b")"
         if creationdate:
-            info["/CreationDate"] = "(D:"+creationdate.strftime("%Y%m%d%H%M%S")+")"
+            info[b"/CreationDate"] = b"(D:"+creationdate.strftime("%Y%m%d%H%M%S").encode()+b")"
         elif not nodate:
-            info["/CreationDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
+            info[b"/CreationDate"] = b"(D:"+now.strftime("%Y%m%d%H%M%S").encode()+b")"
         if moddate:
-            info["/ModDate"] = "(D:"+moddate.strftime("%Y%m%d%H%M%S")+")"
+            info[b"/ModDate"] = b"(D:"+moddate.strftime("%Y%m%d%H%M%S").encode()+b")"
         elif not nodate:
-            info["/ModDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
+            info[b"/ModDate"] = b"(D:"+now.strftime("%Y%m%d%H%M%S").encode()+b")"
         if subject:
-            info["/Subject"] = "("+subject+")"
+            info[b"/Subject"] = b"("+subject+b")"
         if keywords:
-            info["/Keywords"] = "("+",".join(keywords)+")"
+            info[b"/Keywords"] = b"("+b",".join(keywords)+b")"
 
         self.info = obj(info)
 
         # create an incomplete pages object so that a /Parent entry can be
         # added to each page
         self.pages = obj({
-            "/Type": "/Pages",
-            "/Kids": [],
-            "/Count": 0
+            b"/Type": b"/Pages",
+            b"/Kids": [],
+            b"/Count": 0
         })
 
         self.catalog = obj({
-            "/Pages": self.pages,
-            "/Type": "/Catalog"
+            b"/Pages": self.pages,
+            b"/Type": b"/Catalog"
         })
         self.addobj(self.catalog)
         self.addobj(self.pages)
@@ -130,11 +132,11 @@ class pdfdoc(object):
 
     def addimage(self, color, width, height, imgformat, imgdata, pdf_x, pdf_y):
         if color == 'L':
-            colorspace = "/DeviceGray"
+            colorspace = b"/DeviceGray"
         elif color == 'RGB':
-            colorspace = "/DeviceRGB"
+            colorspace = b"/DeviceRGB"
         elif color == 'CMYK' or color == 'CMYK;I':
-            colorspace = "/DeviceCMYK"
+            colorspace = b"/DeviceCMYK"
         else:
             error_out("unsupported color space: %s"%color)
             exit(1)
@@ -144,47 +146,47 @@ class pdfdoc(object):
 
         # either embed the whole jpeg or deflate the bitmap representation
         if imgformat is "JPEG":
-            ofilter = [ "/DCTDecode" ]
+            ofilter = [ b"/DCTDecode" ]
         elif imgformat is "JPEG2000":
-            ofilter = [ "/JPXDecode" ]
+            ofilter = [ b"/JPXDecode" ]
             self.version = 5 # jpeg2000 needs pdf 1.5
         else:
-            ofilter = [ "/FlateDecode" ]
+            ofilter = [ b"/FlateDecode" ]
         image = obj({
-            "/Type": "/XObject",
-            "/Subtype": "/Image",
-            "/Filter": ofilter,
-            "/Width": width,
-            "/Height": height,
-            "/ColorSpace": colorspace,
+            b"/Type": b"/XObject",
+            b"/Subtype": b"/Image",
+            b"/Filter": ofilter,
+            b"/Width": width,
+            b"/Height": height,
+            b"/ColorSpace": colorspace,
             # hardcoded as PIL doesnt provide bits for non-jpeg formats
-            "/BitsPerComponent": 8,
-            "/Length": len(imgdata)
+            b"/BitsPerComponent": 8,
+            b"/Length": len(imgdata)
         }, imgdata)
 
         if color == 'CMYK;I':
             # Inverts all four channels
-            image.content['/Decode'] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+            image.content[b'/Decode'] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 
-        text = ("q\n%0.4f 0 0 %0.4f 0 0 cm\n/Im0 Do\nQ"%(pdf_x, pdf_y)).encode('utf8')
+        text = ("q\n%0.4f 0 0 %0.4f 0 0 cm\n/Im0 Do\nQ"%(pdf_x, pdf_y)).encode()
 
         content = obj({
-            "/Length": len(text)
+            b"/Length": len(text)
         }, text)
 
         page = obj({
-            "/Type": "/Page",
-            "/Parent": self.pages,
-            "/Resources": {
-                "/XObject": {
-                    "/Im0": image
+            b"/Type": b"/Page",
+            b"/Parent": self.pages,
+            b"/Resources": {
+                b"/XObject": {
+                    b"/Im0": image
                 }
             },
-            "/MediaBox": [0, 0, pdf_x, pdf_y],
-            "/Contents": content
+            b"/MediaBox": [0, 0, pdf_x, pdf_y],
+            b"/Contents": content
         })
-        self.pages.content["/Kids"].append(page)
-        self.pages.content["/Count"] += 1
+        self.pages.content[b"/Kids"].append(page)
+        self.pages.content[b"/Count"] += 1
         self.addobj(page)
         self.addobj(content)
         self.addobj(image)
@@ -195,22 +197,22 @@ class pdfdoc(object):
 
         xreftable = list()
 
-        result = ("%%PDF-1.%d\n"%self.version).encode("utf8")
+        result = ("%%PDF-1.%d\n"%self.version).encode()
 
         xreftable.append(b"0000000000 65535 f \n")
         for o in self.objects:
-            xreftable.append(("%010d 00000 n \n"%len(result)).encode("utf8"))
+            xreftable.append(("%010d 00000 n \n"%len(result)).encode())
             result += o.tostring()
 
         xrefoffset = len(result)
         result += b"xref\n"
-        result += ("0 %d\n"%len(xreftable)).encode("utf8")
+        result += ("0 %d\n"%len(xreftable)).encode()
         for x in xreftable:
             result += x
         result += b"trailer\n"
-        result += parse({"/Size": len(xreftable), "/Info": self.info, "/Root": self.catalog})+b"\n"
+        result += parse({b"/Size": len(xreftable), b"/Info": self.info, b"/Root": self.catalog})+b"\n"
         result += b"startxref\n"
-        result += ("%d\n"%xrefoffset).encode("utf8")
+        result += ("%d\n"%xrefoffset).encode()
         result += b"%%EOF\n"
         return result
 
@@ -508,6 +510,17 @@ def valid_size(string):
 
     return (x, y, pagesize_options)
 
+# in python3, the received argument will be a unicode str() object which needs
+# to be encoded into a bytes() object
+# in python2, the received argument will be a binary str() object which needs
+# no encoding
+# we check whether we use python2 or python3 by checking whether the argument
+# is both, type str and type bytes (only the case in python2)
+def pdf_embedded_string(string):
+    if type(string) is str and type(string) is not bytes:
+        string = string.encode("utf8")
+    return string
+
 parser = argparse.ArgumentParser(
     description='Lossless conversion/embedding of images (in)to pdf')
 parser.add_argument(
@@ -540,16 +553,16 @@ sizeopts.add_argument(
 )
 
 parser.add_argument(
-    '-t', '--title', metavar='title', type=str,
+    '-t', '--title', metavar='title', type=pdf_embedded_string,
     help='title for metadata')
 parser.add_argument(
-    '-a', '--author', metavar='author', type=str,
+    '-a', '--author', metavar='author', type=pdf_embedded_string,
     help='author for metadata')
 parser.add_argument(
-    '-c', '--creator', metavar='creator', type=str,
+    '-c', '--creator', metavar='creator', type=pdf_embedded_string,
     help='creator for metadata')
 parser.add_argument(
-    '-p', '--producer', metavar='producer', type=str,
+    '-p', '--producer', metavar='producer', type=pdf_embedded_string,
     help='producer for metadata')
 parser.add_argument(
     '-r', '--creationdate', metavar='creationdate', type=valid_date,
@@ -558,13 +571,13 @@ parser.add_argument(
     '-m', '--moddate', metavar='moddate', type=valid_date,
     help='modification date for metadata in YYYY-MM-DDTHH:MM:SS format')
 parser.add_argument(
-    '-S', '--subject', metavar='subject', type=str,
+    '-S', '--subject', metavar='subject', type=pdf_embedded_string,
     help='subject for metadata')
 parser.add_argument(
-    '-k', '--keywords', metavar='kw', type=str, nargs='+',
+    '-k', '--keywords', metavar='kw', type=pdf_embedded_string, nargs='+',
     help='keywords for metadata')
 parser.add_argument(
-    '-C', '--colorspace', metavar='colorspace', type=str,
+    '-C', '--colorspace', metavar='colorspace', type=pdf_embedded_string,
     help='force PIL colorspace (one of: RGB, L, 1, CMYK, CMYK;I)')
 parser.add_argument(
     '-D', '--nodate', help='do not add timestamps', action="store_true")
