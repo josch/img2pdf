@@ -93,14 +93,17 @@ class pdfdoc(object):
             info[b"/Creator"] = b"("+creator+b")"
         if producer:
             info[b"/Producer"] = b"("+producer+b")"
+
+        datetime_formatstring = "%Y%m%d%H%M%S"
         if creationdate:
-            info[b"/CreationDate"] = b"(D:"+creationdate.strftime("%Y%m%d%H%M%S").encode()+b")"
+            info[b"/CreationDate"] = b"(D:"+creationdate.strftime(datetime_formatstring).encode()+b")"
         elif not nodate:
-            info[b"/CreationDate"] = b"(D:"+now.strftime("%Y%m%d%H%M%S").encode()+b")"
+            info[b"/CreationDate"] = b"(D:"+now.strftime(datetime_formatstring).encode()+b")"
         if moddate:
-            info[b"/ModDate"] = b"(D:"+moddate.strftime("%Y%m%d%H%M%S").encode()+b")"
+            info[b"/ModDate"] = b"(D:"+moddate.strftime(datetime_formatstring).encode()+b")"
         elif not nodate:
-            info[b"/ModDate"] = b"(D:"+now.strftime("%Y%m%d%H%M%S").encode()+b")"
+            info[b"/ModDate"] = b"(D:"+now.strftime(datetime_formatstring).encode()+b")"
+
         if subject:
             info[b"/Subject"] = b"("+subject+b")"
         if keywords:
