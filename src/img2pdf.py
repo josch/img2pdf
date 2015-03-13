@@ -518,7 +518,15 @@ def valid_size(string):
 # is both, type str and type bytes (only the case in python2)
 def pdf_embedded_string(string):
     if type(string) is str and type(string) is not bytes:
-        string = string.encode("utf8")
+        # py3
+        pass
+    else:
+        # py2
+        string = string.decode("utf8")
+    string = b"\xfe\xff"+string.encode("utf-16-be")
+    string = string.replace(b'\\', b'\\\\')
+    string = string.replace(b'(', b'\\(')
+    string = string.replace(b')', b'\\)')
     return string
 
 parser = argparse.ArgumentParser(

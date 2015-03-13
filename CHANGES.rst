@@ -7,6 +7,7 @@ CHANGES
 
  - replace -x and -y option by combined option -s (or --pagesize) and use -S
    for --subject
+ - correctly encode and escape non-ascii metadata
 
 0.1.5
 -----
