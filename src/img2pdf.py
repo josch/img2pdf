@@ -229,11 +229,10 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
         debug_out("Reading %s"%imfilename, verbose)
         try:
             rawdata = imfilename.read()
-            im = cStringIO(rawdata)
-        except:
+        except AttributeError:
             with open(imfilename, "rb") as im:
                 rawdata = im.read()
-                im = cStringIO(rawdata)
+        im = cStringIO(rawdata)
         try:
             imgdata = Image.open(im)
         except IOError as e:
