@@ -8,6 +8,8 @@ CHANGES
  - replace -x and -y option by combined option -s (or --pagesize) and use -S
    for --subject
  - correctly encode and escape non-ascii metadata
+ - explicitly store date in UTC and allow parsing all date formats understood
+   by dateutil and `date --date`
 
 0.1.5
 -----

@@ -41,6 +41,9 @@ def error_out(message):
 def warning_out(message):
     sys.stderr.write("W: "+message+"\n")
 
+def datetime_to_pdfdate(dt):
+    return dt.strftime("%Y%m%d%H%M%SZ")
+
 def parse(cont, indent=1):
     if type(cont) is dict:
         return b"<<\n"+b"\n".join(
@@ -93,17 +96,14 @@ class pdfdoc(object):
             info[b"/Creator"] = b"("+creator+b")"
         if producer:
             info[b"/Producer"] = b"("+producer+b")"
-
-        datetime_formatstring = "%Y%m%d%H%M%S"
         if creationdate:
-            info[b"/CreationDate"] = b"(D:"+creationdate.strftime(datetime_formatstring).encode()+b")"
+            info[b"/CreationDate"] = b"(D:"+datetime_to_pdfdate(creationdate).encode()+b")"
         elif not nodate:
-            info[b"/CreationDate"] = b"(D:"+now.strftime(datetime_formatstring).encode()+b")"
+            info[b"/CreationDate"] = b"(D:"+datetime_to_pdfdate(now).encode()+b")"
         if moddate:
-            info[b"/ModDate"] = b"(D:"+moddate.strftime(datetime_formatstring).encode()+b")"
+            info[b"/ModDate"] = b"(D:"+datetime_to_pdfdate(moddate).encode()+b")"
         elif not nodate:
-            info[b"/ModDate"] = b"(D:"+now.strftime(datetime_formatstring).encode()+b")"
-
+            info[b"/ModDate"] = b"(D:"+datetime_to_pdfdate(now).encode()+b")"
         if subject:
             info[b"/Subject"] = b"("+subject+b")"
         if keywords:
@@ -349,7 +349,42 @@ def positive_float(string):
     return value
 
 def valid_date(string):
-    return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
+    # first try parsing in ISO8601 format
+    try:
+        return datetime.strptime(string, "%Y-%m-%d")
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(string, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        pass
+    # then try dateutil
+    try:
+        from dateutil import parser
+    except ImportError:
+        pass
+    else:
+        try:
+            return parser.parse(string)
+        except TypeError:
+            pass
+    # as a last resort, try the local date utility
+    try:
+        import subprocess
+    except ImportError:
+        pass
+    else:
+        try:
+            utime = subprocess.check_output(["date", "--date", string, "+%s"])
+        except subprocess.CalledProcessError:
+            pass
+        else:
+            return datetime.utcfromtimestamp(int(utime))
+    raise argparse.ArgumentTypeError("cannot parse date: %s"%string)
 
 def valid_size(string):
     tokens = string.split('x')
@@ -419,10 +454,10 @@ parser.add_argument(
     help='producer for metadata')
 parser.add_argument(
     '-r', '--creationdate', metavar='creationdate', type=valid_date,
-    help='creation date for metadata in YYYY-MM-DDTHH:MM:SS format')
+    help='UTC creation date for metadata in YYYY-MM-DD or YYYY-MM-DDTHH:MM or YYYY-MM-DDTHH:MM:SS format or any format understood by python dateutil module or any format understood by `date --date`')
 parser.add_argument(
     '-m', '--moddate', metavar='moddate', type=valid_date,
-    help='modification date for metadata in YYYY-MM-DDTHH:MM:SS format')
+    help='UTC modification date for metadata in YYYY-MM-DD or YYYY-MM-DDTHH:MM or YYYY-MM-DDTHH:MM:SS format or any format understood by python dateutil module or any format understood by `date --date`')
 parser.add_argument(
     '-S', '--subject', metavar='subject', type=pdf_embedded_string,
     help='subject for metadata')
