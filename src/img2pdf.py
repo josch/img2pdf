@@ -17,10 +17,11 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+__version__ = "0.1.6~git"
+
 import sys
 import zlib
 import argparse
-import struct
 from PIL import Image
 from datetime import datetime
 from jp2 import parsejp2
@@ -40,23 +41,28 @@ def error_out(message):
 def warning_out(message):
     sys.stderr.write("W: "+message+"\n")
 
+def datetime_to_pdfdate(dt):
+    return dt.strftime("%Y%m%d%H%M%SZ")
+
 def parse(cont, indent=1):
     if type(cont) is dict:
         return b"<<\n"+b"\n".join(
-            [4 * indent * b" " + k.encode("utf8") + b" " + parse(v, indent+1)
+            [4 * indent * b" " + k + b" " + parse(v, indent+1)
              for k, v in sorted(cont.items())])+b"\n"+4*(indent-1)*b" "+b">>"
     elif type(cont) is int:
-        return str(cont).encode("utf8")
+        return str(cont).encode()
     elif type(cont) is float:
-        return ("%0.4f"%cont).encode("utf8")
+        return ("%0.4f"%cont).encode()
     elif isinstance(cont, obj):
-        return ("%d 0 R"%cont.identifier).encode("utf8")
-    elif type(cont) is str:
-        return cont.encode("utf8")
-    elif type(cont) is bytes:
+        return ("%d 0 R"%cont.identifier).encode()
+    elif type(cont) is str or type(cont) is bytes:
+        if type(cont) is str and type(cont) is not bytes:
+            raise Exception("parse must be passed a bytes object in py3")
         return cont
     elif type(cont) is list:
         return b"[ "+b" ".join([parse(c, indent) for c in cont])+b" ]"
+    else:
+        raise Exception("cannot handle type %s"%type(cont))
 
 class obj(object):
     def __init__(self, content, stream=None):
@@ -66,11 +72,11 @@ class obj(object):
     def tostring(self):
         if self.stream:
             return (
-                ("%d 0 obj " % self.identifier).encode("utf8") +
+                ("%d 0 obj " % self.identifier).encode() +
                 parse(self.content) +
                 b"\nstream\n" + self.stream + b"\nendstream\nendobj\n")
         else:
-            return ("%d 0 obj "%self.identifier).encode("utf8")+parse(self.content)+b" endobj\n"
+            return ("%d 0 obj "%self.identifier).encode()+parse(self.content)+b" endobj\n"
 
 class pdfdoc(object):
 
@@ -83,39 +89,39 @@ class pdfdoc(object):
 
         info = {}
         if title:
-            info["/Title"] = "("+title+")"
+            info[b"/Title"] = b"("+title+b")"
         if author:
-            info["/Author"] = "("+author+")"
+            info[b"/Author"] = b"("+author+b")"
         if creator:
-            info["/Creator"] = "("+creator+")"
+            info[b"/Creator"] = b"("+creator+b")"
         if producer:
-            info["/Producer"] = "("+producer+")"
+            info[b"/Producer"] = b"("+producer+b")"
         if creationdate:
-            info["/CreationDate"] = "(D:"+creationdate.strftime("%Y%m%d%H%M%S")+")"
+            info[b"/CreationDate"] = b"(D:"+datetime_to_pdfdate(creationdate).encode()+b")"
         elif not nodate:
-            info["/CreationDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
+            info[b"/CreationDate"] = b"(D:"+datetime_to_pdfdate(now).encode()+b")"
         if moddate:
-            info["/ModDate"] = "(D:"+moddate.strftime("%Y%m%d%H%M%S")+")"
+            info[b"/ModDate"] = b"(D:"+datetime_to_pdfdate(moddate).encode()+b")"
         elif not nodate:
-            info["/ModDate"] = "(D:"+now.strftime("%Y%m%d%H%M%S")+")"
+            info[b"/ModDate"] = b"(D:"+datetime_to_pdfdate(now).encode()+b")"
         if subject:
-            info["/Subject"] = "("+subject+")"
+            info[b"/Subject"] = b"("+subject+b")"
         if keywords:
-            info["/Keywords"] = "("+",".join(keywords)+")"
+            info[b"/Keywords"] = b"("+b",".join(keywords)+b")"
 
         self.info = obj(info)
 
         # create an incomplete pages object so that a /Parent entry can be
         # added to each page
         self.pages = obj({
-            "/Type": "/Pages",
-            "/Kids": [],
-            "/Count": 0
+            b"/Type": b"/Pages",
+            b"/Kids": [],
+            b"/Count": 0
         })
 
         self.catalog = obj({
-            "/Pages": self.pages,
-            "/Type": "/Catalog"
+            b"/Pages": self.pages,
+            b"/Type": b"/Catalog"
         })
         self.addobj(self.catalog)
         self.addobj(self.pages)
@@ -127,11 +133,11 @@ class pdfdoc(object):
 
     def addimage(self, color, width, height, imgformat, imgdata, pdf_x, pdf_y):
         if color == 'L':
-            colorspace = "/DeviceGray"
+            colorspace = b"/DeviceGray"
         elif color == 'RGB':
-            colorspace = "/DeviceRGB"
+            colorspace = b"/DeviceRGB"
         elif color == 'CMYK' or color == 'CMYK;I':
-            colorspace = "/DeviceCMYK"
+            colorspace = b"/DeviceCMYK"
         else:
             error_out("unsupported color space: %s"%color)
             exit(1)
@@ -141,47 +147,47 @@ class pdfdoc(object):
 
         # either embed the whole jpeg or deflate the bitmap representation
         if imgformat is "JPEG":
-            ofilter = [ "/DCTDecode" ]
+            ofilter = [ b"/DCTDecode" ]
         elif imgformat is "JPEG2000":
-            ofilter = [ "/JPXDecode" ]
+            ofilter = [ b"/JPXDecode" ]
             self.version = 5 # jpeg2000 needs pdf 1.5
         else:
-            ofilter = [ "/FlateDecode" ]
+            ofilter = [ b"/FlateDecode" ]
         image = obj({
-            "/Type": "/XObject",
-            "/Subtype": "/Image",
-            "/Filter": ofilter,
-            "/Width": width,
-            "/Height": height,
-            "/ColorSpace": colorspace,
-            # hardcoded as PIL doesnt provide bits for non-jpeg formats
-            "/BitsPerComponent": 8,
-            "/Length": len(imgdata)
+            b"/Type": b"/XObject",
+            b"/Subtype": b"/Image",
+            b"/Filter": ofilter,
+            b"/Width": width,
+            b"/Height": height,
+            b"/ColorSpace": colorspace,
+            # hardcoded as PIL doesn't provide bits for non-jpeg formats
+            b"/BitsPerComponent": 8,
+            b"/Length": len(imgdata)
         }, imgdata)
 
         if color == 'CMYK;I':
             # Inverts all four channels
-            image.content['/Decode'] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+            image.content[b'/Decode'] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 
-        text = ("q\n%f 0 0 %f 0 0 cm\n/Im0 Do\nQ"%(pdf_x, pdf_y)).encode('utf8')
+        text = ("q\n%0.4f 0 0 %0.4f 0 0 cm\n/Im0 Do\nQ"%(pdf_x, pdf_y)).encode()
 
         content = obj({
-            "/Length": len(text)
+            b"/Length": len(text)
         }, text)
 
         page = obj({
-            "/Type": "/Page",
-            "/Parent": self.pages,
-            "/Resources": {
-                "/XObject": {
-                    "/Im0": image
+            b"/Type": b"/Page",
+            b"/Parent": self.pages,
+            b"/Resources": {
+                b"/XObject": {
+                    b"/Im0": image
                 }
             },
-            "/MediaBox": [0, 0, pdf_x, pdf_y],
-            "/Contents": content
+            b"/MediaBox": [0, 0, pdf_x, pdf_y],
+            b"/Contents": content
         })
-        self.pages.content["/Kids"].append(page)
-        self.pages.content["/Count"] += 1
+        self.pages.content[b"/Kids"].append(page)
+        self.pages.content[b"/Count"] += 1
         self.addobj(page)
         self.addobj(content)
         self.addobj(image)
@@ -192,26 +198,26 @@ class pdfdoc(object):
 
         xreftable = list()
 
-        result = ("%%PDF-1.%d\n"%self.version).encode("utf8")
+        result = ("%%PDF-1.%d\n"%self.version).encode()
 
         xreftable.append(b"0000000000 65535 f \n")
         for o in self.objects:
-            xreftable.append(("%010d 00000 n \n"%len(result)).encode("utf8"))
+            xreftable.append(("%010d 00000 n \n"%len(result)).encode())
             result += o.tostring()
 
         xrefoffset = len(result)
         result += b"xref\n"
-        result += ("0 %d\n"%len(xreftable)).encode("utf8")
+        result += ("0 %d\n"%len(xreftable)).encode()
         for x in xreftable:
             result += x
         result += b"trailer\n"
-        result += parse({"/Size": len(xreftable), "/Info": self.info, "/Root": self.catalog})+b"\n"
+        result += parse({b"/Size": len(xreftable), b"/Info": self.info, b"/Root": self.catalog})+b"\n"
         result += b"startxref\n"
-        result += ("%d\n"%xrefoffset).encode("utf8")
+        result += ("%d\n"%xrefoffset).encode()
         result += b"%%EOF\n"
         return result
 
-def convert(images, dpi=None, x=None, y=None, title=None, author=None,
+def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
             creator=None, producer=None, creationdate=None, moddate=None,
             subject=None, keywords=None, colorspace=None, nodate=False,
             verbose=False):
@@ -223,11 +229,10 @@ def convert(images, dpi=None, x=None, y=None, title=None, author=None,
         debug_out("Reading %s"%imfilename, verbose)
         try:
             rawdata = imfilename.read()
-            im = cStringIO(rawdata)
-        except:
+        except AttributeError:
             with open(imfilename, "rb") as im:
                 rawdata = im.read()
-                im = cStringIO(rawdata)
+        im = cStringIO(rawdata)
         try:
             imgdata = Image.open(im)
         except IOError as e:
@@ -244,7 +249,8 @@ def convert(images, dpi=None, x=None, y=None, title=None, author=None,
                 ndpi = dpi, dpi
                 debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
             else:
-                ndpi = (96, 96) # TODO: read real dpi
+                # TODO: read real dpi from input jpeg2000 image
+                ndpi = (96, 96)
                 debug_out("input dpi = %d x %d"%ndpi, verbose)
 
             if colorspace:
@@ -310,20 +316,24 @@ def convert(images, dpi=None, x=None, y=None, title=None, author=None,
                 imgdata = imgdata.convert('RGB')
                 color = imgdata.mode
             img = imgdata.tobytes()
-            imgdata.close()
+            # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the close() method
+            try:
+                imgdata.close()
+            except AttributeError:
+                pass
             imgdata = zlib.compress(img)
         im.close()
 
         # pdf units = 1/72 inch
-        if not x and not y:
+        if not pagesize[0] and not pagesize[1]:
             pdf_x, pdf_y = 72.0*width/float(ndpi[0]), 72.0*height/float(ndpi[1])
-        elif not y:
-            pdf_x, pdf_y = x, x*height/float(width)
-        elif not x:
-            pdf_x, pdf_y = y*width/float(height), y
+        elif not pagesize[1]:
+            pdf_x, pdf_y = pagesize[0], pagesize[0]*height/float(width)
+        elif not pagesize[0]:
+            pdf_x, pdf_y = pagesize[1]*width/float(height), pagesize[1]
         else:
-            pdf_x = x
-            pdf_y = y
+            pdf_x = pagesize[0]
+            pdf_y = pagesize[1]
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
 
@@ -338,7 +348,78 @@ def positive_float(string):
     return value
 
 def valid_date(string):
-    return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
+    # first try parsing in ISO8601 format
+    try:
+        return datetime.strptime(string, "%Y-%m-%d")
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(string, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        pass
+    # then try dateutil
+    try:
+        from dateutil import parser
+    except ImportError:
+        pass
+    else:
+        try:
+            return parser.parse(string)
+        except TypeError:
+            pass
+    # as a last resort, try the local date utility
+    try:
+        import subprocess
+    except ImportError:
+        pass
+    else:
+        try:
+            utime = subprocess.check_output(["date", "--date", string, "+%s"])
+        except subprocess.CalledProcessError:
+            pass
+        else:
+            return datetime.utcfromtimestamp(int(utime))
+    raise argparse.ArgumentTypeError("cannot parse date: %s"%string)
+
+def valid_size(string):
+    tokens = string.split('x')
+    if len(tokens) != 2:
+        msg = "input size needs to be of the format Ax, xB or AxB with A and B being integers"
+        raise argparse.ArgumentTypeError(msg)
+    x = tokens[0]
+    y = tokens[1]
+    if x == '':
+        x = None
+    else:
+        x = int(x)
+    if y == '':
+        y = None
+    else:
+        y = int(y)
+    return (x,y)
+
+# in python3, the received argument will be a unicode str() object which needs
+# to be encoded into a bytes() object
+# in python2, the received argument will be a binary str() object which needs
+# no encoding
+# we check whether we use python2 or python3 by checking whether the argument
+# is both, type str and type bytes (only the case in python2)
+def pdf_embedded_string(string):
+    if type(string) is str and type(string) is not bytes:
+        # py3
+        pass
+    else:
+        # py2
+        string = string.decode("utf8")
+    string = b"\xfe\xff"+string.encode("utf-16-be")
+    string = string.replace(b'\\', b'\\\\')
+    string = string.replace(b'(', b'\\(')
+    string = string.replace(b')', b'\\)')
+    return string
 
 parser = argparse.ArgumentParser(
     description='Lossless conversion/embedding of images (in)to pdf')
@@ -348,46 +429,50 @@ parser.add_argument(
 parser.add_argument(
     '-o', '--output', metavar='out', type=argparse.FileType('wb'),
     default=getattr(sys.stdout, "buffer", sys.stdout), help='output file (default: stdout)')
-parser.add_argument(
+
+sizeopts = parser.add_mutually_exclusive_group()
+sizeopts.add_argument(
     '-d', '--dpi', metavar='dpi', type=positive_float,
-    help='dpi for pdf output (default: 96.0)')
+    help='dpi for pdf output. If input image does not specify dpi the default is 96.0. Must not be specified together with -s/--pagesize.')
+sizeopts.add_argument(
+    '-s', '--pagesize', metavar='size', type=valid_size,
+    default=(None, None),
+    help='size of the pages in the pdf output in format AxB with A and B being width and height of the page in points. You can omit either one of them. Must not be specified together with -d/--dpi.')
+
 parser.add_argument(
-    '-x', metavar='pdf_x', type=positive_float,
-    help='output width in points')
-parser.add_argument(
-    '-y', metavar='pdf_y', type=positive_float,
-    help='output height in points')
-parser.add_argument(
-    '-t', '--title', metavar='title', type=str,
+    '-t', '--title', metavar='title', type=pdf_embedded_string,
     help='title for metadata')
 parser.add_argument(
-    '-a', '--author', metavar='author', type=str,
+    '-a', '--author', metavar='author', type=pdf_embedded_string,
     help='author for metadata')
 parser.add_argument(
-    '-c', '--creator', metavar='creator', type=str,
+    '-c', '--creator', metavar='creator', type=pdf_embedded_string,
     help='creator for metadata')
 parser.add_argument(
-    '-p', '--producer', metavar='producer', type=str,
+    '-p', '--producer', metavar='producer', type=pdf_embedded_string,
     help='producer for metadata')
 parser.add_argument(
     '-r', '--creationdate', metavar='creationdate', type=valid_date,
-    help='creation date for metadata in YYYY-MM-DDTHH:MM:SS format')
+    help='UTC creation date for metadata in YYYY-MM-DD or YYYY-MM-DDTHH:MM or YYYY-MM-DDTHH:MM:SS format or any format understood by python dateutil module or any format understood by `date --date`')
 parser.add_argument(
     '-m', '--moddate', metavar='moddate', type=valid_date,
-    help='modification date for metadata in YYYY-MM-DDTHH:MM:SS format')
+    help='UTC modification date for metadata in YYYY-MM-DD or YYYY-MM-DDTHH:MM or YYYY-MM-DDTHH:MM:SS format or any format understood by python dateutil module or any format understood by `date --date`')
 parser.add_argument(
-    '-s', '--subject', metavar='subject', type=str,
+    '-S', '--subject', metavar='subject', type=pdf_embedded_string,
     help='subject for metadata')
 parser.add_argument(
-    '-k', '--keywords', metavar='kw', type=str, nargs='+',
+    '-k', '--keywords', metavar='kw', type=pdf_embedded_string, nargs='+',
     help='keywords for metadata')
 parser.add_argument(
-    '-C', '--colorspace', metavar='colorspace', type=str,
+    '-C', '--colorspace', metavar='colorspace', type=pdf_embedded_string,
     help='force PIL colorspace (one of: RGB, L, 1, CMYK, CMYK;I)')
 parser.add_argument(
     '-D', '--nodate', help='do not add timestamps', action="store_true")
 parser.add_argument(
     '-v', '--verbose', help='verbose mode', action="store_true")
+parser.add_argument(
+    '-V', '--version', action='version', version='%(prog)s '+__version__,
+    help="Print version information and exit")
 
 def main(args=None):
     if args is None:
@@ -396,7 +481,7 @@ def main(args=None):
 
     args.output.write(
         convert(
-            args.images, args.dpi, args.x, args.y, args.title, args.author,
+            args.images, args.dpi, args.pagesize, args.title, args.author,
             args.creator, args.producer, args.creationdate, args.moddate,
             args.subject, args.keywords, args.colorspace, args.nodate,
             args.verbose))

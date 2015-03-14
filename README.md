@@ -8,7 +8,7 @@ Background
 ----------
 
 PDF is able to embed JPEG and JPEG2000 images as they are without re-encoding
-them (and hence loosing quality) but I was missing a tool to do this
+them (and hence losing quality) but I was missing a tool to do this
 automatically, thus I wrote this piece of python code.
 
 If you know how to embed JPEG and JPEG2000 images into a PDF container without
@@ -100,6 +100,14 @@ Like -C L for DeviceGray.
 
 Installation
 ------------
+
+On a Debian/Ubuntu based OS, the following dependencies are needed:
+
+	apt-get install python python-pil python-setuptools
+
+Or for Python 3:
+
+	apt-get install python3 python3-pil python3-setuptools
 
 You can install the package using:
 

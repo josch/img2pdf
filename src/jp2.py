@@ -20,7 +20,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import struct
-import sys
 
 def getBox(data, byteStart, noBytes):
     boxLengthValue = struct.unpack(">I", data[byteStart:byteStart+4])[0]

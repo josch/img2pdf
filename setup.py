@@ -1,8 +1,10 @@
 from setuptools import setup
 
+VERSION="0.1.6~git"
+
 setup (
     name='img2pdf',
-    version='0.1.5',
+    version=VERSION,
     author = "Johannes 'josch' Schauer",
     author_email = 'j.schauer@email.de',
     description = "Convert images to PDF via direct JPEG inclusion.",
@@ -24,7 +26,7 @@ setup (
         'Natural Language :: English',
         'Operating System :: OS Independent'],
     url = 'https://github.com/josch/img2pdf',
-    download_url = 'https://github.com/josch/img2pdf/archive/0.1.5.tar.gz',
+    download_url = 'https://github.com/josch/img2pdf/archive/'+VERSION+'.tar.gz',
     package_dir={"": "src"},
     py_modules=['img2pdf', 'jp2'],
     include_package_data = True,
