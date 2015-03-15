@@ -1,3 +1,14 @@
+PROJECT MOVED
+=============
+
+This project moved to:
+
+https://gitlab.mister-muffin.de/josch/img2pdf
+
+Rationale: free software needs free tools. See: http://mako.cc/writing/hill-free_tools.html
+
+This copy will remain read-only and will not receive any further updates.
+
 img2pdf
 =======
 
