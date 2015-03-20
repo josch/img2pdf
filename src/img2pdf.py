@@ -18,7 +18,9 @@
 # <http://www.gnu.org/licenses/>.
 
 __version__ = "0.1.6~git"
+default_dpi = 96.0
 
+import re
 import sys
 import zlib
 import argparse
@@ -212,10 +214,12 @@ class pdfdoc(object):
         result += b"%%EOF\n"
         return result
 
-def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
-            creator=None, producer=None, creationdate=None, moddate=None,
-            subject=None, keywords=None, colorspace=None, nodate=False,
-            verbose=False):
+def convert(images, dpi=None, pagesize=(None, None, None), title=None,
+            author=None, creator=None, producer=None, creationdate=None,
+            moddate=None, subject=None, keywords=None, colorspace=None,
+            nodate=False, verbose=False):
+
+    pagesize_options = pagesize[2]
 
     pdf = pdfdoc(3, title, author, creator, producer, creationdate,
                  moddate, subject, keywords, nodate)
@@ -241,13 +245,9 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
             width, height, ics = parsejp2(rawdata)
             imgformat = "JPEG2000"
 
-            if dpi:
-                ndpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
-            else:
-                # TODO: read real dpi from input jpeg2000 image
-                ndpi = (96, 96)
-                debug_out("input dpi = %d x %d"%ndpi, verbose)
+            # TODO: read real dpi from input jpeg2000 image
+            ndpi = (default_dpi, default_dpi)
+            debug_out("input dpi = %d x %d" % ndpi, verbose)
 
             if colorspace:
                 color = colorspace
@@ -259,18 +259,14 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
             width, height = imgdata.size
             imgformat = imgdata.format
 
-            if dpi:
-                ndpi = dpi, dpi
-                debug_out("input dpi (forced) = %d x %d"%ndpi, verbose)
-            else:
-                ndpi = imgdata.info.get("dpi", (96, 96))
-                # in python3, the returned dpi value for some tiff images will
-                # not be an integer but a float. To make the behaviour of
-                # img2pdf the same between python2 and python3, we convert that
-                # float into an integer by rounding
-                # search online for the 72.009 dpi problem for more info
-                ndpi = (int(round(ndpi[0])),int(round(ndpi[1])))
-                debug_out("input dpi = %d x %d"%ndpi, verbose)
+            ndpi = imgdata.info.get("dpi", (default_dpi, default_dpi))
+            # in python3, the returned dpi value for some tiff images will
+            # not be an integer but a float. To make the behaviour of
+            # img2pdf the same between python2 and python3, we convert that
+            # float into an integer by rounding
+            # search online for the 72.009 dpi problem for more info
+            ndpi = (int(round(ndpi[0])),int(round(ndpi[1])))
+            debug_out("input dpi = %d x %d" % ndpi, verbose)
 
             if colorspace:
                 color = colorspace
@@ -291,6 +287,13 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
 
         debug_out("width x height = %d x %d"%(width,height), verbose)
         debug_out("imgformat = %s"%imgformat, verbose)
+
+        if dpi:
+            ndpi = dpi, dpi
+            debug_out("input dpi (forced) = %d x %d" % ndpi, verbose)
+        elif pagesize_options:
+            ndpi = get_ndpi(width, height, pagesize)
+            debug_out("calculated dpi (based on pagesize) = %d x %d" % ndpi, verbose)
 
         # depending on the input format, determine whether to pass the raw
         # image or the zlib compressed color information
@@ -320,21 +323,43 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
             imgdata = zlib.compress(img)
         im.close()
 
-        # pdf units = 1/72 inch
-        if not pagesize[0] and not pagesize[1]:
-            pdf_x, pdf_y = 72.0*width/float(ndpi[0]), 72.0*height/float(ndpi[1])
-        elif not pagesize[1]:
-            pdf_x, pdf_y = pagesize[0], pagesize[0]*height/float(width)
-        elif not pagesize[0]:
-            pdf_x, pdf_y = pagesize[1]*width/float(height), pagesize[1]
+        if pagesize_options and pagesize_options['exact'][1]:
+            # output size exactly to specified dimensions
+            # pagesize[0], pagesize[1] already checked in valid_size()
+            pdf_x, pdf_y = pagesize[0], pagesize[1]
         else:
-            pdf_x = pagesize[0]
-            pdf_y = pagesize[1]
+            # output size based on dpi; point = 1/72 inch
+            pdf_x, pdf_y = 72.0*width/float(ndpi[0]), 72.0*height/float(ndpi[1])
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
 
     return pdf.tostring()
 
+def get_ndpi(width, height, pagesize):
+    pagesize_options = pagesize[2]
+
+    if pagesize_options and pagesize_options['fill'][1]:
+        if width/height < pagesize[0]/pagesize[1]:
+            tmp_dpi = 72.0*width/pagesize[0]
+        else:
+            tmp_dpi = 72.0*height/pagesize[1]
+    elif pagesize[0] and pagesize[1]:
+        # if both height and width given with no specific pagesize_option,
+        # resize to fit "into" page
+        if width/height < pagesize[0]/pagesize[1]:
+            tmp_dpi = 72.0*height/pagesize[1]
+        else:
+            tmp_dpi = 72.0*width/pagesize[0]
+    elif pagesize[0]:
+        # if width given, calculate dpi based on width
+        tmp_dpi = 72.0*width/pagesize[0]
+    elif pagesize[1]:
+        # if height given, calculate dpi based on height
+        tmp_dpi = 72.0*height/pagesize[1]
+    else:
+        tmp_dpi = default_dpi
+
+    return tmp_dpi, tmp_dpi
 
 def positive_float(string):
     value = float(string)
@@ -346,22 +371,142 @@ def positive_float(string):
 def valid_date(string):
     return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S")
 
+def get_standard_papersize(string):
+    papersizes = {
+        "11x17"       : "792x792^",     # "792x1224",
+        "ledger"      : "792x792^",     # "1224x792",
+        "legal"       : "612x612^",     # "612x1008",
+        "letter"      : "612x612^",     # "612x792",
+        "arche"       : "2592x2592^",   # "2592x3456",
+        "archd"       : "1728x1728^",   # "1728x2592",
+        "archc"       : "1296x1296^",   # "1296x1728",
+        "archb"       : "864x864^",     # "864x1296",
+        "archa"       : "648x648^",     # "648x864",
+        "a0"          : "2380x2380^",   # "2380x3368",
+        "a1"          : "1684x1684^",   # "1684x2380",
+        "a2"          : "1190x1190^",   # "1190x1684",
+        "a3"          : "842x842^",     # "842x1190",
+        "a4"          : "595x595^",     # "595x842",
+        "a5"          : "421x421^",     # "421x595",
+        "a6"          : "297x297^",     # "297x421",
+        "a7"          : "210x210^",     # "210x297",
+        "a8"          : "148x148^",     # "148x210",
+        "a9"          : "105x105^",     # "105x148",
+        "a10"         : "74x74^",       # "74x105",
+        "b0"          : "2836x2836^",   # "2836x4008",
+        "b1"          : "2004x2004^",   # "2004x2836",
+        "b2"          : "1418x1418^",   # "1418x2004",
+        "b3"          : "1002x1002^",   # "1002x1418",
+        "b4"          : "709x709^",     # "709x1002",
+        "b5"          : "501x501^",     # "501x709",
+        "c0"          : "2600x2600^",   # "2600x3677",
+        "c1"          : "1837x1837^",   # "1837x2600",
+        "c2"          : "1298x1298^",   # "1298x1837",
+        "c3"          : "918x918^",     # "918x1298",
+        "c4"          : "649x649^",     # "649x918",
+        "c5"          : "459x459^",     # "459x649",
+        "c6"          : "323x323^",     # "323x459",
+        "flsa"        : "612x612^",     # "612x936",
+        "flse"        : "612x612^",     # "612x936",
+        "halfletter"  : "396x396^",     # "396x612",
+        "tabloid"     : "792x792^",     # "792x1224",
+        "statement"   : "396x396^",     # "396x612",
+        "executive"   : "540x540^",     # "540x720",
+        "folio"       : "612x612^",     # "612x936",
+        "quarto"      : "610x610^",     # "610x780"
+    }
+
+    string = string.lower()
+    return papersizes.get(string, string)
+
 def valid_size(string):
-    tokens = string.split('x')
-    if len(tokens) != 2:
-        msg = "input size needs to be of the format Ax, xB or AxB with A and B being integers"
+    # conversion factors from units to points
+    units = {
+        'in'  : 72.0,
+        'cm'  : 72.0/2.54,
+        'mm'  : 72.0/25.4,
+        'pt' : 1.0
+    }
+
+    pagesize_options = {
+        'exact'  : ['\!', False],
+        'shrink'  : ['\>', False],
+        'enlarge' : ['\<', False],
+        'fill'    : ['\^', False],
+        'percent' : ['\%', False],
+        'count'   : ['\@', False],
+    }
+
+    string = get_standard_papersize(string)
+
+    pattern = re.compile(r"""
+            ([0-9]*\.?[0-9]*)   # tokens.group(1) == width; may be empty
+            ([a-z]*)            # tokens.group(2) == units; may be empty
+            x
+            ([0-9]*\.?[0-9]*)   # tokens.group(3) == height; may be empty
+            ([a-zA-Z]*)         # tokens.group(4) == units; may be empty
+            ([^0-9a-zA-Z]*)     # tokens.group(5) == extra options
+        """, re.VERBOSE)
+
+    tokens = pattern.match(string)
+
+    # tokens.group(0) should match entire input string
+    if tokens.group(0) != string:
+        msg = ('Input size needs to be of the format AuxBv#, '
+            'where A is width, B is height, u and v are units, '
+            '# are options.  '
+            'You may omit either width or height, but not both.  '
+            'Units may be specified as (in, cm, mm, pt).  '
+            'You may omit units, which will default to pt.  '
+            'Available options include (! = exact ; ^ = fill ; default = into).')
         raise argparse.ArgumentTypeError(msg)
-    x = tokens[0]
-    y = tokens[1]
-    if x == '':
-        x = None
-    else:
-        x = int(x)
-    if y == '':
-        y = None
-    else:
-        y = int(y)
-    return (x,y)
+
+    # temporary list to loop through to process width and height
+    pagesize_size = {
+        'x' : [0, tokens.group(1), tokens.group(2)],
+        'y' : [0, tokens.group(3), tokens.group(4)]
+    }
+
+    for key, value in pagesize_size.items():
+        try:
+            value[0] = float(value[1])
+            value[0] *= units[value[2]]     # convert to points
+        except ValueError, e:
+            # assign None if width or height not provided
+            value[0] = None
+        except KeyError, e:
+            # if units unrecognized, raise error
+            # otherwise default to pt because units not provided 
+            if value[2]:
+                msg = "unrecognized unit '%s'." % value[2]
+                raise argparse.ArgumentTypeError(msg)
+
+    x = pagesize_size['x'][0]
+    y = pagesize_size['y'][0]
+
+    # parse options for resize methods
+    if tokens.group(5):
+        for key, value in pagesize_options.items():
+            if re.search(value[0], tokens.group(5)):
+                value[1] = True
+
+    if pagesize_options['fill'][1]:
+        # if either width or height is not given, try to fill in missing value
+        if not x:
+            x = y
+        elif not y:
+            y = x
+
+    if pagesize_options['exact'][1]:
+        if not x or not y:
+            msg = ('exact size requires both width and height.')
+            raise argparse.ArgumentTypeError(msg)
+
+    if not x and not y:
+        msg = ('width and height cannot both be omitted.')
+        raise argparse.ArgumentTypeError(msg)
+
+    return (x, y, pagesize_options)
 
 parser = argparse.ArgumentParser(
     description='Lossless conversion/embedding of images (in)to pdf')
@@ -370,16 +515,29 @@ parser.add_argument(
     nargs='+', help='input file(s)')
 parser.add_argument(
     '-o', '--output', metavar='out', type=argparse.FileType('wb'),
-    default=getattr(sys.stdout, "buffer", sys.stdout), help='output file (default: stdout)')
+    default=getattr(sys.stdout, "buffer", sys.stdout),
+    help='output file (default: stdout)')
 
 sizeopts = parser.add_mutually_exclusive_group()
 sizeopts.add_argument(
     '-d', '--dpi', metavar='dpi', type=positive_float,
-    help='dpi for pdf output. If input image does not specify dpi the default is 96.0. Must not be specified together with -s/--pagesize.')
+    help=('dpi for pdf output. '
+        'If input image does not specify dpi the default is %.2f.  '
+        'Must not be used with -s/--pagesize.') % default_dpi
+)
+
 sizeopts.add_argument(
     '-s', '--pagesize', metavar='size', type=valid_size,
-    default=(None, None),
-    help='size of the pages in the pdf output in format AxB with A and B being width and height of the page in points. You can omit either one of them. Must not be specified together with -d/--dpi.')
+    default=(None, None, None),
+    help=('size of the pdf pages in format AuxBv#, '
+        'where A is width, B is height, u and v are units, # are options. '
+        'You may omit either width or height, but not both.  '
+        'Some common page sizes, such as letter and a4, are also recognized.  '
+        'Units may be specified as (in, cm, mm, pt).  '
+        'Units default to pt when absent.  '
+        'Available options include (! = exact ; ^ = fill ; default = into).  '
+        'Must not be used with -d/--dpi.')
+)
 
 parser.add_argument(
     '-t', '--title', metavar='title', type=str,
