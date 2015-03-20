@@ -56,26 +56,68 @@ While the above convert command with a 2.8MB JPEG took 27 seconds
 (on average) on my machine, conversion using img2pdf took just a
 fraction of a second.
 
-Commandline Arguments
----------------------
 
-At least one input file argument must be given as img2pdf needs to seek in the
-file descriptor which would not be possible for stdin.
+Usage
+-----
 
-Specify the dpi with the -d or --dpi options instead of reading it from the
-image or falling back to 96.0.
+#### General Notes
 
-Specify the output file with -o or --output. By default output will be done to
-stdout.
+The images must be provided as files because img2pdf needs to seek
+in the file descriptor.  Input cannot be piped through stdin.
 
-Specify metadata using the --title, --author, --creator, --producer,
---creationdate, --moddate, --subject and --keywords options (or their short
-forms).
+If no output file is specified with the `-o`/`--output` option,
+output will be to stdout.
 
-Specify -C or --colorspace to force a colorspace using PIL short handles like
-'RGB', 'L' or '1'.
+Descriptions of the options should be self explanatory.
+They are available by running:
 
-More help is available with the -h or --help option.
+	img2pdf --help
+
+
+#### Controlling Page Size
+
+The PDF page size can be manipulated.  By default, the image will be sized "into" the given dimensions with the aspect ratio retained.  For instance, to size an image into a page that is at most 500pt x 500pt, use:
+
+	img2pdf -s 500x500 -o output.pdf input.jpg
+
+To "fill" out a page that is at least 500pt x 500pt, follow the dimensions with a `^`:
+
+	img2pdf -s 500x500^ -o output.pdf input.jpg
+
+To output pages that are exactly 500pt x 500pt, follow the dimensions with an `!`:
+
+	img2pdf -s 500x500\! -o output.pdf input.jpg
+
+Notice that the default unit is points.  Units may be also be specified and mixed:
+
+	img2pdf -s 8.5inx27.94cm -o output.pdf input.jpg
+
+If either width or height is omitted, the other will be calculated
+to preserve aspect ratio.
+
+	img2pdf -s x280mm -o output1.pdf input.jpg
+	img2pdf -s 280mmx -o output2.pdf input.jpg
+
+Some standard page sizes are recognized:
+
+	img2pdf -s letter -o output1.pdf input.jpg
+	img2pdf -s a4 -o output2.pdf input.jpg
+
+#### Colorspace
+
+Currently, the colorspace must be forced for JPEG 2000 images that are
+not in the RGB colorspace.  Available colorspace options are based on
+Python Imaging Library (PIL) short handles.
+
+ * `RGB` = RGB color
+ * `L` = Grayscale
+ * `1` = Black and white (internally converted to grayscale)
+ * `CMYK` = CMYK color
+ * `CMYK;I` = CMYK color with inversion
+
+For example, to encode a grayscale JPEG2000 image, use:
+
+	img2pdf -C L -o output.pdf input.jp2
 
 Bugs
 ----
