@@ -510,10 +510,10 @@ def valid_size(string):
         try:
             value[0] = float(value[1])
             value[0] *= units[value[2]]     # convert to points
-        except ValueError, e:
+        except ValueError:
             # assign None if width or height not provided
             value[0] = None
-        except KeyError, e:
+        except KeyError:
             # if units unrecognized, raise error
             # otherwise default to pt because units not provided 
             if value[2]:
