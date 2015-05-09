@@ -19,12 +19,15 @@ code into the garbage bin :D
 Functionality
 -------------
 
-This program will take a list of images and produce a PDF file with the
-images embedded in it.  JPEG and JPEG2000 images will be included without
+This program will take a list of images and produce a PDF file with the images
+embedded in it.  JPEG and JPEG2000 images will be included without
 recompression.  Images in other formats will be included with zip/flate
-encoding.  As a result, this tool is able to losslessly wrap any image
-into a PDF container with a quality-filesize ratio that is typically better
-than that of existing tools.
+encoding which usually leads to an increase in the resulting size because
+formats like png compress better than PDF which just zip/flate compresses the
+RGB data.  As a result, this tool is able to losslessly wrap images into a PDF
+container with a quality-filesize ratio that is typically better (in case of
+JPEG and JPEG2000 images) or equal (in case of other formats) than that of
+existing tools.
 
 For example, imagemagick will re-encode the input JPEG image (thus changing
 its content):
@@ -51,10 +54,7 @@ save other graphics formats using lossless zip compression,
 and produce multi-page PDF files when more than one input image is given.
 
 Also, since JPEG and JPEG2000 images are not reencoded, conversion  with
-img2pdf is several (ten to hundred) times faster than with imagemagick.
-While the above convert command with a 2.8MB JPEG took 27 seconds
-(on average) on my machine, conversion using img2pdf took just a
-fraction of a second.
+img2pdf is several times faster than with other tools.
 
 
 Usage
