@@ -137,6 +137,19 @@ I have not yet figured out how to determine the colorspace of JPEG2000 files.
 Therefore JPEG2000 files use DeviceRGB by default. For JPEG2000 files with
 other colorspaces, you must force it using the `--colorspace` option.
 
+It might be possible to store transparency using masks but it is not clear
+what the utility of such a functionality would be.
+
+Most vector graphic formats can be losslessly turned into PDF (minus some of
+the features unsupported by PDF) but img2pdf will currently turn vector
+graphics into their lossy raster representations.
+
+Acrobat is able to store a hint for the PDF reader of how to present the PDF
+when opening it. Things like automatic fullscreen or the zoom level can be
+configured.
+
+It would be nice if a single input image could be read from standard input.
+
 Installation
 ------------
 
