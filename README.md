@@ -150,6 +150,8 @@ configured.
 
 It would be nice if a single input image could be read from standard input.
 
+A configuration file could be used for default options.
+
 Installation
 ------------
 
