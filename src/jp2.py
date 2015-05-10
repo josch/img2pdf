@@ -21,6 +21,7 @@
 
 import struct
 
+
 def getBox(data, byteStart, noBytes):
     boxLengthValue = struct.unpack(">I", data[byteStart:byteStart+4])[0]
     boxType = data[byteStart+4:byteStart+8]
@@ -34,10 +35,12 @@ def getBox(data, byteStart, noBytes):
     boxContents = data[byteStart+contentsStartOffset:byteEnd]
     return (boxLengthValue, boxType, byteEnd, boxContents)
 
+
 def parse_ihdr(data):
     height = struct.unpack(">I", data[0:4])[0]
     width = struct.unpack(">I", data[4:8])[0]
     return width, height
+
 
 def parse_colr(data):
     meth = struct.unpack(">B", data[0:1])[0]
@@ -49,15 +52,18 @@ def parse_colr(data):
     elif enumCS == 17:
         return "L"
     else:
-        raise Exception("only sRGB and greyscale color space is supported, got %d"%enumCS)
+        raise Exception("only sRGB and greyscale color space is supported, "
+                        "got %d" % enumCS)
+
 
 def parse_jp2h(data):
     width, height, colorspace = None, None, None
-    noBytes=len(data)
-    byteStart=0
-    boxLengthValue=1 # dummy value for while loop condition
+    noBytes = len(data)
+    byteStart = 0
+    boxLengthValue = 1  # dummy value for while loop condition
     while byteStart < noBytes and boxLengthValue != 0:
-        boxLengthValue, boxType, byteEnd, boxContents = getBox(data, byteStart, noBytes)
+        boxLengthValue, boxType, byteEnd, boxContents = \
+            getBox(data, byteStart, noBytes)
         if boxType == 'ihdr':
             width, height = parse_ihdr(boxContents)
         elif boxType == 'colr':
@@ -65,12 +71,14 @@ def parse_jp2h(data):
         byteStart = byteEnd
     return (width, height, colorspace)
 
+
 def parsejp2(data):
-    noBytes=len(data)
-    byteStart=0
-    boxLengthValue=1 # dummy value for while loop condition
+    noBytes = len(data)
+    byteStart = 0
+    boxLengthValue = 1  # dummy value for while loop condition
     while byteStart < noBytes and boxLengthValue != 0:
-        boxLengthValue, boxType, byteEnd, boxContents = getBox(data, byteStart, noBytes)
+        boxLengthValue, boxType, byteEnd, boxContents = \
+            getBox(data, byteStart, noBytes)
         if boxType == 'jp2h':
             width, height, colorspace = parse_jp2h(boxContents)
         byteStart = byteEnd
@@ -85,6 +93,6 @@ def parsejp2(data):
 if __name__ == "__main__":
     import sys
     width, height, colorspace = parsejp2(open(sys.argv[1]).read())
-    sys.stdout.write("width = %d"%width)
-    sys.stdout.write("height = %d"%height)
-    sys.stdout.write("colorspace = %s"%colorspace)
+    sys.stdout.write("width = %d" % width)
+    sys.stdout.write("height = %d" % height)
+    sys.stdout.write("colorspace = %s" % colorspace)

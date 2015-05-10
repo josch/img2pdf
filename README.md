@@ -1,31 +1,35 @@
 img2pdf
 =======
 
-Losslessly convert images to PDF without unnecessarily re-encoding JPEG and
-JPEG2000 files.  Image quality is retained without unnecessarily increasing
-file size.
+Losslessly convert raster images to PDF. The file size will not unnecessarily
+increase. One major application would be a number of scans made in JPEG format
+which should now become part of a single PDF document.  Existing solutions
+would either re-encode the input JPEG files (leading to quality loss) or store
+them in the zip/flate format which results into the PDF becoming unnecessarily
+large in terms of its file size.
 
 Background
 ----------
 
-Quality loss can be avoided when converting JPEG and JPEG2000 images to
-PDF by embedding them without re-encoding.  I wrote this piece of python code.
-because I was missing a tool to do this automatically.
+Quality loss can be avoided when converting JPEG and JPEG2000 images to PDF by
+embedding them without re-encoding.  I wrote this piece of python code.
+because I was missing a tool to do this automatically. Img2pdf basically just
+wraps JPEG images into the PDF container as they are.
 
-If you know how to embed JPEG and JPEG2000 images into a PDF container without
-recompression, using existing tools, please contact me so that I can put this
-code into the garbage bin :D
+If you know an existing tool which allows one to embed JPEG and JPEG2000 images
+into a PDF container without recompression, please contact me so that I can put
+this code into the garbage bin.
 
 Functionality
 -------------
 
 This program will take a list of images and produce a PDF file with the images
 embedded in it.  JPEG and JPEG2000 images will be included without
-recompression.  Images in other formats will be included with zip/flate
+recompression.  Raster images in other formats will be included with zip/flate
 encoding which usually leads to an increase in the resulting size because
 formats like png compress better than PDF which just zip/flate compresses the
 RGB data.  As a result, this tool is able to losslessly wrap images into a PDF
-container with a quality-filesize ratio that is typically better (in case of
+container with a quality to filesize ratio that is typically better (in case of
 JPEG and JPEG2000 images) or equal (in case of other formats) than that of
 existing tools.
 
@@ -50,74 +54,25 @@ than the input JPEG or JPEG2000 file.
 
 img2pdf is able to losslessly embed JPEG and JPEG2000 files into a PDF
 container without additional overhead (aside from the PDF structure itself),
-save other graphics formats using lossless zip compression,
-and produce multi-page PDF files when more than one input image is given.
+save other graphics formats using lossless zip compression, and produce
+multi-page PDF files when more than one input image is given.
 
-Also, since JPEG and JPEG2000 images are not reencoded, conversion  with
-img2pdf is several times faster than with other tools.
-
+Also, since JPEG and JPEG2000 images are not reencoded, conversion with img2pdf
+is several times faster than with other tools.
 
 Usage
 -----
 
-#### General Notes
+The images must be provided as files because img2pdf needs to seek in the file
+descriptor.
 
-The images must be provided as files because img2pdf needs to seek
-in the file descriptor.  Input cannot be piped through stdin.
+If no output file is specified with the `-o`/`--output` option, output will be
+done to stdout.
 
-If no output file is specified with the `-o`/`--output` option,
-output will be to stdout.
-
-Descriptions of the options should be self explanatory.
-They are available by running:
+The detailed documentation can be accessed by running:
 
 	img2pdf --help
 
-
-#### Controlling Page Size
-
-The PDF page size can be manipulated.  By default, the image will be sized "into" the given dimensions with the aspect ratio retained.  For instance, to size an image into a page that is at most 500pt x 500pt, use:
-
-	img2pdf -s 500x500 -o output.pdf input.jpg
-
-To "fill" out a page that is at least 500pt x 500pt, follow the dimensions with a `^`:
-
-	img2pdf -s 500x500^ -o output.pdf input.jpg
-
-To output pages that are exactly 500pt x 500pt, follow the dimensions with an `!`:
-
-	img2pdf -s 500x500\! -o output.pdf input.jpg
-
-Notice that the default unit is points.  Units may be also be specified and mixed:
-
-	img2pdf -s 8.5inx27.94cm -o output.pdf input.jpg
-
-If either width or height is omitted, the other will be calculated
-to preserve aspect ratio.
-
-	img2pdf -s x280mm -o output1.pdf input.jpg
-	img2pdf -s 280mmx -o output2.pdf input.jpg
-
-Some standard page sizes are recognized:
-
-	img2pdf -s letter -o output1.pdf input.jpg
-	img2pdf -s a4 -o output2.pdf input.jpg
-
-#### Colorspace
-
-Currently, the colorspace must be forced for JPEG 2000 images that are
-not in the RGB colorspace.  Available colorspace options are based on
-Python Imaging Library (PIL) short handles.
-
- * `RGB` = RGB color
- * `L` = Grayscale
- * `1` = Black and white (internally converted to grayscale)
- * `CMYK` = CMYK color
- * `CMYK;I` = CMYK color with inversion
-
-For example, to encode a grayscale JPEG2000 image, use:
-
-	img2pdf -C L -o output.pdf input.jp2
 
 Bugs
 ----
@@ -135,20 +90,17 @@ outperformed by another lossless compression method, contact me.
 
 I have not yet figured out how to determine the colorspace of JPEG2000 files.
 Therefore JPEG2000 files use DeviceRGB by default. For JPEG2000 files with
-other colorspaces, you must force it using the `--colorspace` option.
+other colorspaces, you must explicitly specify it using the `--colorspace`
+option.
 
 It might be possible to store transparency using masks but it is not clear
 what the utility of such a functionality would be.
 
 Most vector graphic formats can be losslessly turned into PDF (minus some of
 the features unsupported by PDF) but img2pdf will currently turn vector
-graphics into their lossy raster representations.
-
-Acrobat is able to store a hint for the PDF reader of how to present the PDF
-when opening it. Things like automatic fullscreen or the zoom level can be
-configured.
-
-It would be nice if a single input image could be read from standard input.
+graphics into their lossy raster representations. For converting raster
+graphics to PDF, use another tool like inkscape and then join the resulting
+pages with a tool like pdftk.
 
 A configuration file could be used for default options.
 
@@ -157,10 +109,6 @@ Installation
 
 On a Debian- and Ubuntu-based systems, dependencies may be installed
 with the following command:
-
-	apt-get install python python-pil python-setuptools
-
-Or for Python 3:
 
 	apt-get install python3 python3-pil python3-setuptools
 
@@ -187,7 +135,7 @@ You can then test the converter using:
 The package can also be used as a library:
 
 	import img2pdf
-	pdf_bytes = img2pdf.convert(['test.jpg'])
+	pdf_bytes = img2pdf.convert('test.jpg')
 
 	file = open("name.pdf","wb")
 	file.write(pdf_bytes)
