@@ -930,7 +930,13 @@ def parse_imgsize_num(num, name):
     if unit is None:
         unit = ImgUnit.pt
     else:
-        num = num[:-2]
+        # strip off unit from string
+        if unit == ImgUnit.dpi:
+            num = num[:-3]
+        elif unit == ImgUnit.perc:
+            num = num[:-1]
+        else:
+            num = num[:-2]
         try:
             num = float(num)
         except ValueError:
@@ -1396,7 +1402,7 @@ values set via the --border option.
         '--creator', metavar='creator', type=str,
         help='Sets the creator metadata value')
     metaargs.add_argument(
-        '--producer', metavar='producer', type=str, default="img2pdf"
+        '--producer', metavar='producer', type=str, default="img2pdf",
         help='Sets the producer metadata value (default is: img2pdf)')
     metaargs.add_argument(
         '--creationdate', metavar='creationdate', type=valid_date,
