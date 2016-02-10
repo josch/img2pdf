@@ -857,6 +857,9 @@ def convert(*images, title=None,
         if pagewidth < 3.00 or pageheight < 3.00:
             logging.warning("pdf width or height is below 3.00 - too small "
                             "for some viewers!")
+        elif pagewidth > 14400.0 or pageheight > 14400.0:
+            logging.error("pdf width or height must not exceed 200 inches.")
+            exit(1)
         # the image is always centered on the page
         imgxpdf = (pagewidth - imgwidthpdf)/2.0
         imgypdf = (pageheight - imgheightpdf)/2.0
