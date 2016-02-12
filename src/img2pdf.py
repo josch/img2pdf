@@ -1419,7 +1419,8 @@ values set via the --border option.
         '--creator', metavar='creator', type=str,
         help='Sets the creator metadata value')
     metaargs.add_argument(
-        '--producer', metavar='producer', type=str, default="img2pdf",
+        '--producer', metavar='producer', type=str,
+        default="img2pdf " + __version__,
         help='Sets the producer metadata value (default is: img2pdf)')
     metaargs.add_argument(
         '--creationdate', metavar='creationdate', type=valid_date,
