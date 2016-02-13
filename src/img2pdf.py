@@ -841,6 +841,17 @@ def default_layout_fun(imgwidthpx, imgheightpx, ndpi):
     return pagewidth, pageheight, imgwidthpdf, imgheightpdf
 
 
+def get_fixed_dpi_layout_fun(fixed_dpi):
+    """Layout function that overrides whatever DPI is claimed in input images.
+
+    >>> layout_fun = get_fixed_dpi_layout_fun((300, 300))
+    >>> convert(image1, layout_fun=layout_fun, ... outputstream=...)
+    """
+    def fixed_dpi_layout_fun(imgwidthpx, imgheightpx, ndpi):
+        return default_layout_fun(imgwidthpx, imgheightpx, fixed_dpi)
+    return fixed_dpi_layout_fun
+
+
 # given one or more input image, depending on outputstream, either return a
 # string containing the whole PDF if outputstream is None or write the PDF
 # data to the given file-like object and return None
