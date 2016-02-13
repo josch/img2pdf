@@ -177,7 +177,7 @@ class MyPdfWriter():
         obj.identifier = newid
         self.objects.append(obj)
 
-    def getstring(self, info):
+    def tostream(self, info, stream):
         xreftable = list()
 
         # justification of the random binary garbage in the header from
@@ -194,8 +194,9 @@ class MyPdfWriter():
         #
         # the choice of binary characters is arbitrary but those four seem to
         # be used elsewhere.
-        result = ('%%PDF-%s\n' % self.version).encode('ascii')
-        result += b'%\xe2\xe3\xcf\xd3\n'
+        pdfheader = ('%%PDF-%s\n' % self.version).encode('ascii')
+        pdfheader += b'%\xe2\xe3\xcf\xd3\n'
+        stream.write(pdfheader)
 
         # From section 3.4.3 of the PDF Reference (version 1.7):
         #
@@ -219,23 +220,26 @@ class MyPdfWriter():
         #
         # Since we chose to use a single character eol marker, we preceed it by
         # a space
+        pos = len(pdfheader)
         xreftable.append(b"0000000000 65535 f \n")
         for o in self.objects:
-            xreftable.append(("%010d 00000 n \n" % len(result)).encode())
-            result += o.tostring()
+            xreftable.append(("%010d 00000 n \n" % pos).encode())
+            content = o.tostring()
+            stream.write(content)
+            pos += len(content)
 
-        xrefoffset = len(result)
-        result += b"xref\n"
-        result += ("0 %d\n" % len(xreftable)).encode()
+        xrefoffset = pos
+        stream.write(b"xref\n")
+        stream.write(("0 %d\n" % len(xreftable)).encode())
         for x in xreftable:
-            result += x
-        result += b"trailer\n"
-        result += parse({b"/Size": len(xreftable), b"/Info": info,
-                         b"/Root": self.catalog})+b"\n"
-        result += b"startxref\n"
-        result += ("%d\n" % xrefoffset).encode()
-        result += b"%%EOF\n"
-        return result
+            stream.write(x)
+        stream.write(b"trailer\n")
+        stream.write(parse({b"/Size": len(xreftable), b"/Info": info,
+                            b"/Root": self.catalog})+b"\n")
+        stream.write(b"startxref\n")
+        stream.write(("%d\n" % xrefoffset).encode())
+        stream.write(b"%%EOF\n")
+        return
 
     def addpage(self, page):
         page[b"/Parent"] = self.pages
@@ -393,6 +397,11 @@ class pdfdoc(object):
             self.writer.addobj(image)
 
     def tostring(self):
+        stream = BytesIO()
+        self.tostream(stream)
+        return stream.getvalue()
+
+    def tostream(self, outputstream):
         if self.with_pdfrw:
             from pdfrw import PdfDict, PdfName, PdfArray, PdfObject
         else:
@@ -509,12 +518,10 @@ class pdfdoc(object):
 
         # now write out the PDF
         if self.with_pdfrw:
-            outf = BytesIO()
             self.writer.trailer.Info = self.info
-            self.writer.write(outf)
-            return outf.getvalue()
+            self.writer.write(outputstream)
         else:
-            return self.writer.getstring(self.info)
+            self.writer.tostream(self.info, outputstream)
 
 
 def read_image(rawdata, colorspace):
@@ -834,6 +841,9 @@ def default_layout_fun(imgwidthpx, imgheightpx, ndpi):
     return pagewidth, pageheight, imgwidthpdf, imgheightpdf
 
 
+# given one or more input image, depending on outputstream, either return a
+# string containing the whole PDF if outputstream is None or write the PDF
+# data to the given file-like object and return None
 def convert(*images, title=None,
             author=None, creator=None, producer=None, creationdate=None,
             moddate=None, subject=None, keywords=None, colorspace=None,
@@ -841,7 +851,7 @@ def convert(*images, title=None,
             viewer_initial_page=None, viewer_magnification=None,
             viewer_page_layout=None, viewer_fit_window=False,
             viewer_center_window=False, viewer_fullscreen=False,
-            with_pdfrw=True):
+            with_pdfrw=True, outputstream=None):
 
     pdf = pdfdoc("1.3", title, author, creator, producer, creationdate,
                  moddate, subject, keywords, nodate, viewer_panes,
@@ -866,6 +876,10 @@ def convert(*images, title=None,
         pdf.add_imagepage(color, imgwidthpx, imgheightpx, imgformat, imgdata,
                           imgwidthpdf, imgheightpdf, imgxpdf, imgypdf,
                           pagewidth, pageheight)
+
+    if outputstream:
+        pdf.tostream(outputstream)
+        return
 
     return pdf.tostring()
 
@@ -1497,21 +1511,20 @@ values set via the --border option.
                           parser.prog)
             exit(2)
 
-    args.output.write(
-        convert(
-            *args.images, title=args.title, author=args.author,
-            creator=args.creator, producer=args.producer,
-            creationdate=args.creationdate, moddate=args.moddate,
-            subject=args.subject, keywords=args.keywords,
-            colorspace=args.colorspace, nodate=args.nodate,
-            layout_fun=layout_fun, viewer_panes=args.viewer_panes,
-            viewer_initial_page=args.viewer_initial_page,
-            viewer_magnification=args.viewer_magnification,
-            viewer_page_layout=args.viewer_page_layout,
-            viewer_fit_window=args.viewer_fit_window,
-            viewer_center_window=args.viewer_center_window,
-            viewer_fullscreen=args.viewer_fullscreen,
-            with_pdfrw=not args.without_pdfrw))
+    convert(
+        *args.images, title=args.title, author=args.author,
+        creator=args.creator, producer=args.producer,
+        creationdate=args.creationdate, moddate=args.moddate,
+        subject=args.subject, keywords=args.keywords,
+        colorspace=args.colorspace, nodate=args.nodate, layout_fun=layout_fun,
+        viewer_panes=args.viewer_panes,
+        viewer_initial_page=args.viewer_initial_page,
+        viewer_magnification=args.viewer_magnification,
+        viewer_page_layout=args.viewer_page_layout,
+        viewer_fit_window=args.viewer_fit_window,
+        viewer_center_window=args.viewer_center_window,
+        viewer_fullscreen=args.viewer_fullscreen, with_pdfrw=not
+        args.without_pdfrw, outputstream=args.output)
 
 if __name__ == '__main__':
     main()
