@@ -18,6 +18,7 @@
 # <http://www.gnu.org/licenses/>.
 
 import sys
+import os
 import zlib
 import argparse
 from PIL import Image
@@ -869,6 +870,10 @@ def get_fixed_dpi_layout_fun(fixed_dpi):
 # given one or more input image, depending on outputstream, either return a
 # string containing the whole PDF if outputstream is None or write the PDF
 # data to the given file-like object and return None
+#
+# Input images can be given as file like objects (they must implement read()),
+# as a binary string representing the image content or as filenames to the
+# images.
 def convert(*images, title=None,
             author=None, creator=None, producer=None, creationdate=None,
             moddate=None, subject=None, keywords=None, colorspace=None,
@@ -884,7 +889,23 @@ def convert(*images, title=None,
                  viewer_fit_window, viewer_center_window, viewer_fullscreen,
                  with_pdfrw)
 
-    for rawdata in images:
+    for img in images:
+        # img is allowed to be a path, a binary string representing image data
+        # or a file-like object (really anything that implements read())
+        try:
+            rawdata = img.read()
+        except AttributeError:
+            # the thing doesn't have a read() function, so try if we can treat
+            # it as a file name
+            try:
+                with open(img, "rb") as f:
+                    rawdata = f.read()
+            except:
+                # whatever the exception is (string could contain NUL
+                # characters or the path could just not exist) it's not a file
+                # name so we now try treating it as raw image content
+                rawdata = img
+
         color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx = \
             read_image(rawdata, colorspace)
         pagewidth, pageheight, imgwidthpdf, imgheightpdf = \
@@ -1063,11 +1084,18 @@ def parse_borderarg(string):
 
 def input_images(path):
     if path == '-':
-        rawdata = sys.stdin.buffer.read()
+        # we slurp in all data from stdin because we need to seek in it later
+        result = sys.stdin.buffer.read()
+        if len(result) == 0:
+            raise argparse.ArgumentTypeError("\"%s\" is empty" % path)
     else:
         try:
+            if os.path.getsize(path) == 0:
+                raise argparse.ArgumentTypeError("\"%s\" is empty" % path)
+            # test-read a byte from it so that we can abort early in case
+            # we cannot read data from the file
             with open(path, "rb") as im:
-                rawdata = im.read()
+                im.read(1)
         except IsADirectoryError:
             raise argparse.ArgumentTypeError(
                 "\"%s\" is a directory" % path)
@@ -1077,9 +1105,8 @@ def input_images(path):
         except FileNotFoundError:
             raise argparse.ArgumentTypeError(
                 "\"%s\" does not exist" % path)
-    if len(rawdata) == 0:
-        raise argparse.ArgumentTypeError("\"%s\" is empty" % path)
-    return rawdata
+        result = path
+    return result
 
 
 def parse_fitarg(string):
