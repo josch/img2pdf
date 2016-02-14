@@ -1581,6 +1581,9 @@ values set via the --border option.
             args.without_pdfrw, outputstream=args.output)
     except Exception as e:
         logging.error("error: " + str(e))
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            import traceback
+            traceback.print_exc(file=sys.stderr)
         exit(1)
 
 if __name__ == '__main__':
