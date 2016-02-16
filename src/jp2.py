@@ -64,9 +64,9 @@ def parse_jp2h(data):
     while byteStart < noBytes and boxLengthValue != 0:
         boxLengthValue, boxType, byteEnd, boxContents = \
             getBox(data, byteStart, noBytes)
-        if boxType == 'ihdr':
+        if boxType == b'ihdr':
             width, height = parse_ihdr(boxContents)
-        elif boxType == 'colr':
+        elif boxType == b'colr':
             colorspace = parse_colr(boxContents)
         byteStart = byteEnd
     return (width, height, colorspace)
@@ -76,10 +76,13 @@ def parsejp2(data):
     noBytes = len(data)
     byteStart = 0
     boxLengthValue = 1  # dummy value for while loop condition
+    width = None
+    height = None
+    colorspace = None
     while byteStart < noBytes and boxLengthValue != 0:
         boxLengthValue, boxType, byteEnd, boxContents = \
             getBox(data, byteStart, noBytes)
-        if boxType == 'jp2h':
+        if boxType == b'jp2h':
             width, height, colorspace = parse_jp2h(boxContents)
         byteStart = byteEnd
     if not width:
