@@ -56,7 +56,7 @@ FitMode = Enum('FitMode', 'into fill exact shrink enlarge')
 
 PageOrientation = Enum('PageOrientation', 'portrait landscape')
 
-Colorspace = Enum('Colorspace', 'RGB L 1 CMYK CMYK;I RGBA')
+Colorspace = Enum('Colorspace', 'RGB L 1 CMYK CMYK;I RGBA P')
 
 ImageFormat = Enum('ImageFormat', 'JPEG JPEG2000 TIFF PNG GIF')
 
@@ -617,6 +617,8 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         if color == Colorspace['1']:
             raise MonochromeJpegError("jpeg can't be monochrome")
+        if color == Colorspace['P']:
+            raise MonochromeJpegError("jpeg can't have a color palette")
         im.close()
         return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx)]
     else:
@@ -646,7 +648,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                            Colorspace["CMYK;I"]]:
                 logging.debug("Colorspace is OK: %s", color)
                 newimg = imgdata
-            elif color in [Colorspace.RGBA]:
+            elif color in [Colorspace.RGBA, Colorspace.P]:
                 logging.debug("Converting colorspace %s to RGB", color)
                 newimg = imgdata.convert('RGB')
                 color = Colorspace.RGB
