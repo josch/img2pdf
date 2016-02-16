@@ -415,7 +415,7 @@ def test_suite():
                                               img2pdf.default_dpi))
                 self.assertEqual((pwpdf, phpdf), pspdf)
                 self.assertEqual((iwpdf, ihpdf), ispdf)
-            except img2pdf.NegativeDimensionException:
+            except img2pdf.NegativeDimensionError:
                 self.assertEqual(None, pspdf)
                 self.assertEqual(None, ispdf)
 
