@@ -86,7 +86,7 @@ class ImageOpenError(Exception):
     pass
 
 
-class MonochromeJpegError(Exception):
+class JpegColorspaceError(Exception):
     pass
 
 
@@ -616,9 +616,11 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         if color == Colorspace['1']:
-            raise MonochromeJpegError("jpeg can't be monochrome")
+            raise JpegColorspaceError("jpeg can't be monochrome")
         if color == Colorspace['P']:
-            raise MonochromeJpegError("jpeg can't have a color palette")
+            raise JpegColorspaceError("jpeg can't have a color palette")
+        if color == Colorspace['RGBA']:
+            raise JpegColorspaceError("jpeg can't have an alpha channel")
         im.close()
         return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx)]
     else:
