@@ -541,7 +541,54 @@ class pdfdoc(object):
             self.writer.tostream(self.info, outputstream)
 
 
-def read_image(rawdata, colorspace):
+def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
+    if imgformat == ImageFormat.JPEG2000 and rawdata is not None:
+        imgwidthpx, imgheightpx, ics = parsejp2(rawdata)
+
+        # TODO: read real dpi from input jpeg2000 image
+        ndpi = (default_dpi, default_dpi)
+    else:
+        imgwidthpx, imgheightpx = imgdata.size
+
+        ndpi = imgdata.info.get("dpi", (default_dpi, default_dpi))
+        # In python3, the returned dpi value for some tiff images will
+        # not be an integer but a float. To make the behaviour of
+        # img2pdf the same between python2 and python3, we convert that
+        # float into an integer by rounding.
+        # Search online for the 72.009 dpi problem for more info.
+        ndpi = (int(round(ndpi[0])), int(round(ndpi[1])))
+        ics = imgdata.mode
+
+    logging.debug("input dpi = %d x %d", *ndpi)
+
+    if colorspace:
+        color = colorspace
+        logging.debug("input colorspace (forced) = %s", color)
+    else:
+        color = None
+        for c in Colorspace:
+            if c.name == ics:
+                color = c
+        if color is None:
+            raise ValueError("unknown PIL colorspace: %s" % imgdata.mode)
+        if color == Colorspace.CMYK and imgformat == ImageFormat.JPEG:
+            # Adobe inverts CMYK JPEGs for some reason, and others
+            # have followed suit as well. Some software assumes the
+            # JPEG is inverted if the Adobe tag (APP14), while other
+            # software assumes all CMYK JPEGs are inverted. I don't
+            # have enough experience with these to know which is
+            # better for images currently in the wild, so I'm going
+            # with the first approach for now.
+            if "adobe" in imgdata.info:
+                color = Colorspace['CMYK;I']
+        logging.debug("input colorspace = %s", color.name)
+
+    logging.debug("width x height = %dpx x %dpx", imgwidthpx, imgheightpx)
+
+    return (color, ndpi, imgwidthpx, imgheightpx)
+
+
+def read_images(rawdata, colorspace, first_frame_only=False):
     im = BytesIO(rawdata)
     im.seek(0)
     try:
@@ -552,21 +599,8 @@ def read_image(rawdata, colorspace):
             raise ImageOpenError("cannot read input image (not jpeg2000). "
                                  "PIL: error reading image: %s" % e)
         # image is jpeg2000
-        imgwidthpx, imgheightpx, ics = parsejp2(rawdata)
         imgformat = ImageFormat.JPEG2000
-
-        # TODO: read real dpi from input jpeg2000 image
-        ndpi = (default_dpi, default_dpi)
-        logging.debug("input dpi = %d x %d", *ndpi)
-
-        if colorspace:
-            color = colorspace
-            logging.debug("input colorspace (forced) = %s", ics)
-        else:
-            color = ics
-            logging.debug("input colorspace = %s", ics)
     else:
-        imgwidthpx, imgheightpx = imgdata.size
         imgformat = None
         for f in ImageFormat:
             if f.name == imgdata.format:
@@ -574,72 +608,62 @@ def read_image(rawdata, colorspace):
         if imgformat is None:
             raise ValueError("unknown PIL image format: %s" % imgdata.format)
 
-        ndpi = imgdata.info.get("dpi", (default_dpi, default_dpi))
-        # In python3, the returned dpi value for some tiff images will
-        # not be an integer but a float. To make the behaviour of
-        # img2pdf the same between python2 and python3, we convert that
-        # float into an integer by rounding.
-        # Search online for the 72.009 dpi problem for more info.
-        ndpi = (int(round(ndpi[0])), int(round(ndpi[1])))
-        logging.debug("input dpi = %d x %d", *ndpi)
-
-        if colorspace:
-            color = colorspace
-            logging.debug("input colorspace (forced) = %s", color)
-        else:
-            color = None
-            for c in Colorspace:
-                if c.name == imgdata.mode:
-                    color = c
-            if color is None:
-                raise ValueError("unknown PIL colorspace: %s" % imgdata.mode)
-            if color == Colorspace.CMYK and imgformat == ImageFormat.JPEG:
-                # Adobe inverts CMYK JPEGs for some reason, and others
-                # have followed suit as well. Some software assumes the
-                # JPEG is inverted if the Adobe tag (APP14), while other
-                # software assumes all CMYK JPEGs are inverted. I don't
-                # have enough experience with these to know which is
-                # better for images currently in the wild, so I'm going
-                # with the first approach for now.
-                if "adobe" in imgdata.info:
-                    color = Colorspace['CMYK;I']
-            logging.debug("input colorspace = %s", color.name)
-
-    logging.debug("width x height = %dpx x %dpx", imgwidthpx, imgheightpx)
     logging.debug("imgformat = %s", imgformat.name)
 
     # depending on the input format, determine whether to pass the raw
     # image or the zlib compressed color information
     if imgformat == ImageFormat.JPEG or imgformat == ImageFormat.JPEG2000:
+        color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+                imgdata, imgformat, default_dpi, colorspace, rawdata)
         if color == Colorspace['1']:
             raise MonochromeJpegError("jpeg can't be monochrome")
-        imgdata = rawdata
+        im.close()
+        return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx)]
     else:
-        # because we do not support /CCITTFaxDecode
-        if color == Colorspace['1']:
-            logging.debug("Converting colorspace 1 to L")
-            imgdata = imgdata.convert('L')
-            color = Colorspace.L
-        elif color in [Colorspace.RGB, Colorspace.L, Colorspace.CMYK,
-                       Colorspace["CMYK;I"]]:
-            logging.debug("Colorspace is OK: %s", color)
-        elif color in [Colorspace.RGBA]:
-            logging.debug("Converting colorspace %s to RGB", color)
-            imgdata = imgdata.convert('RGB')
-            color = Colorspace.RGB
-        else:
-            raise ValueError("unknown colorspace: %s" % color.name)
-        img = imgdata.tobytes()
+        result = []
+        img_page_count = 0
+        # loop through all frames of the image (example: multipage TIFF)
+        while True:
+            try:
+                imgdata.seek(img_page_count)
+            except EOFError:
+                break
+
+            if first_frame_only and img_page_count > 0:
+                break
+
+            logging.debug("Converting frame: %d" % img_page_count)
+
+            color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+                    imgdata, imgformat, default_dpi, colorspace)
+
+            # because we do not support /CCITTFaxDecode
+            if color == Colorspace['1']:
+                logging.debug("Converting colorspace 1 to L")
+                newimg = imgdata.convert('L')
+                color = Colorspace.L
+            elif color in [Colorspace.RGB, Colorspace.L, Colorspace.CMYK,
+                           Colorspace["CMYK;I"]]:
+                logging.debug("Colorspace is OK: %s", color)
+                newimg = imgdata
+            elif color in [Colorspace.RGBA]:
+                logging.debug("Converting colorspace %s to RGB", color)
+                newimg = imgdata.convert('RGB')
+                color = Colorspace.RGB
+            else:
+                raise ValueError("unknown colorspace: %s" % color.name)
+            imggz = zlib.compress(newimg.tobytes())
+            result.append((color, ndpi, imgformat, imggz, imgwidthpx,
+                           imgheightpx))
+            img_page_count += 1
         # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
         # close() method
         try:
             imgdata.close()
         except AttributeError:
             pass
-        imgdata = zlib.compress(img)
-    im.close()
-
-    return color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx
+        im.close()
+        return result
 
 
 # converts a length in pixels to a length in PDF units (1/72 of an inch)
@@ -881,7 +905,7 @@ def convert(*images, title=None,
             viewer_initial_page=None, viewer_magnification=None,
             viewer_page_layout=None, viewer_fit_window=False,
             viewer_center_window=False, viewer_fullscreen=False,
-            with_pdfrw=True, outputstream=None):
+            with_pdfrw=True, outputstream=None, first_frame_only=False):
 
     pdf = pdfdoc("1.3", title, author, creator, producer, creationdate,
                  moddate, subject, keywords, nodate, viewer_panes,
@@ -906,22 +930,22 @@ def convert(*images, title=None,
                 # name so we now try treating it as raw image content
                 rawdata = img
 
-        color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx = \
-            read_image(rawdata, colorspace)
-        pagewidth, pageheight, imgwidthpdf, imgheightpdf = \
-            layout_fun(imgwidthpx, imgheightpx, ndpi)
-        if pagewidth < 3.00 or pageheight < 3.00:
-            logging.warning("pdf width or height is below 3.00 - too small "
-                            "for some viewers!")
-        elif pagewidth > 14400.0 or pageheight > 14400.0:
-            raise PdfTooLargeError(
-                    "pdf width or height must not exceed 200 inches.")
-        # the image is always centered on the page
-        imgxpdf = (pagewidth - imgwidthpdf)/2.0
-        imgypdf = (pageheight - imgheightpdf)/2.0
-        pdf.add_imagepage(color, imgwidthpx, imgheightpx, imgformat, imgdata,
-                          imgwidthpdf, imgheightpdf, imgxpdf, imgypdf,
-                          pagewidth, pageheight)
+        for color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx \
+                in read_images(rawdata, colorspace, first_frame_only):
+            pagewidth, pageheight, imgwidthpdf, imgheightpdf = \
+                layout_fun(imgwidthpx, imgheightpx, ndpi)
+            if pagewidth < 3.00 or pageheight < 3.00:
+                logging.warning("pdf width or height is below 3.00 - too "
+                                "small for some viewers!")
+            elif pagewidth > 14400.0 or pageheight > 14400.0:
+                raise PdfTooLargeError(
+                        "pdf width or height must not exceed 200 inches.")
+            # the image is always centered on the page
+            imgxpdf = (pagewidth - imgwidthpdf)/2.0
+            imgypdf = (pageheight - imgheightpdf)/2.0
+            pdf.add_imagepage(color, imgwidthpx, imgheightpx, imgformat,
+                              imgdata, imgwidthpdf, imgheightpdf, imgxpdf,
+                              imgypdf, pagewidth, pageheight)
 
     if outputstream:
         pdf.tostream(outputstream)
@@ -1369,6 +1393,14 @@ RGB.''')
              "https://github.com/pmaupin/pdfrw/issues/39) or if you want the "
              "PDF code to be more human readable.")
 
+    outargs.add_argument(
+        "--first-frame-only", action="store_true",
+        help="By default, img2pdf will convert multi-frame images like "
+             "multi-page TIFF or animated GIF images to one page per frame. "
+             "This option will only let the first frame of every multi-frame "
+             "input image be converted into a page in the resulting PDF."
+            )
+
     sizeargs = parser.add_argument_group(
         title='Image and page size and layout arguments',
         description='''\
@@ -1578,7 +1610,8 @@ values set via the --border option.
             viewer_fit_window=args.viewer_fit_window,
             viewer_center_window=args.viewer_center_window,
             viewer_fullscreen=args.viewer_fullscreen, with_pdfrw=not
-            args.without_pdfrw, outputstream=args.output)
+            args.without_pdfrw, outputstream=args.output,
+            first_frame_only=args.first_frame_only)
     except Exception as e:
         logging.error("error: " + str(e))
         if logging.getLogger().isEnabledFor(logging.DEBUG):
