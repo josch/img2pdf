@@ -542,11 +542,17 @@ class pdfdoc(object):
 
 
 def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
-    if imgformat == ImageFormat.JPEG2000 and rawdata is not None:
-        imgwidthpx, imgheightpx, ics = parsejp2(rawdata)
+    if imgformat == ImageFormat.JPEG2000 \
+            and rawdata is not None and imgdata is None:
+        # this codepath gets called if the PIL installation is not able to
+        # handle JPEG2000 files
+        imgwidthpx, imgheightpx, ics, hdpi, vdpi = parsejp2(rawdata)
 
-        # TODO: read real dpi from input jpeg2000 image
-        ndpi = (default_dpi, default_dpi)
+        if hdpi is None:
+            hdpi = default_dpi
+        if vdpi is None:
+            vdpi = default_dpi
+        ndpi = (hdpi, vdpi)
     else:
         imgwidthpx, imgheightpx = imgdata.size
 
@@ -591,6 +597,7 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
 def read_images(rawdata, colorspace, first_frame_only=False):
     im = BytesIO(rawdata)
     im.seek(0)
+    imgdata = None
     try:
         imgdata = Image.open(im)
     except IOError as e:
