@@ -750,6 +750,7 @@ def get_layout_fun(pagesize, imgsize, border, fit, auto_orient):
                 newimgheight = (newimgwidth * imgheight)/imgwidth
             else:
                 raise ValueError("fitwidth and fitheight cannot both be None")
+            return newimgwidth, newimgheight
         elif fit == FitMode.shrink:
             if fitwidth is not None and fitheight is not None:
                 if imgwidth <= fitwidth and imgheight <= fitheight:
