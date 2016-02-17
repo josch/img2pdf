@@ -1058,11 +1058,16 @@ def parse_pagesize_rectarg(string):
     if papersizes.get(string.lower()):
         string = papersizes[string.lower()]
     if 'x' not in string:
-        raise argparse.ArgumentTypeError("size must contain 'x' character")
-    w, h = string.split('x', 1)
+        # if there is no separating "x" in the string, then the string is
+        # interpreted as the width
+        w = parse_num(string, "width")
+        h = None
+    else:
+        w, h = string.split('x', 1)
+        w = parse_num(w, "width")
+        h = parse_num(h, "height")
     if transposed:
         w, h = h, w
-    w, h = parse_num(w, "width"), parse_num(h, "height")
     if w is None and h is None:
         raise argparse.ArgumentTypeError("at least one dimension must be "
                                          "specified")
@@ -1076,11 +1081,16 @@ def parse_imgsize_rectarg(string):
     if papersizes.get(string.lower()):
         string = papersizes[string.lower()]
     if 'x' not in string:
-        raise argparse.ArgumentTypeError("size must contain 'x' character")
-    w, h = string.split('x', 1)
+        # if there is no separating "x" in the string, then the string is
+        # interpreted as the width
+        w = parse_imgsize_num(string, "width")
+        h = None
+    else:
+        w, h = string.split('x', 1)
+        w = parse_imgsize_num(w, "width")
+        h = parse_imgsize_num(h, "height")
     if transposed:
         w, h = h, w
-    w, h = parse_imgsize_num(w, "width"), parse_imgsize_num(h, "height")
     if w is None and h is None:
         raise argparse.ArgumentTypeError("at least one dimension must be "
                                          "specified")
@@ -1435,10 +1445,13 @@ allowed units are cm (centimeter), mm (millimeter), and in (inch).
 Any size argument of the format LxL in the options below specifies the width
 and height of a rectangle where the first L represents the width and the second
 L represents the height with an optional unit following each value as described
-above.  Either width or height may be omitted but in that case the separating x
-must still be present. Instead of giving the width and height explicitly, you
-may also specify some (case-insensitive) common page sizes such as letter and
-A4.  See the epilogue at the bottom for a complete list of the valid sizes.
+above.  Either width or height may be omitted. If the height is omitted, the
+separating x can be omitted as well. Omitting the width requires to prefix the
+height with the separating x. The missing dimension will be chosen so to not
+change the image aspect ratio. Instead of giving the width and height
+explicitly, you may also specify some (case-insensitive) common page sizes such
+as letter and A4.  See the epilogue at the bottom for a complete list of the
+valid sizes.
 
 The --fit option scales to fit the image into a rectangle that is either
 derived from the the --imgsize option or otherwise from the --pagesize option.
