@@ -56,8 +56,29 @@ def parse_colr(data):
                         "got %d" % enumCS)
 
 
+def parse_resc(data):
+    hnum, hden, vnum, vden, hexp, vexp = struct.unpack(">HHHHBB", data)
+    hdpi = ((hnum/hden) * (10**hexp) * 100)/2.54
+    vdpi = ((vnum/vden) * (10**vexp) * 100)/2.54
+    return hdpi, vdpi
+
+
+def parse_res(data):
+    hdpi, vdpi = None, None
+    noBytes = len(data)
+    byteStart = 0
+    boxLengthValue = 1  # dummy value for while loop condition
+    while byteStart < noBytes and boxLengthValue != 0:
+        boxLengthValue, boxType, byteEnd, boxContents = \
+            getBox(data, byteStart, noBytes)
+        if boxType == b'resc':
+            hdpi, vdpi = parse_resc(boxContents)
+            break
+    return hdpi, vdpi
+
+
 def parse_jp2h(data):
-    width, height, colorspace = None, None, None
+    width, height, colorspace, hdpi, vdpi = None, None, None, None, None
     noBytes = len(data)
     byteStart = 0
     boxLengthValue = 1  # dummy value for while loop condition
@@ -68,22 +89,23 @@ def parse_jp2h(data):
             width, height = parse_ihdr(boxContents)
         elif boxType == b'colr':
             colorspace = parse_colr(boxContents)
+        elif boxType == b'res ':
+            hdpi, vdpi = parse_res(boxContents)
         byteStart = byteEnd
-    return (width, height, colorspace)
+    return (width, height, colorspace, hdpi, vdpi)
 
 
 def parsejp2(data):
     noBytes = len(data)
     byteStart = 0
     boxLengthValue = 1  # dummy value for while loop condition
-    width = None
-    height = None
-    colorspace = None
+    width, height, colorspace, hdpi, vdpi = None, None, None, None, None
     while byteStart < noBytes and boxLengthValue != 0:
         boxLengthValue, boxType, byteEnd, boxContents = \
             getBox(data, byteStart, noBytes)
         if boxType == b'jp2h':
-            width, height, colorspace = parse_jp2h(boxContents)
+            width, height, colorspace, hdpi, vdpi = parse_jp2h(boxContents)
+            break
         byteStart = byteEnd
     if not width:
         raise Exception("no width in jp2 header")
@@ -91,7 +113,8 @@ def parsejp2(data):
         raise Exception("no height in jp2 header")
     if not colorspace:
         raise Exception("no colorspace in jp2 header")
-    return (width, height, colorspace)
+    # retrieving the dpi is optional so we do not error out if not present
+    return (width, height, colorspace, hdpi, vdpi)
 
 if __name__ == "__main__":
     import sys
