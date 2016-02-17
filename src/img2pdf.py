@@ -695,11 +695,13 @@ def get_layout_fun(pagesize, imgsize, border, fit, auto_orient):
         # are negative but one of them must still be positive
         # if fit is not fill or enlarge then both dimensions must be positive
         if fit in [FitMode.fill, FitMode.enlarge] and \
-                (fitwidth < 0 and fitheight < 0):
+                fitwidth is not None and fitwidth < 0 and \
+                fitheight is not None and fitheight < 0:
             raise ValueError("cannot fit into a rectangle where both "
                              "dimensions are negative")
         elif fit not in [FitMode.fill, FitMode.enlarge] and \
-                (fitwidth < 0 or fitheight < 0):
+                ((fitwidth is not None and fitwidth < 0) or
+                    (fitheight is not None and fitheight < 0)):
             raise Exception("cannot fit into a rectangle where either "
                             "dimensions are negative")
 
