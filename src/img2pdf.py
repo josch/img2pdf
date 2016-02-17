@@ -56,9 +56,9 @@ FitMode = Enum('FitMode', 'into fill exact shrink enlarge')
 
 PageOrientation = Enum('PageOrientation', 'portrait landscape')
 
-Colorspace = Enum('Colorspace', 'RGB L 1 CMYK CMYK;I RGBA P')
+Colorspace = Enum('Colorspace', 'RGB L 1 CMYK CMYK;I RGBA P other')
 
-ImageFormat = Enum('ImageFormat', 'JPEG JPEG2000 TIFF PNG GIF')
+ImageFormat = Enum('ImageFormat', 'JPEG JPEG2000 other')
 
 PageMode = Enum('PageMode', 'none outlines thumbs')
 
@@ -570,7 +570,7 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
             if c.name == ics:
                 color = c
         if color is None:
-            raise ValueError("unknown PIL colorspace: %s" % imgdata.mode)
+            color = Colorspace.other
         if color == Colorspace.CMYK and imgformat == ImageFormat.JPEG:
             # Adobe inverts CMYK JPEGs for some reason, and others
             # have followed suit as well. Some software assumes the
@@ -606,7 +606,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             if f.name == imgdata.format:
                 imgformat = f
         if imgformat is None:
-            raise ValueError("unknown PIL image format: %s" % imgdata.format)
+            imgformat = ImageFormat.other
 
     logging.debug("imgformat = %s", imgformat.name)
 
@@ -650,7 +650,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                            Colorspace["CMYK;I"]]:
                 logging.debug("Colorspace is OK: %s", color)
                 newimg = imgdata
-            elif color in [Colorspace.RGBA, Colorspace.P]:
+            elif color in [Colorspace.RGBA, Colorspace.P, Colorspace.other]:
                 logging.debug("Converting colorspace %s to RGB", color)
                 newimg = imgdata.convert('RGB')
                 color = Colorspace.RGB
