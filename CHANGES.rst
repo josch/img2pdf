@@ -2,6 +2,15 @@
 CHANGES
 =======
 
+0.2.1
+-----
+
+ - set img2pdf as /producer value
+ - support multi-frame images like multipage TIFF and animated GIF
+ - support for palette images like GIF
+ - support all colorspaces and imageformats knows by PIL
+ - read horizontal and vertical dpi from JPEG2000 files
+
 0.2.0
 -----
 
