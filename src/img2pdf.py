@@ -28,7 +28,7 @@ from enum import Enum
 from io import BytesIO
 import logging
 
-__version__ = "0.2"
+__version__ = "0.2.1"
 default_dpi = 96.0
 papersizes = {
     "letter": "8.5inx11in",
