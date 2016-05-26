@@ -816,11 +816,11 @@ def get_layout_fun(pagesize, imgsize, border, fit, auto_orient):
                 pagewidth, pageheight = pagesize[0], pagesize[1]
                 newborder = border
             if pagewidth is not None:
-                fitwidth = pagewidth-2*newborder[0]
+                fitwidth = pagewidth-2*newborder[1]
             else:
                 fitwidth = None
             if pageheight is not None:
-                fitheight = pageheight-2*newborder[1]
+                fitheight = pageheight-2*newborder[0]
             else:
                 fitheight = None
             if fit in [FitMode.fill, FitMode.enlarge] and \
