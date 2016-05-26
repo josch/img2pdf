@@ -173,22 +173,16 @@ layout_test_cases = [
                                        (504, 972),  (864, 432)),
     (psp,  None, None,   f_enlarge, 1, (972, 504),  (972, 324),    # 069
                                        (972, 504),  (972, 486)),
-    (psp,  None, border, f_into,    0, (504, 972),  (180, 60),     # 070
-                                       (504, 972),  (180, 90)),
-    (psp,  None, border, f_into,    1, (972, 504),  (432, 144),    # 071
-                                       (972, 504),  (360, 180)),
-    (psp,  None, border, f_fill,    0, (504, 972),  (1296, 432),   # 072
-                                       (504, 972),  (864, 432)),
-    (psp,  None, border, f_fill,    1, (972, 504),  (540, 180),    # 073
-                                       (972, 504),  (432, 216)),
-    (psp,  None, border, f_exact,   0, (504, 972),  (180, 432),    # 074
-                                       (504, 972),  (180, 432)),
-    (psp,  None, border, f_exact,   1, (972, 504),  (432, 180),    # 075
-                                       (972, 504),  (432, 180)),
-    (psp,  None, border, f_shrink,  0, (504, 972),  (180, 60),     # 076
-                                       (504, 972),  (180, 90)),
-    (psp,  None, border, f_shrink,  1, (972, 504),  (432, 144),    # 077
-                                       (972, 504),  (360, 180)),
+    (psp,  None, border, f_into,    0, None,  None, None,  None),  # 070
+    (psp,  None, border, f_into,    1, None,  None, None,  None),  # 071
+    (psp,  None, border, f_fill,    0, (504, 972),  (1944, 648),   # 072
+                                       (504, 972),  (1296, 648)),
+    (psp,  None, border, f_fill,    1, (972, 504),  (648, 216),    # 073
+                                       (972, 504),  (648, 324)),
+    (psp,  None, border, f_exact,   0, None,  None, None,  None),  # 074
+    (psp,  None, border, f_exact,   1, None,  None, None,  None),  # 075
+    (psp,  None, border, f_shrink,  0, None,  None, None,  None),  # 076
+    (psp,  None, border, f_shrink,  1, None,  None, None,  None),  # 077
     (psp,  None, border, f_enlarge, 0, (504, 972),  (648, 216),    # 078
                                        (504, 972),  (864, 432)),
     (psp,  None, border, f_enlarge, 1, (972, 504),  (648, 216),    # 079
@@ -296,16 +290,22 @@ layout_test_cases = [
                                        (972, 504),  (972, 486)),
     (psl,  None, None,   f_enlarge, 1, (972, 504),  (972, 324),    # 129
                                        (972, 504),  (972, 486)),
-    (psl,  None, border, f_into,    0, None, None, None, None),    # 130
-    (psl,  None, border, f_into,    1, None, None, None, None),    # 131
-    (psl,  None, border, f_fill,    0, (972, 504),  (648, 216),    # 132
-                                       (972, 504),  (648, 324)),
-    (psl,  None, border, f_fill,    1, (972, 504),  (648, 216),    # 133
-                                       (972, 504),  (648, 324)),
-    (psl,  None, border, f_exact,   0, None, None, None, None),    # 134
-    (psl,  None, border, f_exact,   1, None, None, None, None),    # 135
-    (psl,  None, border, f_shrink,  0, None, None, None, None),    # 136
-    (psl,  None, border, f_shrink,  1, None, None, None, None),    # 137
+    (psl,  None, border, f_into,    0, (972, 504),  (432, 144),    # 130
+                                       (972, 504),  (360, 180)),
+    (psl,  None, border, f_into,    1, (972, 504),  (432, 144),    # 131
+                                       (972, 504),  (360, 180)),
+    (psl,  None, border, f_fill,    0, (972, 504),  (540, 180),    # 132
+                                       (972, 504),  (432, 216)),
+    (psl,  None, border, f_fill,    1, (972, 504),  (540, 180),    # 133
+                                       (972, 504),  (432, 216)),
+    (psl,  None, border, f_exact,   0, (972, 504),  (432, 180),    # 134
+                                       (972, 504),  (432, 180)),
+    (psl,  None, border, f_exact,   1, (972, 504),  (432, 180),    # 135
+                                       (972, 504),  (432, 180)),
+    (psl,  None, border, f_shrink,  0, (972, 504),  (432, 144),    # 136
+                                       (972, 504),  (360, 180)),
+    (psl,  None, border, f_shrink,  1, (972, 504),  (432, 144),    # 137
+                                       (972, 504),  (360, 180)),
     (psl,  None, border, f_enlarge, 0, (972, 504),  (648, 216),    # 138
                                        (972, 504),  (864, 432)),
     (psl,  None, border, f_enlarge, 1, (972, 504),  (648, 216),    # 139
