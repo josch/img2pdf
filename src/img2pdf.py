@@ -112,7 +112,7 @@ def parse(cont, indent=1):
         else:
             return ("%0.4f" % cont).rstrip("0").encode()
     elif isinstance(cont, MyPdfDict):
-        # if cont got an identifier, then adobj() has been called with it
+        # if cont got an identifier, then addobj() has been called with it
         # and a link to it will be added, otherwise add it inline
         if hasattr(cont, "identifier"):
             return ("%d 0 R" % cont.identifier).encode()
@@ -235,7 +235,7 @@ class MyPdfWriter():
         #  > If the file’s end-of-line marker is a single character (either a
         #  > carriage return or a line feed), it is preceded by a single space;
         #
-        # Since we chose to use a single character eol marker, we preceed it by
+        # Since we chose to use a single character eol marker, we precede it by
         # a space
         pos = len(pdfheader)
         xreftable.append(b"0000000000 65535 f \n")
@@ -388,7 +388,7 @@ class pdfdoc(object):
         image[PdfName.Width] = imgwidthpx
         image[PdfName.Height] = imgheightpx
         image[PdfName.ColorSpace] = colorspace
-        # hardcoded as PIL doesnt provide bits for non-jpeg formats
+        # hardcoded as PIL doesn't provide bits for non-jpeg formats
         image[PdfName.BitsPerComponent] = 8
 
         if color == Colorspace['CMYK;I']:
@@ -493,7 +493,7 @@ class pdfdoc(object):
         initial_page = self.writer.pagearray[0]
         # we set the open action here to make sure we open on the requested
         # initial page but this value might be overwritten by a custom open
-        # action later while still taking the requested inital page into
+        # action later while still taking the requested initial page into
         # account
         if self.initial_page is not None:
             initial_page = self.writer.pagearray[self.initial_page - 1]
@@ -1461,7 +1461,7 @@ as letter and A4.  See the epilogue at the bottom for a complete list of the
 valid sizes.
 
 The --fit option scales to fit the image into a rectangle that is either
-derived from the the --imgsize option or otherwise from the --pagesize option.
+derived from the --imgsize option or otherwise from the --pagesize option.
 If the --border option is given in addition to the --imgsize option while the
 --pagesize option is not given, then the page size will be calculated from the
 image size, respecting the border setting. If the --border option is given in
