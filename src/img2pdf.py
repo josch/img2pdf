@@ -58,7 +58,7 @@ PageOrientation = Enum('PageOrientation', 'portrait landscape')
 
 Colorspace = Enum('Colorspace', 'RGB L 1 CMYK CMYK;I RGBA P other')
 
-ImageFormat = Enum('ImageFormat', 'JPEG JPEG2000 other')
+ImageFormat = Enum('ImageFormat', 'JPEG JPEG2000 CCITTGroup4 other')
 
 PageMode = Enum('PageMode', 'none outlines thumbs')
 
@@ -354,14 +354,15 @@ class pdfdoc(object):
                       imgwidthpdf, imgheightpdf, imgxpdf, imgypdf, pagewidth,
                       pageheight):
         if self.with_pdfrw:
-            from pdfrw import PdfDict, PdfName
+            from pdfrw import PdfDict, PdfName, PdfObject
             from pdfrw.py23_diffs import convert_load
         else:
             PdfDict = MyPdfDict
             PdfName = MyPdfName
+            PdfObject = MyPdfObject
             convert_load = my_convert_load
 
-        if color == Colorspace.L:
+        if color == Colorspace['1'] or color == Colorspace.L:
             colorspace = PdfName.DeviceGray
         elif color == Colorspace.RGB:
             colorspace = PdfName.DeviceRGB
@@ -372,11 +373,14 @@ class pdfdoc(object):
                                              % color.name)
 
         # either embed the whole jpeg or deflate the bitmap representation
+        logging.debug(imgformat)
         if imgformat is ImageFormat.JPEG:
             ofilter = [PdfName.DCTDecode]
         elif imgformat is ImageFormat.JPEG2000:
             ofilter = [PdfName.JPXDecode]
             self.writer.version = "1.5"  # jpeg2000 needs pdf 1.5
+        elif imgformat is ImageFormat.CCITTGroup4:
+            ofilter = [PdfName.CCITTFaxDecode]
         else:
             ofilter = [PdfName.FlateDecode]
 
@@ -389,11 +393,22 @@ class pdfdoc(object):
         image[PdfName.Height] = imgheightpx
         image[PdfName.ColorSpace] = colorspace
         # hardcoded as PIL doesn't provide bits for non-jpeg formats
-        image[PdfName.BitsPerComponent] = 8
+        if imgformat is ImageFormat.CCITTGroup4:
+            image[PdfName.BitsPerComponent] = 1
+        else:
+            image[PdfName.BitsPerComponent] = 8
 
         if color == Colorspace['CMYK;I']:
             # Inverts all four channels
             image[PdfName.Decode] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+
+        if imgformat is ImageFormat.CCITTGroup4:
+            decodeparms = PdfDict()
+            decodeparms[PdfName.K] = -1
+            decodeparms[PdfName.BlackIs1] = PdfObject('true')
+            decodeparms[PdfName.Columns] = imgwidthpx
+            decodeparms[PdfName.Rows] = imgheightpx
+            image[PdfName.DecodeParms] = [decodeparms]
 
         text = ("q\n%0.4f 0 0 %0.4f %0.4f %0.4f cm\n/Im0 Do\nQ" %
                 (imgwidthpdf, imgheightpdf, imgxpdf, imgypdf)).encode("ascii")
@@ -648,11 +663,30 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
                     imgdata, imgformat, default_dpi, colorspace)
 
-            # because we do not support /CCITTFaxDecode
             if color == Colorspace['1']:
-                logging.debug("Converting colorspace 1 to L")
-                newimg = imgdata.convert('L')
-                color = Colorspace.L
+                logging.debug("Converting monochrome to CCITT Group4")
+                # Convert the image to Group 4 in memory
+                newimgio = BytesIO()
+                imgdata.save(newimgio, format='TIFF', compression='group4')
+
+                # Open new image in memory
+                newimgio.seek(0)
+                newimg = Image.open(newimgio)
+
+                # Obtain tags
+                strip_offsets = newimg.tag_v2[273]
+                strip_bytes = newimg.tag_v2[279]
+                rows_per_strip = newimg.tag_v2[278]
+
+                newimgio.seek(strip_offsets[0])
+                ccittdata = newimgio.read(strip_bytes[0])
+
+                logging.debug("Extracted %i bytes from image" % len(ccittdata))
+                imgformat = ImageFormat.CCITTGroup4
+                result.append((color, ndpi, imgformat, ccittdata,
+                    imgwidthpx, imgheightpx))
+                img_page_count += 1
+                continue
             elif color in [Colorspace.RGB, Colorspace.L, Colorspace.CMYK,
                            Colorspace["CMYK;I"]]:
                 logging.debug("Colorspace is OK: %s", color)
