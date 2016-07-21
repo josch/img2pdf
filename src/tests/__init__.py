@@ -4,6 +4,8 @@ import os
 import img2pdf
 import zlib
 from PIL import Image
+from io import BytesIO
+import struct
 
 HERE = os.path.dirname(__file__)
 
@@ -396,6 +398,28 @@ layout_test_cases = [
 ]
 
 
+def tiff_header_for_ccitt(width, height, img_size, ccitt_group=4):
+    # Quick and dirty TIFF header builder from
+    # https://stackoverflow.com/questions/2641770/extracting-image-from-pdf-with-ccittfaxdecode-filter
+    tiff_header_struct = '<' + '2s' + 'h' + 'l' + 'h' + 'hhll' * 8 + 'h'
+    return struct.pack(
+        tiff_header_struct,
+        b'II',  # Byte order indication: Little indian
+        42,  # Version number (always 42)
+        8,  # Offset to first IFD
+        8,  # Number of tags in IFD
+        256, 4, 1, width,  # ImageWidth, LONG, 1, width
+        257, 4, 1, height,  # ImageLength, LONG, 1, lenght
+        258, 3, 1, 1,  # BitsPerSample, SHORT, 1, 1
+        259, 3, 1, ccitt_group,  # Compression, SHORT, 1, 4 = CCITT Group 4
+        262, 3, 1, 1,  # Threshholding, SHORT, 1, 0 = WhiteIsZero
+        273, 4, 1, struct.calcsize(tiff_header_struct),  # StripOffsets, LONG, 1, len of header
+        278, 4, 1, height,  # RowsPerStrip, LONG, 1, lenght
+        279, 4, 1, img_size,  # StripByteCounts, LONG, 1, size of image
+        0  # last IFD
+        )
+
+
 def test_suite():
     class TestImg2Pdf(unittest.TestCase):
         pass
@@ -485,7 +509,8 @@ def test_suite():
             # test if the filter is valid:
             self.assertIn(
                 imgprops.Filter, [[PdfName.DCTDecode], [PdfName.JPXDecode],
-                                  [PdfName.FlateDecode]])
+                                  [PdfName.FlateDecode],
+                                  [PdfName.CCITTFaxDecode]])
             # test if the colorspace is valid
             self.assertIn(
                 imgprops.ColorSpace, [PdfName.DeviceGray, PdfName.DeviceRGB,
@@ -500,6 +525,22 @@ def test_suite():
                 self.assertEqual(
                     x.Root.Pages.Kids[0].Resources.XObject.Im0.stream,
                     convert_load(orig_imgdata))
+            elif imgprops.Filter == [PdfName.CCITTFaxDecode]:
+                tiff_header = tiff_header_for_ccitt(
+                    int(imgprops.Width), int(imgprops.Height),
+                    int(imgprops.Length), 4)
+                imgio = BytesIO()
+                imgio.write(tiff_header)
+                imgio.write(convert_store(
+                    x.Root.Pages.Kids[0].Resources.XObject.Im0.stream))
+                imgio.seek(0)
+                im = Image.open(imgio)
+                self.assertEqual(im.tobytes(), orig_img.tobytes())
+                try:
+                    im.close()
+                except AttributeError:
+                    pass
+
             elif imgprops.Filter == [PdfName.FlateDecode]:
                 # otherwise, the data is flate encoded and has to be equal to
                 # the pixel data of the input image
