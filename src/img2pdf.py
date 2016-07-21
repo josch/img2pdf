@@ -609,6 +609,45 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
     return (color, ndpi, imgwidthpx, imgheightpx)
 
 
+def transcode_monochrome(imgdata):
+    """Convert the open PIL.Image imgdata to compressed CCITT Group4 data"""
+
+    from PIL import TiffImagePlugin
+
+    logging.debug("Converting monochrome to CCITT Group4")
+
+    # Convert the image to Group 4 in memory. If libtiff is not installed and
+    # Pillow is not compiled against it, .save() will raise an exception.
+    newimgio = BytesIO()
+    imgdata.save(newimgio, format='TIFF', compression='group4')
+
+    # Open new image in memory
+    newimgio.seek(0)
+    newimg = Image.open(newimgio)
+
+    # If Pillow is passed an invalid compression argument it will ignore it;
+    # make sure the image actually got compressed.
+    if newimg.info['compression'] != 'group4':
+        raise ValueError("Image not compressed as expected")
+
+    # Read the TIFF tags to find the offset(s) of the compressed data strips.
+    strip_offsets = newimg.tag_v2[TiffImagePlugin.STRIPOFFSETS]
+    strip_bytes = newimg.tag_v2[TiffImagePlugin.STRIPBYTECOUNTS]
+    rows_per_strip = newimg.tag_v2[TiffImagePlugin.ROWSPERSTRIP]
+
+    # PIL always seems to create a single strip even for very large TIFFs when
+    # it saves images, so assume we only have to read a single strip.
+    # A test ~10 GPixel image was still encoded as a single strip. Just to be
+    # safe check throw an error if there is more than one offset.
+    if len(strip_offsets) > 1:
+        raise NotImplementedError("Transcoding multiple strips not supported")
+
+    newimgio.seek(strip_offsets[0])
+    ccittdata = newimgio.read(strip_bytes[0])
+
+    return ccittdata
+
+
 def read_images(rawdata, colorspace, first_frame_only=False):
     im = BytesIO(rawdata)
     im.seek(0)
@@ -663,30 +702,20 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
                     imgdata, imgformat, default_dpi, colorspace)
 
+            newimg = None
             if color == Colorspace['1']:
-                logging.debug("Converting monochrome to CCITT Group4")
-                # Convert the image to Group 4 in memory
-                newimgio = BytesIO()
-                imgdata.save(newimgio, format='TIFF', compression='group4')
-
-                # Open new image in memory
-                newimgio.seek(0)
-                newimg = Image.open(newimgio)
-
-                # Obtain tags
-                strip_offsets = newimg.tag_v2[273]
-                strip_bytes = newimg.tag_v2[279]
-                rows_per_strip = newimg.tag_v2[278]
-
-                newimgio.seek(strip_offsets[0])
-                ccittdata = newimgio.read(strip_bytes[0])
-
-                logging.debug("Extracted %i bytes from image" % len(ccittdata))
-                imgformat = ImageFormat.CCITTGroup4
-                result.append((color, ndpi, imgformat, ccittdata,
-                    imgwidthpx, imgheightpx))
-                img_page_count += 1
-                continue
+                try:
+                    ccittdata = transcode_monochrome(imgdata)
+                    imgformat = ImageFormat.CCITTGroup4
+                    result.append((color, ndpi, imgformat, ccittdata,
+                        imgwidthpx, imgheightpx))
+                    img_page_count += 1
+                    continue
+                except Exception as e:
+                    logging.debug(e)
+                    logging.debug("Converting colorspace 1 to L")
+                    newimg = imgdata.convert('L')
+                    color = Colorspace.L
             elif color in [Colorspace.RGB, Colorspace.L, Colorspace.CMYK,
                            Colorspace["CMYK;I"]]:
                 logging.debug("Colorspace is OK: %s", color)
