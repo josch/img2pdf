@@ -225,6 +225,8 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
     pdf = pdfdoc(3, title, author, creator, producer, creationdate,
                  moddate, subject, keywords, nodate)
 
+    pdf_orientation = None
+
     for imfilename in images:
         debug_out("Reading %s"%imfilename, verbose)
         try:
@@ -324,16 +326,40 @@ def convert(images, dpi=None, pagesize=(None, None), title=None, author=None,
             imgdata = zlib.compress(img)
         im.close()
 
+        # determine current page orientation
+        if width < height:
+            page_orientation = 'portrait'
+        else:
+            page_orientation = 'landscape'
+
+        # set pdf orientation based on first page
+        if pdf_orientation == None:
+            pdf_orientation = page_orientation
+
         # pdf units = 1/72 inch
         if not pagesize[0] and not pagesize[1]:
+            # pdf output based on dpi
             pdf_x, pdf_y = 72.0*width/float(ndpi[0]), 72.0*height/float(ndpi[1])
         elif not pagesize[1]:
-            pdf_x, pdf_y = pagesize[0], pagesize[0]*height/float(width)
+            # pdf width provided
+            if pdf_orientation == page_orientation:
+                pdf_x, pdf_y = pagesize[0], pagesize[0]*height/float(width)
+            else:
+                pdf_x, pdf_y = pagesize[0]*width/float(height), pagesize[0]
         elif not pagesize[0]:
-            pdf_x, pdf_y = pagesize[1]*width/float(height), pagesize[1]
+            # pdf height provided
+            if pdf_orientation == page_orientation:
+                pdf_x, pdf_y = pagesize[1]*width/float(height), pagesize[1]
+            else:
+                pdf_x, pdf_y = pagesize[1], pagesize[1]*height/float(width)
         else:
-            pdf_x = pagesize[0]
-            pdf_y = pagesize[1]
+            # output width and height both provided
+            if pdf_orientation == page_orientation:
+                pdf_x = pagesize[0]
+                pdf_y = pagesize[1]
+            else:
+                pdf_x = pagesize[1]
+                pdf_y = pagesize[0]
 
         pdf.addimage(color, width, height, imgformat, imgdata, pdf_x, pdf_y)
 
@@ -386,21 +412,46 @@ def valid_date(string):
     raise argparse.ArgumentTypeError("cannot parse date: %s"%string)
 
 def valid_size(string):
-    tokens = string.split('x')
-    if len(tokens) != 2:
-        msg = "input size needs to be of the format Ax, xB or AxB with A and B being integers"
-        raise argparse.ArgumentTypeError(msg)
-    x = tokens[0]
-    y = tokens[1]
-    if x == '':
-        x = None
-    else:
-        x = int(x)
-    if y == '':
-        y = None
-    else:
-        y = int(y)
-    return (x,y)
+    papersizes = {
+        "letter"    : (612,792),
+        "tabloid"   : (792,1224),
+        "ledger"    : (1224,792),
+        "legal"     : (612,1008),
+        "statement" : (396,612),
+        "executive" : (540,720),
+        "a0"        : (2384,3371),
+        "a1"        : (1685,2384),
+        "a2"        : (1190,1684),
+        "a3"        : (842,1190),
+        "a4"        : (595,842),
+        "a5"        : (420,595),
+        "a4"        : (729,1032),
+        "a5"        : (516,729),
+        "folio"     : (612,936),
+        "quarto"    : (610,780)
+    }
+
+    try:
+        return papersizes[string.lower()]
+
+    except KeyError, e:
+        tokens = string.split('x')
+
+        if len(tokens) != 2:
+            msg = "input size needs to be of the format Ax, xB or AxB with A and B being integers"
+            raise argparse.ArgumentTypeError(msg)
+
+        try:
+            x = int(tokens[0])
+        except ValueError, e:
+            x = None
+
+        try:
+            y = int(tokens[1])
+        except ValueError, e:
+            y = None
+
+        return (x,y)
 
 # in python3, the received argument will be a unicode str() object which needs
 # to be encoded into a bytes() object
