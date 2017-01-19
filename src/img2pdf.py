@@ -1005,6 +1005,9 @@ def convert(*images, title=None,
         try:
             rawdata = img.read()
         except AttributeError:
+            if not isinstance(img, (str, bytes)):
+                raise TypeError(
+                        "Neither implements read() nor is str or bytes")
             # the thing doesn't have a read() function, so try if we can treat
             # it as a file name
             try:
