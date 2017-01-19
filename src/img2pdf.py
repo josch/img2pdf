@@ -167,6 +167,8 @@ class MyPdfDict(object):
 class MyPdfName():
     def __getattr__(self, name):
         return b'/' + name.encode('ascii')
+
+
 MyPdfName = MyPdfName()
 
 
@@ -708,7 +710,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                     ccittdata = transcode_monochrome(imgdata)
                     imgformat = ImageFormat.CCITTGroup4
                     result.append((color, ndpi, imgformat, ccittdata,
-                        imgwidthpx, imgheightpx))
+                                   imgwidthpx, imgheightpx))
                     img_page_count += 1
                     continue
                 except Exception as e:
@@ -1708,6 +1710,7 @@ values set via the --border option.
             import traceback
             traceback.print_exc(file=sys.stderr)
         exit(1)
+
 
 if __name__ == '__main__':
     main()

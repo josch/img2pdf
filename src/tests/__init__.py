@@ -400,7 +400,7 @@ layout_test_cases = [
 
 def tiff_header_for_ccitt(width, height, img_size, ccitt_group=4):
     # Quick and dirty TIFF header builder from
-    # https://stackoverflow.com/questions/2641770/extracting-image-from-pdf-with-ccittfaxdecode-filter
+    # https://stackoverflow.com/questions/2641770
     tiff_header_struct = '<' + '2s' + 'h' + 'l' + 'h' + 'hhll' * 8 + 'h'
     return struct.pack(
         tiff_header_struct,
@@ -413,7 +413,8 @@ def tiff_header_for_ccitt(width, height, img_size, ccitt_group=4):
         258, 3, 1, 1,  # BitsPerSample, SHORT, 1, 1
         259, 3, 1, ccitt_group,  # Compression, SHORT, 1, 4 = CCITT Group 4
         262, 3, 1, 1,  # Threshholding, SHORT, 1, 0 = WhiteIsZero
-        273, 4, 1, struct.calcsize(tiff_header_struct),  # StripOffsets, LONG, 1, len of header
+        273, 4, 1, struct.calcsize(
+            tiff_header_struct),  # StripOffsets, LONG, 1, len of header
         278, 4, 1, height,  # RowsPerStrip, LONG, 1, lenght
         279, 4, 1, img_size,  # StripByteCounts, LONG, 1, size of image
         0  # last IFD

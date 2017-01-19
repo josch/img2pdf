@@ -116,6 +116,7 @@ def parsejp2(data):
     # retrieving the dpi is optional so we do not error out if not present
     return (width, height, colorspace, hdpi, vdpi)
 
+
 if __name__ == "__main__":
     import sys
     width, height, colorspace = parsejp2(open(sys.argv[1]).read())
