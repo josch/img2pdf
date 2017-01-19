@@ -992,6 +992,13 @@ def convert(*images, title=None,
                  viewer_fit_window, viewer_center_window, viewer_fullscreen,
                  with_pdfrw)
 
+    # backwards compatibility with older img2pdf versions where the first
+    # argument to the function had to be given as a list
+    if len(images) == 1:
+        # if only one argument was given and it is a list, expand it
+        if isinstance(images[0], (list, tuple)):
+            images = images[0]
+
     for img in images:
         # img is allowed to be a path, a binary string representing image data
         # or a file-like object (really anything that implements read())
