@@ -2,6 +2,11 @@
 CHANGES
 =======
 
+0.2.2
+-----
+
+ - automatic monochrome CCITT Group4 encoding via Pillow/libtiff
+
 0.2.1
 -----
 
