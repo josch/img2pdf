@@ -4,4 +4,6 @@ include CHANGES.rst
 recursive-include src *.jpg
 recursive-include src *.pdf
 recursive-include src *.png
+recursive-include src *.tif
+recursive-include src *.gif
 recursive-include src *.py
