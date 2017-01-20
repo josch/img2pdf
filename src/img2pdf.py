@@ -316,7 +316,7 @@ class pdfdoc(object):
             self.info[PdfName.Author] = PdfString.encode(author)
         if creator is not None:
             self.info[PdfName.Creator] = PdfString.encode(creator)
-        if producer is not None:
+        if producer is not None and producer != "":
             self.info[PdfName.Producer] = PdfString.encode(producer)
         if creationdate is not None:
             self.info[PdfName.CreationDate] = \
