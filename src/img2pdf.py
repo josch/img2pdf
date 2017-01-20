@@ -1331,10 +1331,11 @@ useful to convert JPEG and JPEG2000 images to PDF.
 The output is sent to standard output so that it can be redirected into a file
 or to another program as part of a shell pipe. To directly write the output
 into a file, use the -o or --output option.
+
+Options:
 ''',
             epilog='''\
-Colorspace
-
+Colorspace:
   Currently, the colorspace must be forced for JPEG 2000 images that are not in
   the RGB colorspace.  Available colorspace options are based on Python Imaging
   Library (PIL) short handles.
@@ -1345,8 +1346,7 @@ Colorspace
     CMYK     CMYK color
     CMYK;I   CMYK color with inversion (for CMYK JPEG files from Adobe)
 
-Paper sizes
-
+Paper sizes:
   You can specify the short hand paper size names shown in the first column in
   the table below as arguments to the --pagesize and --imgsize options.  The
   width and height they are mapping to is shown in the second column.  Giving
@@ -1357,8 +1357,7 @@ Paper sizes
 
 %s
 
-Fit options
-
+Fit options:
   The img2pdf options for the --fit argument are shown in the first column in
   the table below. The function of these options can be mapped to the geometry
   operators of imagemagick. For users who are familiar with imagemagick, the
@@ -1382,8 +1381,32 @@ Fit options
     enlarge | < | Y | Enlarges an image with dimensions smaller than the given
             |   |   | ones (and otherwise behaves like "into").
 
-Examples
+Argument parsing:
+  Argument long options can be abbreviated to a prefix if the abbreviation is
+  anambiguous. That is, the prefix must match a unique option.
 
+  Beware of your shell interpreting argument values as special characters (like
+  the semicolon in the CMYK;I colorspace option). If in doubt, put the argument
+  values in single quotes.
+
+  If you want an argument value to start with one or more minus characters, you
+  must use the long option name and join them with an equal sign like so:
+
+    $ img2pdf --author=--test--
+
+  If your input file name starts with one or more minus characters, either
+  separate the input files from the other arguments by two minus signs:
+
+    $ img2pdf -- --my-file-starts-with-two-minuses.jpg
+
+  Or be more explicit about its relative path by prepending a ./:
+
+    $ img2pdf ./--my-file-starts-with-two-minuses.jpg
+
+  The order of non-positional arguments (all arguments other than the input
+  images) does not matter.
+
+Examples:
   Lines starting with a dollar sign denote commands you can enter into your
   terminal. The dollar sign signifies your command prompt. It is not part of
   the command you type.
@@ -1415,31 +1438,9 @@ Examples
 
     $ img2pdf --output out.pdf --colorspace L input.jp2
 
-Argument parsing
+Written by Johannes 'josch' Schauer <josch@mister-muffin.de>
 
-  Argument long options can be abbreviated to a prefix if the abbreviation is
-  anambiguous. That is, the prefix must match a unique option.
-
-  Beware of your shell interpreting argument values as special characters (like
-  the semicolon in the CMYK;I colorspace option). If in doubt, put the argument
-  values in single quotes.
-
-  If you want an argument value to start with one or more minus characters, you
-  must use the long option name and join them with an equal sign like so:
-
-    $ img2pdf --author=--test--
-
-  If your input file name starts with one or more minus characters, either
-  separate the input files from the other arguments by two minus signs:
-
-    $ img2pdf -- --my-file-starts-with-two-minuses.jpg
-
-  Or be more explicit about its relative path by prepending a ./:
-
-    $ img2pdf ./--my-file-starts-with-two-minuses.jpg
-
-  The order of non-positional arguments (all arguments other than the input
-  images) does not matter.
+Report bugs at https://gitlab.mister-muffin.de/josch/img2pdf/issues
 ''' % rendered_papersizes)
 
     parser.add_argument(
@@ -1460,7 +1461,7 @@ Argument parsing
 
     outargs = parser.add_argument_group(
             title='General output arguments',
-            description='')
+            description='Arguments controlling the output format.')
 
     outargs.add_argument(
         '-o', '--output', metavar='out', type=argparse.FileType('wb'),
@@ -1503,8 +1504,7 @@ RGB.''')
     sizeargs = parser.add_argument_group(
         title='Image and page size and layout arguments',
         description='''\
-
-Every input image will be placed on its own page.  The image size is controlled
+Every input image will be placed on its own page. The image size is controlled
 by the dpi value of the input image or, if unset or missing, the default dpi of
 %.2f. By default, each page will have the same size as the image it shows.
 Thus, there will be no visible border between the image and the page border by
@@ -1593,8 +1593,10 @@ of the input image. If the orientation of a page gets flipped, then so do the
 values set via the --border option.
 ''')
 
-    metaargs = parser.add_argument_group(title='Arguments setting metadata',
-                                         description='')
+    metaargs = parser.add_argument_group(
+        title='Arguments setting metadata',
+        description='Options handling embedded timestamps, title and author '
+                    'information.')
     metaargs.add_argument(
         '--title', metavar='title', type=str,
         help='Sets the title metadata value')
