@@ -759,7 +759,8 @@ def in_to_pt(length):
     return 72*length
 
 
-def get_layout_fun(pagesize=None, imgsize=None, border=None, fit=None, auto_orient=False):
+def get_layout_fun(pagesize=None, imgsize=None, border=None, fit=None,
+                   auto_orient=False):
     def fitfun(fit, imgwidth, imgheight, fitwidth, fitheight):
         if fitwidth is None and fitheight is None:
             raise ValueError("fitwidth and fitheight cannot both be None")

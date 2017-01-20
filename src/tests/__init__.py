@@ -495,6 +495,7 @@ def test_suite():
                 # retrieve the original image frame that this page was
                 # generated from
                 orig_img.seek(pagenum)
+                cur_page = x.Root.Pages.Kids[pagenum]
 
                 ndpi = orig_img.info.get("dpi", (96.0, 96.0))
                 # In python3, the returned dpi value for some tiff images will
@@ -513,26 +514,28 @@ def test_suite():
                     else:
                         return ("%.4f" % f).rstrip("0")
 
-                self.assertEqual(sorted(x.Root.Pages.Kids[pagenum].keys()),
+                self.assertEqual(sorted(cur_page.keys()),
                                  [PdfName.Contents, PdfName.MediaBox,
-                                  PdfName.Parent, PdfName.Resources, PdfName.Type])
-                self.assertEqual(x.Root.Pages.Kids[pagenum].MediaBox,
-                                 ['0', '0', format_float(pagewidth), format_float(pageheight)])
-                self.assertEqual(x.Root.Pages.Kids[pagenum].Parent, x.Root.Pages)
-                self.assertEqual(x.Root.Pages.Kids[pagenum].Type, PdfName.Page)
-                self.assertEqual(x.Root.Pages.Kids[pagenum].Resources.keys(),
+                                  PdfName.Parent, PdfName.Resources,
+                                  PdfName.Type])
+                self.assertEqual(cur_page.MediaBox,
+                                 ['0', '0', format_float(pagewidth),
+                                  format_float(pageheight)])
+                self.assertEqual(cur_page.Parent, x.Root.Pages)
+                self.assertEqual(cur_page.Type, PdfName.Page)
+                self.assertEqual(cur_page.Resources.keys(),
                                  [PdfName.XObject])
-                self.assertEqual(x.Root.Pages.Kids[pagenum].Resources.XObject.keys(),
+                self.assertEqual(cur_page.Resources.XObject.keys(),
                                  [PdfName.Im0])
-                self.assertEqual(x.Root.Pages.Kids[pagenum].Contents.keys(),
+                self.assertEqual(cur_page.Contents.keys(),
                                  [PdfName.Length])
-                self.assertEqual(x.Root.Pages.Kids[pagenum].Contents.Length,
-                                 str(len(x.Root.Pages.Kids[pagenum].Contents.stream)))
-                self.assertEqual(x.Root.Pages.Kids[pagenum].Contents.stream,
+                self.assertEqual(cur_page.Contents.Length,
+                                 str(len(cur_page.Contents.stream)))
+                self.assertEqual(cur_page.Contents.stream,
                                  "q\n%.4f 0 0 %.4f 0.0000 0.0000 cm\n"
                                  "/Im0 Do\nQ" % (pagewidth, pageheight))
 
-                imgprops = x.Root.Pages.Kids[pagenum].Resources.XObject.Im0
+                imgprops = cur_page.Resources.XObject.Im0
 
                 # test if the filter is valid:
                 self.assertIn(
@@ -541,7 +544,8 @@ def test_suite():
                                       [PdfName.CCITTFaxDecode]])
                 # test if the colorspace is valid
                 self.assertIn(
-                    imgprops.ColorSpace, [PdfName.DeviceGray, PdfName.DeviceRGB,
+                    imgprops.ColorSpace, [PdfName.DeviceGray,
+                                          PdfName.DeviceRGB,
                                           PdfName.DeviceCMYK])
 
                 # test if the image has correct size
@@ -549,9 +553,10 @@ def test_suite():
                 self.assertEqual(imgprops.Height, str(orig_img.size[1]))
                 # if the input file is a jpeg then it should've been copied
                 # verbatim into the PDF
-                if imgprops.Filter in [[PdfName.DCTDecode], [PdfName.JPXDecode]]:
+                if imgprops.Filter in [[PdfName.DCTDecode],
+                                       [PdfName.JPXDecode]]:
                     self.assertEqual(
-                        x.Root.Pages.Kids[pagenum].Resources.XObject.Im0.stream,
+                        cur_page.Resources.XObject.Im0.stream,
                         convert_load(orig_imgdata))
                 elif imgprops.Filter == [PdfName.CCITTFaxDecode]:
                     tiff_header = tiff_header_for_ccitt(
@@ -560,7 +565,7 @@ def test_suite():
                     imgio = BytesIO()
                     imgio.write(tiff_header)
                     imgio.write(convert_store(
-                        x.Root.Pages.Kids[pagenum].Resources.XObject.Im0.stream))
+                        cur_page.Resources.XObject.Im0.stream))
                     imgio.seek(0)
                     im = Image.open(imgio)
                     self.assertEqual(im.tobytes(), orig_img.tobytes())
@@ -570,11 +575,10 @@ def test_suite():
                         pass
 
                 elif imgprops.Filter == [PdfName.FlateDecode]:
-                    # otherwise, the data is flate encoded and has to be equal to
-                    # the pixel data of the input image
+                    # otherwise, the data is flate encoded and has to be equal
+                    # to the pixel data of the input image
                     imgdata = zlib.decompress(
-                        convert_store(
-                            x.Root.Pages.Kids[pagenum].Resources.XObject.Im0.stream))
+                        convert_store(cur_page.Resources.XObject.Im0.stream))
                     colorspace = imgprops.ColorSpace
                     if colorspace == PdfName.DeviceGray:
                         colorspace = 'L'
@@ -588,11 +592,13 @@ def test_suite():
                                                       int(imgprops.Height)),
                                          imgdata)
                     if orig_img.mode == '1':
-                        self.assertEqual(im.tobytes(), orig_img.convert("L").tobytes())
+                        self.assertEqual(im.tobytes(),
+                                         orig_img.convert("L").tobytes())
                     elif orig_img.mode not in ("RGB", "L", "CMYK", "CMYK;I"):
-                        self.assertEqual(im.tobytes(), orig_img.convert("RGB").tobytes())
-                    # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have
-                    # the close() method
+                        self.assertEqual(im.tobytes(),
+                                         orig_img.convert("RGB").tobytes())
+                    # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not
+                    # have the close() method
                     try:
                         im.close()
                     except AttributeError:
