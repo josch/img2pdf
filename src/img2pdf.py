@@ -1607,7 +1607,8 @@ values set via the --border option.
     metaargs.add_argument(
         '--producer', metavar='producer', type=str,
         default="img2pdf " + __version__,
-        help='Sets the producer metadata value (default is: img2pdf)')
+        help='Sets the producer metadata value '
+             '(default is: img2pdf ' + __version__ + ')')
     metaargs.add_argument(
         '--creationdate', metavar='creationdate', type=valid_date,
         help='Sets the UTC creation date metadata value in YYYY-MM-DD or '
