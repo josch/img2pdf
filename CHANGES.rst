@@ -2,6 +2,11 @@
 CHANGES
 =======
 
+0.2.3
+-----
+
+ - version number bump for botched pypi upload...
+
 0.2.2
 -----
 
