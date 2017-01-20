@@ -2,19 +2,19 @@ img2pdf
 =======
 
 Losslessly convert raster images to PDF. The file size will not unnecessarily
-increase. One major application would be a number of scans made in JPEG format
-which should now become part of a single PDF document.  Existing solutions
-would either re-encode the input JPEG files (leading to quality loss) or store
-them in the zip/flate format which results into the PDF becoming unnecessarily
-large in terms of its file size.
+increase. It can for example be used to create a PDF document from a number of
+scans that are only available in JPEG format. Existing solutions would either
+re-encode the input JPEG files (leading to quality loss) or store them in the
+zip/flate format which results into the PDF becoming unnecessarily large in
+terms of its file size.
 
 Background
 ----------
 
 Quality loss can be avoided when converting JPEG and JPEG2000 images to PDF by
-embedding them without re-encoding.  I wrote this piece of python code.
-because I was missing a tool to do this automatically. Img2pdf basically just
-wraps JPEG images into the PDF container as they are.
+embedding them into the PDF without re-encoding them. This is what img2pdf
+does. It thus treats the PDF format merely as a container format for storing
+one or more JPEGs without re-encoding the JPEG images themselves.
 
 If you know an existing tool which allows one to embed JPEG and JPEG2000 images
 into a PDF container without recompression, please contact me so that I can put
@@ -23,12 +23,18 @@ this code into the garbage bin.
 Functionality
 -------------
 
-This program will take a list of images and produce a PDF file with the images
-embedded in it.  JPEG and JPEG2000 images will be included without
-recompression.  Raster images in other formats will be included with zip/flate
-encoding which usually leads to an increase in the resulting size because
-formats like png compress better than PDF which just zip/flate compresses the
-RGB data.  As a result, this tool is able to losslessly wrap images into a PDF
+This program will take a list of raster images and produce a PDF file with the
+images embedded in it.  JPEG and JPEG2000 images will be included without
+recompression and the resulting PDF will only be slightly larger than the input
+images due to the overhead of the PDF container.  Raster images in other
+formats (like png, gif or tif) will be included using the lossless zip/flate
+encoding which usually leads to a significant increase in the PDF size if the
+input was for example a png image. This is unfortunately unavoidable because
+there is no other way to store arbitrary RGB bitmaps in PDF in a lossless way
+other than zip/flate encoding. And zip/flate compresses bitmaps worse than png
+is able to compress them.
+
+As a result, this tool is able to losslessly wrap raster images into a PDF
 container with a quality to filesize ratio that is typically better (in case of
 JPEG and JPEG2000 images) or equal (in case of other formats) than that of
 existing tools.
@@ -67,7 +73,9 @@ The images must be provided as files because img2pdf needs to seek in the file
 descriptor.
 
 If no output file is specified with the `-o`/`--output` option, output will be
-done to stdout.
+done to stdout. A typical invocation is:
+
+	img2pdf img1.png img2.jpg -o out.pdf
 
 The detailed documentation can be accessed by running:
 
