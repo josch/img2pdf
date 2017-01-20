@@ -1,5 +1,6 @@
 include README.md
 include test_comp.sh
+include CHANGES.rst
 recursive-include src *.jpg
 recursive-include src *.pdf
 recursive-include src *.png
