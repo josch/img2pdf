@@ -122,19 +122,19 @@ with the following command:
 
 You can then install the package using:
 
-	$ pip install img2pdf
+	$ pip3 install img2pdf
 
 If you prefer to install from source code use:
 
 	$ cd img2pdf/
-	$ pip install .
+	$ pip3 install .
 
 To test the console script without installing the package on your system,
 use virtualenv:
 
 	$ cd img2pdf/
 	$ virtualenv ve
-	$ ve/bin/pip install .
+	$ ve/bin/pip3 install .
 
 You can then test the converter using:
 
