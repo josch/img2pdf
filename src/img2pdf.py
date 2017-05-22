@@ -991,20 +991,30 @@ def get_fixed_dpi_layout_fun(fixed_dpi):
 # Input images can be given as file like objects (they must implement read()),
 # as a binary string representing the image content or as filenames to the
 # images.
-def convert(*images, title=None,
-            author=None, creator=None, producer=None, creationdate=None,
-            moddate=None, subject=None, keywords=None, colorspace=None,
-            nodate=False, layout_fun=default_layout_fun, viewer_panes=None,
-            viewer_initial_page=None, viewer_magnification=None,
-            viewer_page_layout=None, viewer_fit_window=False,
-            viewer_center_window=False, viewer_fullscreen=False,
-            with_pdfrw=True, outputstream=None, first_frame_only=False):
+def convert(*images, **kwargs):
 
-    pdf = pdfdoc("1.3", title, author, creator, producer, creationdate,
-                 moddate, subject, keywords, nodate, viewer_panes,
-                 viewer_initial_page, viewer_magnification, viewer_page_layout,
-                 viewer_fit_window, viewer_center_window, viewer_fullscreen,
-                 with_pdfrw)
+    _default_kwargs = dict(
+        title=None,
+        author=None, creator=None, producer=None, creationdate=None,
+        moddate=None, subject=None, keywords=None, colorspace=None,
+        nodate=False, layout_fun=default_layout_fun, viewer_panes=None,
+        viewer_initial_page=None, viewer_magnification=None,
+        viewer_page_layout=None, viewer_fit_window=False,
+        viewer_center_window=False, viewer_fullscreen=False,
+        with_pdfrw=True, outputstream=None, first_frame_only=False)
+    for kwname, default in _default_kwargs.items():
+        if kwname not in kwargs:
+            kwargs[kwname] = default
+
+    pdf = pdfdoc(
+        "1.3",
+        kwargs['title'], kwargs['author'], kwargs['creator'],
+        kwargs['producer'], kwargs['creationdate'], kwargs['moddate'],
+        kwargs['subject'], kwargs['keywords'], kwargs['nodate'],
+        kwargs['viewer_panes'], kwargs['viewer_initial_page'],
+        kwargs['viewer_magnification'], kwargs['viewer_page_layout'],
+        kwargs['viewer_fit_window'], kwargs['viewer_center_window'],
+        kwargs['viewer_fullscreen'], kwargs['with_pdfrw'])
 
     # backwards compatibility with older img2pdf versions where the first
     # argument to the function had to be given as a list
@@ -1012,6 +1022,9 @@ def convert(*images, title=None,
         # if only one argument was given and it is a list, expand it
         if isinstance(images[0], (list, tuple)):
             images = images[0]
+
+    if not isinstance(images, (list, tuple)):
+        images = [images]
 
     for img in images:
         # img is allowed to be a path, a binary string representing image data
@@ -1034,9 +1047,10 @@ def convert(*images, title=None,
                 rawdata = img
 
         for color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx \
-                in read_images(rawdata, colorspace, first_frame_only):
+                in read_images(
+                    rawdata, kwargs['colorspace'], kwargs['first_frame_only']):
             pagewidth, pageheight, imgwidthpdf, imgheightpdf = \
-                layout_fun(imgwidthpx, imgheightpx, ndpi)
+                kwargs['layout_fun'](imgwidthpx, imgheightpx, ndpi)
             if pagewidth < 3.00 or pageheight < 3.00:
                 logging.warning("pdf width or height is below 3.00 - too "
                                 "small for some viewers!")
@@ -1050,8 +1064,8 @@ def convert(*images, title=None,
                               imgdata, imgwidthpdf, imgheightpdf, imgxpdf,
                               imgypdf, pagewidth, pageheight)
 
-    if outputstream:
-        pdf.tostream(outputstream)
+    if kwargs['outputstream']:
+        pdf.tostream(kwargs['outputstream'])
         return
 
     return pdf.tostring()
