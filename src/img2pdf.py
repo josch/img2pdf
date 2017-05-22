@@ -29,6 +29,8 @@ from enum import Enum
 from io import BytesIO
 import logging
 
+PY3 = sys.version_info[0] >= 3
+
 __version__ = "0.2.3"
 default_dpi = 96.0
 papersizes = {
@@ -269,17 +271,27 @@ class MyPdfWriter():
         self.addobj(page)
 
 
-class MyPdfString():
-    @classmethod
-    def encode(cls, string):
-        try:
-            string = string.encode('ascii')
-        except UnicodeEncodeError:
-            string = b"\xfe\xff"+string.encode("utf-16-be")
-        string = string.replace(b'\\', b'\\\\')
-        string = string.replace(b'(', b'\\(')
-        string = string.replace(b')', b'\\)')
-        return b'(' + string + b')'
+if PY3:
+    class MyPdfString():
+        @classmethod
+        def encode(cls, string):
+            try:
+                string = string.encode('ascii')
+            except UnicodeEncodeError:
+                string = b"\xfe\xff"+string.encode("utf-16-be")
+            string = string.replace(b'\\', b'\\\\')
+            string = string.replace(b'(', b'\\(')
+            string = string.replace(b')', b'\\)')
+            return b'(' + string + b')'
+else:
+    class MyPdfString(object):
+        @classmethod
+        def encode(cls, string):
+            # This mimics exactely to what pdfrw does.
+            string = string.replace(b'\\', b'\\\\')
+            string = string.replace(b'(', b'\\(')
+            string = string.replace(b')', b'\\)')
+            return b'(' + string + b')'
 
 
 class pdfdoc(object):
