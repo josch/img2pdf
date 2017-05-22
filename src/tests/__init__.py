@@ -1,13 +1,22 @@
 import unittest
 
-import os
 import img2pdf
+import os
+import struct
+import sys
 import zlib
 from PIL import Image
-from io import BytesIO
-import struct
+from io import StringIO, BytesIO
 
 HERE = os.path.dirname(__file__)
+
+PY3 = sys.version_info[0] >= 3
+
+if PY3:
+    PdfReaderIO = StringIO
+else:
+    PdfReaderIO = BytesIO
+
 
 # convert +set date:create +set date:modify -define png:exclude-chunk=time
 
@@ -470,10 +479,9 @@ def test_suite():
                 orig_imgdata = inf.read()
             output = img2pdf.convert(orig_imgdata, nodate=True,
                                      with_pdfrw=with_pdfrw)
-            from io import StringIO, BytesIO
             from pdfrw import PdfReader, PdfName, PdfWriter
             from pdfrw.py23_diffs import convert_load, convert_store
-            x = PdfReader(StringIO(convert_load(output)))
+            x = PdfReader(PdfReaderIO(convert_load(output)))
             self.assertEqual(sorted(x.keys()), [PdfName.Info, PdfName.Root,
                              PdfName.Size])
             self.assertIn(x.Root.Pages.Count, ('1', '2'))
