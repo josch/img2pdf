@@ -744,19 +744,19 @@ def read_images(rawdata, colorspace, first_frame_only=False):
 
 # converts a length in pixels to a length in PDF units (1/72 of an inch)
 def px_to_pt(length, dpi):
-    return 72*length/dpi
+    return 72.0*length/dpi
 
 
 def cm_to_pt(length):
-    return (72*length)/2.54
+    return (72.0*length)/2.54
 
 
 def mm_to_pt(length):
-    return (72*length)/25.4
+    return (72.0*length)/25.4
 
 
 def in_to_pt(length):
-    return 72*length
+    return 72.0*length
 
 
 def get_layout_fun(pagesize=None, imgsize=None, border=None, fit=None,

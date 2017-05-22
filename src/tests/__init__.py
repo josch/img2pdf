@@ -513,8 +513,8 @@ def test_suite():
                 # Search online for the 72.009 dpi problem for more info.
                 ndpi = (int(round(ndpi[0])), int(round(ndpi[1])))
                 imgwidthpx, imgheightpx = orig_img.size
-                pagewidth = 72*imgwidthpx/ndpi[0]
-                pageheight = 72*imgheightpx/ndpi[1]
+                pagewidth = 72.0*imgwidthpx/ndpi[0]
+                pageheight = 72.0*imgheightpx/ndpi[1]
 
                 def format_float(f):
                     if int(f) == f:
