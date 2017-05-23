@@ -2,6 +2,13 @@
 CHANGES
 =======
 
+0.2.4
+-----
+
+ - Restore support for Python 2.7
+ - Add support for PyPy
+ - Add support for testing using tox
+
 0.2.3
 -----
 

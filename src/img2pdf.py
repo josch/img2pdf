@@ -31,7 +31,7 @@ import logging
 
 PY3 = sys.version_info[0] >= 3
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 default_dpi = 96.0
 papersizes = {
     "letter": "8.5inx11in",
