@@ -26,6 +26,7 @@ psp = (504, 972)     # --pagesize portrait
 isl = (756, 324)     # --imgsize landscape
 isp = (324, 756)     # --imgsize portrait
 border = (162, 270)  # --border
+poster = (97200, 50400)
 # there is no need to have test cases with the same images with inverted
 # orientation (landscape/portrait) because --pagesize and --imgsize are
 # already inverted
@@ -404,6 +405,8 @@ layout_test_cases = [
                                        (972, 504),  (864, 432)),
     (psl,  isl,  border, f_enlarge, 1, (972, 504),  (756, 252),    # 179
                                        (972, 504),  (864, 432)),
+    (poster, None, None, f_fill,    0, (97200, 50400), (151200, 50400),
+                                       (97200, 50400), (100800, 50400)),
 ]
 
 

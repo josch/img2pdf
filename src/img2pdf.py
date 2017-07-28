@@ -367,7 +367,7 @@ class pdfdoc(object):
 
     def add_imagepage(self, color, imgwidthpx, imgheightpx, imgformat, imgdata,
                       imgwidthpdf, imgheightpdf, imgxpdf, imgypdf, pagewidth,
-                      pageheight):
+                      pageheight, userunit=None):
         if self.with_pdfrw:
             from pdfrw import PdfDict, PdfName, PdfObject
             from pdfrw.py23_diffs import convert_load
@@ -436,6 +436,11 @@ class pdfdoc(object):
         page[PdfName.MediaBox] = [0, 0, pagewidth, pageheight]
         page[PdfName.Resources] = resources
         page[PdfName.Contents] = content
+        if userunit is not None:
+            # /UserUnit requires PDF 1.6
+            if self.writer.version < '1.6':
+                self.writer.version = '1.6'
+            page[PdfName.UserUnit] = userunit
 
         self.writer.addpage(page)
 
@@ -984,6 +989,17 @@ def get_fixed_dpi_layout_fun(fixed_dpi):
     return fixed_dpi_layout_fun
 
 
+def find_scale(pagewidth, pageheight):
+    """Find the power of 10 (10, 100, 1000...) that will reduce the scale
+    below the PDF specification limit of 14400 PDF units (=200 inches)"""
+    from math import log10, ceil
+
+    major = max(pagewidth, pageheight)
+    oversized = major / 14400.0
+
+    return 10 ** ceil(log10(oversized))
+
+
 # given one or more input image, depending on outputstream, either return a
 # string containing the whole PDF if outputstream is None or write the PDF
 # data to the given file-like object and return None
@@ -1001,7 +1017,8 @@ def convert(*images, **kwargs):
         viewer_initial_page=None, viewer_magnification=None,
         viewer_page_layout=None, viewer_fit_window=False,
         viewer_center_window=False, viewer_fullscreen=False,
-        with_pdfrw=True, outputstream=None, first_frame_only=False)
+        with_pdfrw=True, outputstream=None, first_frame_only=False,
+        allow_oversized=True)
     for kwname, default in _default_kwargs.items():
         if kwname not in kwargs:
             kwargs[kwname] = default
@@ -1051,18 +1068,27 @@ def convert(*images, **kwargs):
                     rawdata, kwargs['colorspace'], kwargs['first_frame_only']):
             pagewidth, pageheight, imgwidthpdf, imgheightpdf = \
                 kwargs['layout_fun'](imgwidthpx, imgheightpx, ndpi)
+
+            userunit = None
             if pagewidth < 3.00 or pageheight < 3.00:
                 logging.warning("pdf width or height is below 3.00 - too "
                                 "small for some viewers!")
             elif pagewidth > 14400.0 or pageheight > 14400.0:
-                raise PdfTooLargeError(
+                if kwargs['allow_oversized']:
+                    userunit = find_scale(pagewidth, pageheight)
+                    pagewidth /= userunit
+                    pageheight /= userunit
+                    imgwidthpdf /= userunit
+                    imgheightpdf /= userunit
+                else:
+                    raise PdfTooLargeError(
                         "pdf width or height must not exceed 200 inches.")
             # the image is always centered on the page
             imgxpdf = (pagewidth - imgwidthpdf)/2.0
             imgypdf = (pageheight - imgheightpdf)/2.0
             pdf.add_imagepage(color, imgwidthpx, imgheightpx, imgformat,
                               imgdata, imgwidthpdf, imgheightpdf, imgxpdf,
-                              imgypdf, pagewidth, pageheight)
+                              imgypdf, pagewidth, pageheight, userunit)
 
     if kwargs['outputstream']:
         pdf.tostream(kwargs['outputstream'])
