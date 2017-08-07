@@ -1236,26 +1236,42 @@ def parse_borderarg(string):
 def input_images(path):
     if path == '-':
         # we slurp in all data from stdin because we need to seek in it later
-        result = sys.stdin.buffer.read()
+        if PY3:
+            result = sys.stdin.buffer.read()
+        else:
+            result = sys.stdin.read()
         if len(result) == 0:
             raise argparse.ArgumentTypeError("\"%s\" is empty" % path)
     else:
-        try:
-            if os.path.getsize(path) == 0:
-                raise argparse.ArgumentTypeError("\"%s\" is empty" % path)
-            # test-read a byte from it so that we can abort early in case
-            # we cannot read data from the file
-            with open(path, "rb") as im:
-                im.read(1)
-        except IsADirectoryError:
-            raise argparse.ArgumentTypeError(
-                "\"%s\" is a directory" % path)
-        except PermissionError:
-            raise argparse.ArgumentTypeError(
-                "\"%s\" permission denied" % path)
-        except FileNotFoundError:
-            raise argparse.ArgumentTypeError(
-                "\"%s\" does not exist" % path)
+        if PY3:
+            try:
+                if os.path.getsize(path) == 0:
+                    raise argparse.ArgumentTypeError("\"%s\" is empty" % path)
+                # test-read a byte from it so that we can abort early in case
+                # we cannot read data from the file
+                with open(path, "rb") as im:
+                    im.read(1)
+            except IsADirectoryError:
+                raise argparse.ArgumentTypeError(
+                    "\"%s\" is a directory" % path)
+            except PermissionError:
+                raise argparse.ArgumentTypeError(
+                    "\"%s\" permission denied" % path)
+            except FileNotFoundError:
+                raise argparse.ArgumentTypeError(
+                    "\"%s\" does not exist" % path)
+        else:
+            try:
+                if os.path.getsize(path) == 0:
+                    raise argparse.ArgumentTypeError("\"%s\" is empty" % path)
+                # test-read a byte from it so that we can abort early in case
+                # we cannot read data from the file
+                with open(path, "rb") as im:
+                    im.read(1)
+            except IOError as err:
+                raise argparse.ArgumentTypeError(str(err))
+            except OSError as err:
+                raise argparse.ArgumentTypeError(str(err))
         result = path
     return result
 
@@ -1338,7 +1354,7 @@ def valid_date(string):
     raise argparse.ArgumentTypeError("cannot parse date: %s" % string)
 
 
-def main():
+def main(argv=sys.argv):
     rendered_papersizes = ""
     for k, v in sorted(papersizes.items()):
         rendered_papersizes += "    %-8s %s\n" % (papernames[k], v)
@@ -1493,7 +1509,7 @@ Report bugs at https://gitlab.mister-muffin.de/josch/img2pdf/issues
 
     outargs.add_argument(
         '-o', '--output', metavar='out', type=argparse.FileType('wb'),
-        default=sys.stdout.buffer,
+        default=sys.stdout.buffer if PY3 else sys.stdout,
         help='Makes the program output to a file instead of standard output.')
     outargs.add_argument(
         '-C', '--colorspace', metavar='colorspace', type=parse_colorspacearg,
@@ -1697,7 +1713,7 @@ values set via the --border option.
         '--viewer-fullscreen', action="store_true",
         help='Instruct the PDF viewer to open the PDF in fullscreen mode')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv[1:])
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
@@ -1710,7 +1726,10 @@ values set via the --border option.
     if len(args.images) == 0:
         logging.info("reading image from standard input")
         try:
-            args.images = [sys.stdin.buffer.read()]
+            if PY3:
+                args.images = [sys.stdin.buffer.read()]
+            else:
+                args.images = [sys.stdin.read()]
         except KeyboardInterrupt:
             exit(0)
 
