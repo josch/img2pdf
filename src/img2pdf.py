@@ -671,7 +671,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         imgdata = Image.open(im)
     except IOError as e:
         # test if it is a jpeg2000 image
-        if rawdata[:12] != "\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+        if rawdata[:12] != b"\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
             raise ImageOpenError("cannot read input image (not jpeg2000). "
                                  "PIL: error reading image: %s" % e)
         # image is jpeg2000
