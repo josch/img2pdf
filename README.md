@@ -11,28 +11,24 @@ terms of its file size.
 Background
 ----------
 
-Quality loss can be avoided when converting JPEG and JPEG2000 images to PDF by
-embedding them into the PDF without re-encoding them. This is what img2pdf
-does. It thus treats the PDF format merely as a container format for storing
-one or more JPEGs without re-encoding the JPEG images themselves.
+Quality loss can be avoided when converting PNG, JPEG and JPEG2000 images to
+PDF by embedding them into the PDF without re-encoding them. This is what
+img2pdf does. It thus treats the PDF format merely as a container format for
+storing one or more JPEGs or PNGs without re-encoding the images themselves.
 
-If you know an existing tool which allows one to embed JPEG and JPEG2000 images
-into a PDF container without recompression, please contact me so that I can put
-this code into the garbage bin.
+If you know an existing tool which allows one to embed PNG, JPEG and JPEG2000
+images into a PDF container without recompression, please contact me so that I
+can put this code into the garbage bin.
 
 Functionality
 -------------
 
 This program will take a list of raster images and produce a PDF file with the
-images embedded in it.  JPEG and JPEG2000 images will be included without
+images embedded in it. PNG, JPEG and JPEG2000 images will be included without
 recompression and the resulting PDF will only be slightly larger than the input
 images due to the overhead of the PDF container.  Raster images in other
-formats (like png, gif or tif) will be included using the lossless zip/flate
-encoding which usually leads to a significant increase in the PDF size if the
-input was for example a png image. This is unfortunately unavoidable because
-there is no other way to store arbitrary RGB bitmaps in PDF in a lossless way
-other than zip/flate encoding. And zip/flate compresses bitmaps worse than png
-is able to compress them.
+formats (like gif or tif) will be included using the lossless zip/flate
+encoding using the PNG Paeth predictor.
 
 As a result, this tool is able to losslessly wrap raster images into a PDF
 container with a quality to filesize ratio that is typically better (in case of
@@ -58,13 +54,17 @@ imagemagick, one has to use zip compression:
 However, this approach will result in PDF files that are a few times larger
 than the input JPEG or JPEG2000 file.
 
-img2pdf is able to losslessly embed JPEG and JPEG2000 files into a PDF
+Furthermore, when converting PNG images, popular tools like imagemagick use
+flate encoding without a predictor. This means, that image file size ends up
+being several orders of magnitude larger then necessary.
+
+img2pdf is able to losslessly embed PNG, JPEG and JPEG2000 files into a PDF
 container without additional overhead (aside from the PDF structure itself),
 save other graphics formats using lossless zip compression, and produce
 multi-page PDF files when more than one input image is given.
 
-Also, since JPEG and JPEG2000 images are not reencoded, conversion with img2pdf
-is several times faster than with other tools.
+Also, since PNG, JPEG and JPEG2000 images are not reencoded, conversion with
+img2pdf is several times faster than with other tools.
 
 Usage
 -----

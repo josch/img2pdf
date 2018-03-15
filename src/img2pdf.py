@@ -28,6 +28,7 @@ from jp2 import parsejp2
 from enum import Enum
 from io import BytesIO
 import logging
+import struct
 
 PY3 = sys.version_info[0] >= 3
 
@@ -61,7 +62,7 @@ PageOrientation = Enum('PageOrientation', 'portrait landscape')
 
 Colorspace = Enum('Colorspace', 'RGB L 1 CMYK CMYK;I RGBA P other')
 
-ImageFormat = Enum('ImageFormat', 'JPEG JPEG2000 CCITTGroup4 other')
+ImageFormat = Enum('ImageFormat', 'JPEG JPEG2000 CCITTGroup4 PNG other')
 
 PageMode = Enum('PageMode', 'none outlines thumbs')
 
@@ -274,24 +275,30 @@ class MyPdfWriter():
 if PY3:
     class MyPdfString():
         @classmethod
-        def encode(cls, string):
-            try:
-                string = string.encode('ascii')
-            except UnicodeEncodeError:
-                string = b"\xfe\xff"+string.encode("utf-16-be")
-            string = string.replace(b'\\', b'\\\\')
-            string = string.replace(b'(', b'\\(')
-            string = string.replace(b')', b'\\)')
-            return b'(' + string + b')'
+        def encode(cls, string, hextype=False):
+            if hextype:
+                return b'< ' + b' '.join(("%06x"%c).encode('ascii') for c in string) + b' >'
+            else:
+                try:
+                    string = string.encode('ascii')
+                except UnicodeEncodeError:
+                    string = b"\xfe\xff"+string.encode("utf-16-be")
+                string = string.replace(b'\\', b'\\\\')
+                string = string.replace(b'(', b'\\(')
+                string = string.replace(b')', b'\\)')
+                return b'(' + string + b')'
 else:
     class MyPdfString(object):
         @classmethod
-        def encode(cls, string):
-            # This mimics exactely to what pdfrw does.
-            string = string.replace(b'\\', b'\\\\')
-            string = string.replace(b'(', b'\\(')
-            string = string.replace(b')', b'\\)')
-            return b'(' + string + b')'
+        def encode(cls, string, hextype=False):
+            if hextype:
+                return b'< ' + b' '.join(("%06x"%c).encode('ascii') for c in string) + b' >'
+            else:
+                # This mimics exactely to what pdfrw does.
+                string = string.replace(b'\\', b'\\\\')
+                string = string.replace(b'(', b'\\(')
+                string = string.replace(b')', b'\\)')
+                return b'(' + string + b')'
 
 
 class pdfdoc(object):
@@ -367,14 +374,15 @@ class pdfdoc(object):
 
     def add_imagepage(self, color, imgwidthpx, imgheightpx, imgformat, imgdata,
                       imgwidthpdf, imgheightpdf, imgxpdf, imgypdf, pagewidth,
-                      pageheight, userunit=None):
+                      pageheight, userunit=None, palette=None):
         if self.with_pdfrw:
-            from pdfrw import PdfDict, PdfName, PdfObject
+            from pdfrw import PdfDict, PdfName, PdfObject, PdfString
             from pdfrw.py23_diffs import convert_load
         else:
             PdfDict = MyPdfDict
             PdfName = MyPdfName
             PdfObject = MyPdfObject
+            PdfString = MyPdfString
             convert_load = my_convert_load
 
         if color == Colorspace['1'] or color == Colorspace.L:
@@ -383,21 +391,24 @@ class pdfdoc(object):
             colorspace = PdfName.DeviceRGB
         elif color == Colorspace.CMYK or color == Colorspace['CMYK;I']:
             colorspace = PdfName.DeviceCMYK
+        elif color == Colorspace.P:
+            if self.with_pdfrw:
+                raise Exception("pdfrw does not support hex strings for palette image input, re-run with --without-pdfrw")
+            colorspace = [ PdfName.Indexed, PdfName.DeviceRGB, len(palette)-1, PdfString.encode(palette, hextype=True)]
         else:
             raise UnsupportedColorspaceError("unsupported color space: %s"
                                              % color.name)
 
         # either embed the whole jpeg or deflate the bitmap representation
-        logging.debug(imgformat)
         if imgformat is ImageFormat.JPEG:
             ofilter = [PdfName.DCTDecode]
         elif imgformat is ImageFormat.JPEG2000:
             ofilter = [PdfName.JPXDecode]
             self.writer.version = "1.5"  # jpeg2000 needs pdf 1.5
         elif imgformat is ImageFormat.CCITTGroup4:
-            ofilter = [PdfName.CCITTFaxDecode]
+            ofilter = PdfName.CCITTFaxDecode
         else:
-            ofilter = [PdfName.FlateDecode]
+            ofilter = PdfName.FlateDecode
 
         image = PdfDict(stream=convert_load(imgdata))
 
@@ -411,7 +422,15 @@ class pdfdoc(object):
         if imgformat is ImageFormat.CCITTGroup4:
             image[PdfName.BitsPerComponent] = 1
         else:
-            image[PdfName.BitsPerComponent] = 8
+            if color == Colorspace.P:
+                if len(palette) <= 2**1:
+                    image[PdfName.BitsPerComponent] = 1
+                elif len(palette) <= 2**4:
+                    image[PdfName.BitsPerComponent] = 4
+                else:
+                    image[PdfName.BitsPerComponent] = 8
+            else:
+                image[PdfName.BitsPerComponent] = 8
 
         if color == Colorspace['CMYK;I']:
             # Inverts all four channels
@@ -424,6 +443,24 @@ class pdfdoc(object):
             decodeparms[PdfName.Columns] = imgwidthpx
             decodeparms[PdfName.Rows] = imgheightpx
             image[PdfName.DecodeParms] = [decodeparms]
+        elif imgformat is ImageFormat.PNG:
+            decodeparms = PdfDict()
+            decodeparms[PdfName.Predictor] = 15
+            if color in [ Colorspace.P, Colorspace['1'], Colorspace.L ]:
+                decodeparms[PdfName.Colors] = 1
+            else:
+                decodeparms[PdfName.Colors] = 3
+            decodeparms[PdfName.Columns] = imgwidthpx
+            if color == Colorspace.P:
+                if len(palette) <= 2**1:
+                    decodeparms[PdfName.BitsPerComponent] = 1
+                elif len(palette) <= 2**4:
+                    decodeparms[PdfName.BitsPerComponent] = 4
+                else:
+                    decodeparms[PdfName.BitsPerComponent] = 8
+            else:
+                decodeparms[PdfName.BitsPerComponent] = 8
+            image[PdfName.DecodeParms] = decodeparms
 
         text = ("q\n%0.4f 0 0 %0.4f %0.4f %0.4f cm\n/Im0 Do\nQ" %
                 (imgwidthpdf, imgheightpdf, imgxpdf, imgypdf)).encode("ascii")
@@ -674,6 +711,25 @@ def transcode_monochrome(imgdata):
 
     return ccittdata
 
+def parse_png(rawdata):
+    pngidat = b""
+    palette = []
+    i = 16
+    while i < len(rawdata):
+        # once we can require Python >= 3.2 we can use int.from_bytes() instead
+        n, = struct.unpack('>I', rawdata[i-8:i-4])
+        if i + n > len(rawdata):
+            raise Exception("invalid png: %d %d %d"%(i, n, len(rawdata)))
+        if rawdata[i-4:i] == b"IDAT":
+            pngidat += rawdata[i:i+n]
+        elif rawdata[i-4:i] == b"PLTE":
+            for j in range(i, i+n, 3):
+                # with int.from_bytes() we would not have to prepend extra zeroes
+                color, = struct.unpack('>I', b'\x00'+rawdata[j:j+3])
+                palette.append(color)
+        i += n
+        i += 12
+    return pngidat, palette
 
 def read_images(rawdata, colorspace, first_frame_only=False):
     im = BytesIO(rawdata)
@@ -710,7 +766,12 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if color == Colorspace['RGBA']:
             raise JpegColorspaceError("jpeg can't have an alpha channel")
         im.close()
-        return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx)]
+        return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx, [])]
+    elif imgformat == ImageFormat.PNG:
+        color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+                imgdata, imgformat, default_dpi, colorspace, rawdata)
+        pngidat, palette = parse_png(rawdata)
+        return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx, palette)]
     else:
         result = []
         img_page_count = 0
@@ -744,18 +805,24 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                     newimg = imgdata.convert('L')
                     color = Colorspace.L
             elif color in [Colorspace.RGB, Colorspace.L, Colorspace.CMYK,
-                           Colorspace["CMYK;I"]]:
+                           Colorspace["CMYK;I"], Colorspace.P]:
                 logging.debug("Colorspace is OK: %s", color)
                 newimg = imgdata
-            elif color in [Colorspace.RGBA, Colorspace.P, Colorspace.other]:
+            elif color in [Colorspace.RGBA, Colorspace.other]:
                 logging.debug("Converting colorspace %s to RGB", color)
                 newimg = imgdata.convert('RGB')
                 color = Colorspace.RGB
             else:
                 raise ValueError("unknown colorspace: %s" % color.name)
-            imggz = zlib.compress(newimg.tobytes())
-            result.append((color, ndpi, imgformat, imggz, imgwidthpx,
-                           imgheightpx))
+            # cheapo version to retrieve a PNG encoding of the payload is to
+            # just save it with PIL. In the future this could be replaced by
+            # dedicated function applying the Paeth PNG filter to the raw pixel
+            pngbuffer = BytesIO()
+            newimg.save(pngbuffer, format="png")
+            pngidat, palette = parse_png(pngbuffer.getvalue())
+            imgformat = ImageFormat.PNG
+            result.append((color, ndpi, imgformat, pngidat, imgwidthpx,
+                           imgheightpx, palette))
             img_page_count += 1
         # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
         # close() method
@@ -1070,7 +1137,7 @@ def convert(*images, **kwargs):
                 # name so we now try treating it as raw image content
                 rawdata = img
 
-        for color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx \
+        for color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx, palette \
                 in read_images(
                     rawdata, kwargs['colorspace'], kwargs['first_frame_only']):
             pagewidth, pageheight, imgwidthpdf, imgheightpdf = \
@@ -1095,7 +1162,7 @@ def convert(*images, **kwargs):
             imgypdf = (pageheight - imgheightpdf)/2.0
             pdf.add_imagepage(color, imgwidthpx, imgheightpx, imgformat,
                               imgdata, imgwidthpdf, imgheightpdf, imgxpdf,
-                              imgypdf, pagewidth, pageheight, userunit)
+                              imgypdf, pagewidth, pageheight, userunit, palette)
 
     if kwargs['outputstream']:
         pdf.tostream(kwargs['outputstream'])
