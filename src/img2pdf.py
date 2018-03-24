@@ -759,6 +759,8 @@ def read_images(rawdata, colorspace, first_frame_only=False):
 
     # depending on the input format, determine whether to pass the raw
     # image or the zlib compressed color information
+
+    # JPEG and JPEG2000 can be embedded into the PDF as-is
     if imgformat == ImageFormat.JPEG or imgformat == ImageFormat.JPEG2000:
         color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
@@ -770,71 +772,81 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             raise JpegColorspaceError("jpeg can't have an alpha channel")
         im.close()
         return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx, [])]
-    elif imgformat == ImageFormat.PNG:
+
+    # We can directly embed the IDAT chunk of PNG images if the PNG is not
+    # interlaced
+    #
+    # PIL does not provide the information whether a PNG was stored interlaced
+    # or not. Thus, we retrieve that info manually by looking at byte 13 in the
+    # IHDR chunk. We know where to find that in the file because the IHDR chunk
+    # must be the first chunk.
+    if imgformat == ImageFormat.PNG and rawdata[28] == 0:
         color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         pngidat, palette = parse_png(rawdata)
         return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx, palette)]
-    else:
-        result = []
-        img_page_count = 0
-        # loop through all frames of the image (example: multipage TIFF)
-        while True:
-            try:
-                imgdata.seek(img_page_count)
-            except EOFError:
-                break
 
-            if first_frame_only and img_page_count > 0:
-                break
+    # Everything else has to be encoded
 
-            logging.debug("Converting frame: %d" % img_page_count)
-
-            color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
-                    imgdata, imgformat, default_dpi, colorspace)
-
-            newimg = None
-            if color == Colorspace['1']:
-                try:
-                    ccittdata = transcode_monochrome(imgdata)
-                    imgformat = ImageFormat.CCITTGroup4
-                    result.append((color, ndpi, imgformat, ccittdata,
-                                   imgwidthpx, imgheightpx))
-                    img_page_count += 1
-                    continue
-                except Exception as e:
-                    logging.debug(e)
-                    logging.debug("Converting colorspace 1 to L")
-                    newimg = imgdata.convert('L')
-                    color = Colorspace.L
-            elif color in [Colorspace.RGB, Colorspace.L, Colorspace.CMYK,
-                           Colorspace["CMYK;I"], Colorspace.P]:
-                logging.debug("Colorspace is OK: %s", color)
-                newimg = imgdata
-            elif color in [Colorspace.RGBA, Colorspace.other]:
-                logging.debug("Converting colorspace %s to RGB", color)
-                newimg = imgdata.convert('RGB')
-                color = Colorspace.RGB
-            else:
-                raise ValueError("unknown colorspace: %s" % color.name)
-            # cheapo version to retrieve a PNG encoding of the payload is to
-            # just save it with PIL. In the future this could be replaced by
-            # dedicated function applying the Paeth PNG filter to the raw pixel
-            pngbuffer = BytesIO()
-            newimg.save(pngbuffer, format="png")
-            pngidat, palette = parse_png(pngbuffer.getvalue())
-            imgformat = ImageFormat.PNG
-            result.append((color, ndpi, imgformat, pngidat, imgwidthpx,
-                           imgheightpx, palette))
-            img_page_count += 1
-        # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
-        # close() method
+    result = []
+    img_page_count = 0
+    # loop through all frames of the image (example: multipage TIFF)
+    while True:
         try:
-            imgdata.close()
-        except AttributeError:
-            pass
-        im.close()
-        return result
+            imgdata.seek(img_page_count)
+        except EOFError:
+            break
+
+        if first_frame_only and img_page_count > 0:
+            break
+
+        logging.debug("Converting frame: %d" % img_page_count)
+
+        color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+                imgdata, imgformat, default_dpi, colorspace)
+
+        newimg = None
+        if color == Colorspace['1']:
+            try:
+                ccittdata = transcode_monochrome(imgdata)
+                imgformat = ImageFormat.CCITTGroup4
+                result.append((color, ndpi, imgformat, ccittdata,
+                               imgwidthpx, imgheightpx))
+                img_page_count += 1
+                continue
+            except Exception as e:
+                logging.debug(e)
+                logging.debug("Converting colorspace 1 to L")
+                newimg = imgdata.convert('L')
+                color = Colorspace.L
+        elif color in [Colorspace.RGB, Colorspace.L, Colorspace.CMYK,
+                       Colorspace["CMYK;I"], Colorspace.P]:
+            logging.debug("Colorspace is OK: %s", color)
+            newimg = imgdata
+        elif color in [Colorspace.RGBA, Colorspace.other]:
+            logging.debug("Converting colorspace %s to RGB", color)
+            newimg = imgdata.convert('RGB')
+            color = Colorspace.RGB
+        else:
+            raise ValueError("unknown colorspace: %s" % color.name)
+        # cheapo version to retrieve a PNG encoding of the payload is to
+        # just save it with PIL. In the future this could be replaced by
+        # dedicated function applying the Paeth PNG filter to the raw pixel
+        pngbuffer = BytesIO()
+        newimg.save(pngbuffer, format="png")
+        pngidat, palette = parse_png(pngbuffer.getvalue())
+        imgformat = ImageFormat.PNG
+        result.append((color, ndpi, imgformat, pngidat, imgwidthpx,
+                       imgheightpx, palette))
+        img_page_count += 1
+    # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
+    # close() method
+    try:
+        imgdata.close()
+    except AttributeError:
+        pass
+    im.close()
+    return result
 
 
 # converts a length in pixels to a length in PDF units (1/72 of an inch)
