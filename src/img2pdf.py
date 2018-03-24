@@ -1461,15 +1461,13 @@ def main():
     parser = argparse.ArgumentParser(
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description='''\
-Losslessly convert raster images to PDF without re-encoding JPEG and JPEG2000
-images. This leads to a lossless conversion of JPEG and JPEG2000 images with
-the only added file size coming from the PDF container itself.
-
-Other raster graphics formats are losslessly stored in a zip/flate encoding of
-their RGB representation. This might increase file size and does not store
-transparency. There is nothing that can be done about that until the PDF format
-allows embedding other image formats like PNG. Thus, img2pdf is primarily
-useful to convert JPEG and JPEG2000 images to PDF.
+Losslessly convert raster images to PDF without re-encoding PNG, JPEG, and
+JPEG2000 images. This leads to a lossless conversion of PNG, JPEG and JPEG2000
+images with the only added file size coming from the PDF container itself.
+Other raster graphics formats are losslessly stored using the same encoding
+that PNG uses. Since PDF does not support images with transparency and since
+img2pdf aims to never be lossy, input images with an alpha channel are not
+supported.
 
 The output is sent to standard output so that it can be redirected into a file
 or to another program as part of a shell pipe. To directly write the output
