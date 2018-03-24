@@ -1644,6 +1644,15 @@ RGB.''')
              "input image be converted into a page in the resulting PDF."
             )
 
+    outargs.add_argument(
+        "--pillow-limit-break", action="store_true",
+        help="img2pdf uses the Python Imaging Library Pillow to read input "
+             "images. Pillow limits the maximum input image size to %d pixels "
+             "to prevent decompression bomb denial of service attacks. If "
+             "your input image contains more pixels than that, use this "
+             "option to disable this safety measure during this run of img2pdf"
+             %Image.MAX_IMAGE_PIXELS)
+
     sizeargs = parser.add_argument_group(
         title='Image and page size and layout arguments',
         description='''\
@@ -1816,6 +1825,9 @@ values set via the --border option.
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
+
+    if args.pillow_limit_break:
+        Image.MAX_IMAGE_PIXELS = None
 
     layout_fun = get_layout_fun(args.pagesize, args.imgsize, args.border,
                                 args.fit, args.auto_orient)
