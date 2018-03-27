@@ -638,7 +638,12 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
         ics = imgdata.mode
 
     if ics in ["LA", "PA", "RGBA"]:
-        raise Exception("Image contains transparency which cannot be retained in PDF")
+        logging.warn("Image contains transparency which cannot be retained in PDF.")
+        logging.warn("img2pdf will not perform a lossy operation.")
+        logging.warn("You can remove the alpha channel using imagemagick:")
+        logging.warn("  $ convert input.png -background white -alpha remove -alpha off output.png")
+        raise Exception("Refusing to work on images with alpha channel")
+
 
     # Since commit 07a96209597c5e8dfe785c757d7051ce67a980fb or release 4.1.0
     # Pillow retrieves the DPI from EXIF if it cannot find the DPI in the JPEG
