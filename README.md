@@ -88,14 +88,6 @@ Bugs
 If you find a JPEG or JPEG2000 file that, when embedded cannot be read
 by the Adobe Acrobat Reader, please contact me.
 
-For lossless conversion of formats other than JPEG or JPEG2000, zip/flate
-encoding is used.  This choice is based on tests I did with a number of images.
-I converted them into PDF using the lossless variants of the compression
-formats offered by imagemagick.  In all my tests, zip/flate encoding performed
-best.  You can verify my findings using the test_comp.sh script with any input
-image given as a commandline argument.  If you find an input file that is
-outperformed by another lossless compression method, contact me.
-
 I have not yet figured out how to determine the colorspace of JPEG2000 files.
 Therefore JPEG2000 files use DeviceRGB by default. For JPEG2000 files with
 other colorspaces, you must explicitly specify it using the `--colorspace`
