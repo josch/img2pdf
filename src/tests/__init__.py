@@ -589,30 +589,39 @@ def test_suite():
                     # to the pixel data of the input image
                     imgdata = zlib.decompress(
                         convert_store(cur_page.Resources.XObject.Im0.stream))
-                    colorspace = imgprops.ColorSpace
-                    if colorspace == PdfName.DeviceGray:
-                        colorspace = 'L'
-                    elif colorspace == PdfName.DeviceRGB:
-                        colorspace = 'RGB'
-                    elif colorspace == PdfName.DeviceCMYK:
-                        colorspace = 'CMYK'
+                    if imgprops.DecodeParms:
+                        if orig_img.format == 'PNG':
+                            pngidat, palette = img2pdf.parse_png(orig_imgdata)
+                        else:
+                            pngbuffer = BytesIO()
+                            orig_img.save(pngbuffer, format="png")
+                            pngidat, palette = img2pdf.parse_png(pngbuffer.getvalue())
+                        self.assertEqual(zlib.decompress(pngidat), imgdata)
                     else:
-                        raise Exception("invalid colorspace")
-                    im = Image.frombytes(colorspace, (int(imgprops.Width),
-                                                      int(imgprops.Height)),
-                                         imgdata)
-                    if orig_img.mode == '1':
-                        self.assertEqual(im.tobytes(),
-                                         orig_img.convert("L").tobytes())
-                    elif orig_img.mode not in ("RGB", "L", "CMYK", "CMYK;I"):
-                        self.assertEqual(im.tobytes(),
-                                         orig_img.convert("RGB").tobytes())
-                    # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not
-                    # have the close() method
-                    try:
-                        im.close()
-                    except AttributeError:
-                        pass
+                        colorspace = imgprops.ColorSpace
+                        if colorspace == PdfName.DeviceGray:
+                            colorspace = 'L'
+                        elif colorspace == PdfName.DeviceRGB:
+                            colorspace = 'RGB'
+                        elif colorspace == PdfName.DeviceCMYK:
+                            colorspace = 'CMYK'
+                        else:
+                            raise Exception("invalid colorspace")
+                        im = Image.frombytes(colorspace, (int(imgprops.Width),
+                                                          int(imgprops.Height)),
+                                             imgdata)
+                        if orig_img.mode == '1':
+                            self.assertEqual(im.tobytes(),
+                                             orig_img.convert("L").tobytes())
+                        elif orig_img.mode not in ("RGB", "L", "CMYK", "CMYK;I"):
+                            self.assertEqual(im.tobytes(),
+                                             orig_img.convert("RGB").tobytes())
+                        # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not
+                        # have the close() method
+                        try:
+                            im.close()
+                        except AttributeError:
+                            pass
             # now use pdfrw to parse and then write out both pdfs and check the
             # result for equality
             y = PdfReader(out)
