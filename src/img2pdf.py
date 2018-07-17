@@ -422,7 +422,9 @@ class pdfdoc(object):
         if imgformat is ImageFormat.CCITTGroup4:
             image[PdfName.BitsPerComponent] = 1
         else:
-            if color == Colorspace.P:
+            if color == Colorspace['1']:
+                image[PdfName.BitsPerComponent] = 1
+            elif color == Colorspace.P:
                 if len(palette) <= 2**1:
                     image[PdfName.BitsPerComponent] = 1
                 elif len(palette) <= 2**4:
@@ -451,7 +453,9 @@ class pdfdoc(object):
             else:
                 decodeparms[PdfName.Colors] = 3
             decodeparms[PdfName.Columns] = imgwidthpx
-            if color == Colorspace.P:
+            if color == Colorspace['1']:
+                decodeparms[PdfName.BitsPerComponent] = 1
+            elif color == Colorspace.P:
                 if len(palette) <= 2**1:
                     decodeparms[PdfName.BitsPerComponent] = 1
                 elif len(palette) <= 2**4:
