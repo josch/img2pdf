@@ -557,11 +557,6 @@ def test_suite():
                     imgprops.Filter, [PdfName.DCTDecode, PdfName.JPXDecode,
                                       PdfName.FlateDecode,
                                       PdfName.CCITTFaxDecode])
-                # test if the colorspace is valid
-                self.assertIn(
-                    imgprops.ColorSpace, [PdfName.DeviceGray,
-                                          PdfName.DeviceRGB,
-                                          PdfName.DeviceCMYK])
 
                 # test if the image has correct size
                 self.assertEqual(imgprops.Width, str(orig_img.size[0]))
