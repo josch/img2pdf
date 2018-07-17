@@ -828,12 +828,8 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                        Colorspace["CMYK;I"], Colorspace.P]:
             logging.debug("Colorspace is OK: %s", color)
             newimg = imgdata
-        elif color in [Colorspace.RGBA, Colorspace.other]:
-            logging.debug("Converting colorspace %s to RGB", color)
-            newimg = imgdata.convert('RGB')
-            color = Colorspace.RGB
         else:
-            raise ValueError("unknown colorspace: %s" % color.name)
+            raise ValueError("unknown or unsupported colorspace: %s" % color.name)
         # cheapo version to retrieve a PNG encoding of the payload is to
         # just save it with PIL. In the future this could be replaced by
         # dedicated function applying the Paeth PNG filter to the raw pixel
