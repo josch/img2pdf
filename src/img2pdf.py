@@ -695,7 +695,13 @@ def transcode_monochrome(imgdata):
     # Convert the image to Group 4 in memory. If libtiff is not installed and
     # Pillow is not compiled against it, .save() will raise an exception.
     newimgio = BytesIO()
-    imgdata.save(newimgio, format='TIFF', compression='group4')
+
+    # we create a whole new PIL image or otherwise it might happen with some
+    # input images, that libtiff fails an assert and the whole process is
+    # killed by a SIGABRT:
+    #   https://gitlab.mister-muffin.de/josch/img2pdf/issues/46
+    im = Image.frombytes(imgdata.mode, imgdata.size, imgdata.tobytes())
+    im.save(newimgio, format='TIFF', compression='group4')
 
     # Open new image in memory
     newimgio.seek(0)
