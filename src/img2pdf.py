@@ -820,7 +820,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 ccittdata = transcode_monochrome(imgdata)
                 imgformat = ImageFormat.CCITTGroup4
                 result.append((color, ndpi, imgformat, ccittdata,
-                               imgwidthpx, imgheightpx))
+                               imgwidthpx, imgheightpx, []))
                 img_page_count += 1
                 continue
             except Exception as e:
