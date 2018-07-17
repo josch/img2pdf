@@ -556,7 +556,7 @@ def test_suite():
                 self.assertIn(
                     imgprops.Filter, [PdfName.DCTDecode, PdfName.JPXDecode,
                                       PdfName.FlateDecode,
-                                      PdfName.CCITTFaxDecode])
+                                      [PdfName.CCITTFaxDecode]])
 
                 # test if the image has correct size
                 self.assertEqual(imgprops.Width, str(orig_img.size[0]))
@@ -568,7 +568,7 @@ def test_suite():
                     self.assertEqual(
                         cur_page.Resources.XObject.Im0.stream,
                         convert_load(orig_imgdata))
-                elif imgprops.Filter == PdfName.CCITTFaxDecode:
+                elif imgprops.Filter == [PdfName.CCITTFaxDecode]:
                     tiff_header = tiff_header_for_ccitt(
                         int(imgprops.Width), int(imgprops.Height),
                         int(imgprops.Length), 4)
