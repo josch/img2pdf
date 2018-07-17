@@ -830,15 +830,22 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             newimg = imgdata
         else:
             raise ValueError("unknown or unsupported colorspace: %s" % color.name)
-        # cheapo version to retrieve a PNG encoding of the payload is to
-        # just save it with PIL. In the future this could be replaced by
-        # dedicated function applying the Paeth PNG filter to the raw pixel
-        pngbuffer = BytesIO()
-        newimg.save(pngbuffer, format="png")
-        pngidat, palette = parse_png(pngbuffer.getvalue())
-        imgformat = ImageFormat.PNG
-        result.append((color, ndpi, imgformat, pngidat, imgwidthpx,
-                       imgheightpx, palette))
+        # the PNG format does not support CMYK, so we fall back to normal
+        # compression
+        if color in [Colorspace.CMYK, Colorspace["CMYK;I"]]:
+            imggz = zlib.compress(newimg.tobytes())
+            result.append((color, ndpi, imgformat, imggz, imgwidthpx,
+                           imgheightpx, []))
+        else:
+            # cheapo version to retrieve a PNG encoding of the payload is to
+            # just save it with PIL. In the future this could be replaced by
+            # dedicated function applying the Paeth PNG filter to the raw pixel
+            pngbuffer = BytesIO()
+            newimg.save(pngbuffer, format="png")
+            pngidat, palette = parse_png(pngbuffer.getvalue())
+            imgformat = ImageFormat.PNG
+            result.append((color, ndpi, imgformat, pngidat, imgwidthpx,
+                           imgheightpx, palette))
         img_page_count += 1
     # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
     # close() method
