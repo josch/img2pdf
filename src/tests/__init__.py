@@ -471,6 +471,10 @@ def test_suite():
     files = os.listdir(os.path.join(HERE, "input"))
     for with_pdfrw, test_name in [(a, b) for a in [True, False]
                                   for b in files]:
+        # we do not test animation.gif with pdfrw because it doesn't support
+        # saving hexadecimal palette data
+        if test_name == 'animation.gif' and with_pdfrw:
+            continue
         inputf = os.path.join(HERE, "input", test_name)
         if not os.path.isfile(inputf):
             continue
