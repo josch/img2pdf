@@ -401,9 +401,9 @@ class pdfdoc(object):
 
         # either embed the whole jpeg or deflate the bitmap representation
         if imgformat is ImageFormat.JPEG:
-            ofilter = [PdfName.DCTDecode]
+            ofilter = PdfName.DCTDecode
         elif imgformat is ImageFormat.JPEG2000:
-            ofilter = [PdfName.JPXDecode]
+            ofilter = PdfName.JPXDecode
             self.writer.version = "1.5"  # jpeg2000 needs pdf 1.5
         elif imgformat is ImageFormat.CCITTGroup4:
             ofilter = PdfName.CCITTFaxDecode

@@ -554,9 +554,9 @@ def test_suite():
 
                 # test if the filter is valid:
                 self.assertIn(
-                    imgprops.Filter, [[PdfName.DCTDecode], [PdfName.JPXDecode],
-                                      [PdfName.FlateDecode],
-                                      [PdfName.CCITTFaxDecode]])
+                    imgprops.Filter, [PdfName.DCTDecode, PdfName.JPXDecode,
+                                      PdfName.FlateDecode,
+                                      PdfName.CCITTFaxDecode])
                 # test if the colorspace is valid
                 self.assertIn(
                     imgprops.ColorSpace, [PdfName.DeviceGray,
@@ -568,12 +568,12 @@ def test_suite():
                 self.assertEqual(imgprops.Height, str(orig_img.size[1]))
                 # if the input file is a jpeg then it should've been copied
                 # verbatim into the PDF
-                if imgprops.Filter in [[PdfName.DCTDecode],
-                                       [PdfName.JPXDecode]]:
+                if imgprops.Filter in [PdfName.DCTDecode,
+                                       PdfName.JPXDecode]:
                     self.assertEqual(
                         cur_page.Resources.XObject.Im0.stream,
                         convert_load(orig_imgdata))
-                elif imgprops.Filter == [PdfName.CCITTFaxDecode]:
+                elif imgprops.Filter == PdfName.CCITTFaxDecode:
                     tiff_header = tiff_header_for_ccitt(
                         int(imgprops.Width), int(imgprops.Height),
                         int(imgprops.Length), 4)
@@ -589,7 +589,7 @@ def test_suite():
                     except AttributeError:
                         pass
 
-                elif imgprops.Filter == [PdfName.FlateDecode]:
+                elif imgprops.Filter == PdfName.FlateDecode:
                     # otherwise, the data is flate encoded and has to be equal
                     # to the pixel data of the input image
                     imgdata = zlib.decompress(
