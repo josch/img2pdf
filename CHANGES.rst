@@ -2,6 +2,14 @@
 CHANGES
 =======
 
+0.3.0
+-----
+
+ - Store non-jpeg images using PNG compression
+ - Support arbitrarily large pages via PDF /UserUnit field
+ - Disallow input with alpha channel as it cannot be preserved
+ - Add option --pillow-limit-break to support very large input
+
 0.2.4
 -----
 
