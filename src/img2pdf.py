@@ -1542,7 +1542,7 @@ Fit options:
 
 Argument parsing:
   Argument long options can be abbreviated to a prefix if the abbreviation is
-  anambiguous. That is, the prefix must match a unique option.
+  unambiguous. That is, the prefix must match a unique option.
 
   Beware of your shell interpreting argument values as special characters (like
   the semicolon in the CMYK;I colorspace option). If in doubt, put the argument
