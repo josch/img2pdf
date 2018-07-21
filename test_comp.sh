@@ -16,17 +16,17 @@ for a in `convert -list compress`; do
 	echo "encode:\t$a"
 	convert "$1" -compress $a "`basename $1 .jpg`.pdf"
 	pdfimages "`basename $1 .jpg`.pdf" "`basename $1 .jpg`"
-	/bin/echo -ne "diff:\t"
+	printf "diff:\t"
 	diff=`compare -metric AE "$1" "\`basename $1 .jpg\`-000.ppm" null: 2>&1`
 	if [ "$diff" != "0" ]; then
 		echo "lossy"
 	else
 		echo "lossless"
 	fi
-	/bin/echo -ne "size:\t"
+	printf "size:\t"
 	pdfsize=`stat -c "%s" "\`basename $1 .jpg\`.pdf"`
 	echo "scale=1;$pdfsize/$imsize" | bc
-	/bin/echo -ne "pdf:\t"
+	printf "pdf:\t"
 	grep --max-count=1 --text /Filter "`basename $1 .jpg`.pdf"
 	echo
 done
