@@ -592,6 +592,9 @@ def test_suite():
                     if imgprops.DecodeParms:
                         if orig_img.format == 'PNG':
                             pngidat, palette = img2pdf.parse_png(orig_imgdata)
+                        elif orig_img.format == 'TIFF' and orig_img.info['compression'] == "group4":
+                            offset, length = img2pdf.ccitt_payload_location_from_pil(orig_img)
+                            pngidat = orig_imgdata[offset:offset+length]
                         else:
                             pngbuffer = BytesIO()
                             orig_img.save(pngbuffer, format="png")

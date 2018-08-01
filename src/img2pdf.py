@@ -22,7 +22,7 @@ import sys
 import os
 import zlib
 import argparse
-from PIL import Image
+from PIL import Image, TiffImagePlugin
 from datetime import datetime
 from jp2 import parsejp2
 from enum import Enum
@@ -62,7 +62,7 @@ PageOrientation = Enum('PageOrientation', 'portrait landscape')
 
 Colorspace = Enum('Colorspace', 'RGB L 1 CMYK CMYK;I RGBA P other')
 
-ImageFormat = Enum('ImageFormat', 'JPEG JPEG2000 CCITTGroup4 PNG other')
+ImageFormat = Enum('ImageFormat', 'JPEG JPEG2000 CCITTGroup4 PNG TIFF other')
 
 PageMode = Enum('PageMode', 'none outlines thumbs')
 
@@ -374,7 +374,7 @@ class pdfdoc(object):
 
     def add_imagepage(self, color, imgwidthpx, imgheightpx, imgformat, imgdata,
                       imgwidthpdf, imgheightpdf, imgxpdf, imgypdf, pagewidth,
-                      pageheight, userunit=None, palette=None):
+                      pageheight, userunit=None, palette=None, inverted=False):
         if self.with_pdfrw:
             from pdfrw import PdfDict, PdfName, PdfObject, PdfString
             from pdfrw.py23_diffs import convert_load
@@ -440,8 +440,13 @@ class pdfdoc(object):
 
         if imgformat is ImageFormat.CCITTGroup4:
             decodeparms = PdfDict()
+            # The default for the K parameter is 0 which indicates Group 3 1-D
+            # encoding. We set it to -1 because we want Group 4 encoding.
             decodeparms[PdfName.K] = -1
-            decodeparms[PdfName.BlackIs1] = PdfObject('true')
+            if inverted:
+                decodeparms[PdfName.BlackIs1] = PdfObject('false')
+            else:
+                decodeparms[PdfName.BlackIs1] = PdfObject('true')
             decodeparms[PdfName.Columns] = imgwidthpx
             decodeparms[PdfName.Rows] = imgheightpx
             image[PdfName.DecodeParms] = [decodeparms]
@@ -685,10 +690,31 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
     return (color, ndpi, imgwidthpx, imgheightpx)
 
 
+def ccitt_payload_location_from_pil(img):
+    # If Pillow is passed an invalid compression argument it will ignore it;
+    # make sure the image actually got compressed.
+    if img.info['compression'] != 'group4':
+        raise ValueError("Image not compressed with CCITT Group 4 but with: %s" % img.info['compression'])
+
+    # Read the TIFF tags to find the offset(s) of the compressed data strips.
+    strip_offsets = img.tag_v2[TiffImagePlugin.STRIPOFFSETS]
+    strip_bytes = img.tag_v2[TiffImagePlugin.STRIPBYTECOUNTS]
+    rows_per_strip = img.tag_v2[TiffImagePlugin.ROWSPERSTRIP]
+
+    # PIL always seems to create a single strip even for very large TIFFs when
+    # it saves images, so assume we only have to read a single strip.
+    # A test ~10 GPixel image was still encoded as a single strip. Just to be
+    # safe check throw an error if there is more than one offset.
+    if len(strip_offsets) != 1 or len(strip_bytes) != 1:
+        raise NotImplementedError("Transcoding multiple strips not supported")
+
+    (offset, ), (length, ) = strip_offsets, strip_bytes
+
+    return offset, length
+
+
 def transcode_monochrome(imgdata):
     """Convert the open PIL.Image imgdata to compressed CCITT Group4 data"""
-
-    from PIL import TiffImagePlugin
 
     logging.debug("Converting monochrome to CCITT Group4")
 
@@ -707,27 +733,11 @@ def transcode_monochrome(imgdata):
     newimgio.seek(0)
     newimg = Image.open(newimgio)
 
-    # If Pillow is passed an invalid compression argument it will ignore it;
-    # make sure the image actually got compressed.
-    if newimg.info['compression'] != 'group4':
-        raise ValueError("Image not compressed as expected")
+    offset, length = ccitt_payload_location_from_pil(newimg)
 
-    # Read the TIFF tags to find the offset(s) of the compressed data strips.
-    strip_offsets = newimg.tag_v2[TiffImagePlugin.STRIPOFFSETS]
-    strip_bytes = newimg.tag_v2[TiffImagePlugin.STRIPBYTECOUNTS]
-    rows_per_strip = newimg.tag_v2[TiffImagePlugin.ROWSPERSTRIP]
+    newimgio.seek(offset)
+    return newimgio.read(length)
 
-    # PIL always seems to create a single strip even for very large TIFFs when
-    # it saves images, so assume we only have to read a single strip.
-    # A test ~10 GPixel image was still encoded as a single strip. Just to be
-    # safe check throw an error if there is more than one offset.
-    if len(strip_offsets) > 1:
-        raise NotImplementedError("Transcoding multiple strips not supported")
-
-    newimgio.seek(strip_offsets[0])
-    ccittdata = newimgio.read(strip_bytes[0])
-
-    return ccittdata
 
 def parse_png(rawdata):
     pngidat = b""
@@ -786,7 +796,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if color == Colorspace['RGBA']:
             raise JpegColorspaceError("jpeg can't have an alpha channel")
         im.close()
-        return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx, [])]
+        return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx, [], False)]
 
     # We can directly embed the IDAT chunk of PNG images if the PNG is not
     # interlaced
@@ -799,7 +809,27 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         pngidat, palette = parse_png(rawdata)
-        return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx, palette)]
+        im.close()
+        return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx, palette, False)]
+
+    # We can directly copy the data out of a CCITT Group 4 encoded TIFF, if it
+    # only contains a single strip
+    if imgformat == ImageFormat.TIFF \
+        and imgdata.info['compression'] == "group4" \
+        and len(imgdata.tag_v2[TiffImagePlugin.STRIPOFFSETS]) == 1:
+        photo = imgdata.tag_v2[TiffImagePlugin.PHOTOMETRIC_INTERPRETATION]
+        inverted = False
+        if photo == 0:
+            inverted = True
+        elif photo != 1:
+            raise ValueError("unsupported photometric interpretation for group4 tiff: %d" % photo)
+        color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+                imgdata, imgformat, default_dpi, colorspace, rawdata)
+        offset, length = ccitt_payload_location_from_pil(imgdata)
+        im.seek(offset)
+        rawdata = im.read(length)
+        im.close()
+        return [(color, ndpi, ImageFormat.CCITTGroup4, rawdata, imgwidthpx, imgheightpx, [], inverted)]
 
     # Everything else has to be encoded
 
@@ -826,7 +856,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 ccittdata = transcode_monochrome(imgdata)
                 imgformat = ImageFormat.CCITTGroup4
                 result.append((color, ndpi, imgformat, ccittdata,
-                               imgwidthpx, imgheightpx, []))
+                               imgwidthpx, imgheightpx, [], False))
                 img_page_count += 1
                 continue
             except Exception as e:
@@ -845,7 +875,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if color in [Colorspace.CMYK, Colorspace["CMYK;I"]]:
             imggz = zlib.compress(newimg.tobytes())
             result.append((color, ndpi, imgformat, imggz, imgwidthpx,
-                           imgheightpx, []))
+                           imgheightpx, [], False))
         else:
             # cheapo version to retrieve a PNG encoding of the payload is to
             # just save it with PIL. In the future this could be replaced by
@@ -855,7 +885,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             pngidat, palette = parse_png(pngbuffer.getvalue())
             imgformat = ImageFormat.PNG
             result.append((color, ndpi, imgformat, pngidat, imgwidthpx,
-                           imgheightpx, palette))
+                           imgheightpx, palette, False))
         img_page_count += 1
     # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
     # close() method
@@ -1170,8 +1200,8 @@ def convert(*images, **kwargs):
                 # name so we now try treating it as raw image content
                 rawdata = img
 
-        for color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx, palette \
-                in read_images(
+        for color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx, \
+                palette, inverted in read_images(
                     rawdata, kwargs['colorspace'], kwargs['first_frame_only']):
             pagewidth, pageheight, imgwidthpdf, imgheightpdf = \
                 kwargs['layout_fun'](imgwidthpx, imgheightpx, ndpi)
@@ -1195,7 +1225,8 @@ def convert(*images, **kwargs):
             imgypdf = (pageheight - imgheightpdf)/2.0
             pdf.add_imagepage(color, imgwidthpx, imgheightpx, imgformat,
                               imgdata, imgwidthpdf, imgheightpdf, imgxpdf,
-                              imgypdf, pagewidth, pageheight, userunit, palette)
+                              imgypdf, pagewidth, pageheight, userunit,
+                              palette, inverted)
 
     if kwargs['outputstream']:
         pdf.tostream(kwargs['outputstream'])

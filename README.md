@@ -29,16 +29,18 @@ input file format and image color space.
 | JPEG                 | any                            | direct        |
 | JPEG2000             | any                            | direct        |
 | PNG (non-interlaced) | any                            | direct        |
+| TIFF (CCITT Group 4) | monochrome                     | direct        |
 | any                  | any except CMYK and monochrome | PNG Paeth     |
 | any                  | monochrome                     | CCITT Group 4 |
 | any                  | CMYK                           | flate         |
 
-For JPEG, JPEG2000 and non-interlaced PNG input, img2pdf directly embeds the
-image data into the PDF without re-encoding it. It thus treats the PDF format
-merely as a container format for the image data. In these cases, img2pdf only
-increases the filesize by the size of the PDF container (typically around 500
-to 700 bytes). Since data is only copied and not re-encoded, img2pdf is also
-typically faster than other solutions for these input formats.
+For JPEG, JPEG2000, non-interlaced PNG and TIFF images with CCITT Group 4
+encoded data, img2pdf directly embeds the image data into the PDF without
+re-encoding it. It thus treats the PDF format merely as a container format for
+the image data. In these cases, img2pdf only increases the filesize by the size
+of the PDF container (typically around 500 to 700 bytes). Since data is only
+copied and not re-encoded, img2pdf is also typically faster than other
+solutions for these input formats.
 
 For all other input types, img2pdf first has to transform the pixel data to
 make it compatible with PDF. In most cases, the PNG Paeth filter is applied to
