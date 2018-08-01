@@ -592,13 +592,17 @@ def test_suite():
                     if imgprops.DecodeParms:
                         if orig_img.format == 'PNG':
                             pngidat, palette = img2pdf.parse_png(orig_imgdata)
-                        elif orig_img.format == 'TIFF' and orig_img.info['compression'] == "group4":
-                            offset, length = img2pdf.ccitt_payload_location_from_pil(orig_img)
+                        elif orig_img.format == 'TIFF' \
+                                and orig_img.info['compression'] == "group4":
+                            offset, length = \
+                                    img2pdf.ccitt_payload_location_from_pil(
+                                            orig_img)
                             pngidat = orig_imgdata[offset:offset+length]
                         else:
                             pngbuffer = BytesIO()
                             orig_img.save(pngbuffer, format="png")
-                            pngidat, palette = img2pdf.parse_png(pngbuffer.getvalue())
+                            pngidat, palette = img2pdf.parse_png(
+                                    pngbuffer.getvalue())
                         self.assertEqual(zlib.decompress(pngidat), imgdata)
                     else:
                         colorspace = imgprops.ColorSpace
@@ -610,17 +614,19 @@ def test_suite():
                             colorspace = 'CMYK'
                         else:
                             raise Exception("invalid colorspace")
-                        im = Image.frombytes(colorspace, (int(imgprops.Width),
-                                                          int(imgprops.Height)),
+                        im = Image.frombytes(colorspace,
+                                             (int(imgprops.Width),
+                                              int(imgprops.Height)),
                                              imgdata)
                         if orig_img.mode == '1':
                             self.assertEqual(im.tobytes(),
                                              orig_img.convert("L").tobytes())
-                        elif orig_img.mode not in ("RGB", "L", "CMYK", "CMYK;I"):
+                        elif orig_img.mode not in ("RGB", "L", "CMYK",
+                                                   "CMYK;I"):
                             self.assertEqual(im.tobytes(),
                                              orig_img.convert("RGB").tobytes())
-                        # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not
-                        # have the close() method
+                        # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does
+                        # not have the close() method
                         try:
                             im.close()
                         except AttributeError:

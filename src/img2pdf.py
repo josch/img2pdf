@@ -277,7 +277,8 @@ if PY3:
         @classmethod
         def encode(cls, string, hextype=False):
             if hextype:
-                return b'< ' + b' '.join(("%06x"%c).encode('ascii') for c in string) + b' >'
+                return b'< ' + b' '.join(
+                        ("%06x" % c).encode('ascii') for c in string) + b' >'
             else:
                 try:
                     string = string.encode('ascii')
@@ -292,7 +293,8 @@ else:
         @classmethod
         def encode(cls, string, hextype=False):
             if hextype:
-                return b'< ' + b' '.join(("%06x"%c).encode('ascii') for c in string) + b' >'
+                return b'< ' + b' '.join(
+                        ("%06x" % c).encode('ascii') for c in string) + b' >'
             else:
                 # This mimics exactely to what pdfrw does.
                 string = string.replace(b'\\', b'\\\\')
@@ -393,8 +395,11 @@ class pdfdoc(object):
             colorspace = PdfName.DeviceCMYK
         elif color == Colorspace.P:
             if self.with_pdfrw:
-                raise Exception("pdfrw does not support hex strings for palette image input, re-run with --without-pdfrw")
-            colorspace = [ PdfName.Indexed, PdfName.DeviceRGB, len(palette)-1, PdfString.encode(palette, hextype=True)]
+                raise Exception("pdfrw does not support hex strings for "
+                                "palette image input, re-run with "
+                                "--without-pdfrw")
+            colorspace = [PdfName.Indexed, PdfName.DeviceRGB, len(palette)-1,
+                          PdfString.encode(palette, hextype=True)]
         else:
             raise UnsupportedColorspaceError("unsupported color space: %s"
                                              % color.name)
@@ -453,7 +458,7 @@ class pdfdoc(object):
         elif imgformat is ImageFormat.PNG:
             decodeparms = PdfDict()
             decodeparms[PdfName.Predictor] = 15
-            if color in [ Colorspace.P, Colorspace['1'], Colorspace.L ]:
+            if color in [Colorspace.P, Colorspace['1'], Colorspace.L]:
                 decodeparms[PdfName.Colors] = 1
             else:
                 decodeparms[PdfName.Colors] = 3
@@ -647,12 +652,13 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
         ics = imgdata.mode
 
     if ics in ["LA", "PA", "RGBA"]:
-        logging.warning("Image contains transparency which cannot be retained in PDF.")
+        logging.warning("Image contains transparency which cannot be retained "
+                        "in PDF.")
         logging.warning("img2pdf will not perform a lossy operation.")
         logging.warning("You can remove the alpha channel using imagemagick:")
-        logging.warning("  $ convert input.png -background white -alpha remove -alpha off output.png")
+        logging.warning("  $ convert input.png -background white -alpha "
+                        "remove -alpha off output.png")
         raise Exception("Refusing to work on images with alpha channel")
-
 
     # Since commit 07a96209597c5e8dfe785c757d7051ce67a980fb or release 4.1.0
     # Pillow retrieves the DPI from EXIF if it cannot find the DPI in the JPEG
@@ -694,7 +700,8 @@ def ccitt_payload_location_from_pil(img):
     # If Pillow is passed an invalid compression argument it will ignore it;
     # make sure the image actually got compressed.
     if img.info['compression'] != 'group4':
-        raise ValueError("Image not compressed with CCITT Group 4 but with: %s" % img.info['compression'])
+        raise ValueError("Image not compressed with CCITT Group 4 but with: %s"
+                         % img.info['compression'])
 
     # Read the TIFF tags to find the offset(s) of the compressed data strips.
     strip_offsets = img.tag_v2[TiffImagePlugin.STRIPOFFSETS]
@@ -747,17 +754,19 @@ def parse_png(rawdata):
         # once we can require Python >= 3.2 we can use int.from_bytes() instead
         n, = struct.unpack('>I', rawdata[i-8:i-4])
         if i + n > len(rawdata):
-            raise Exception("invalid png: %d %d %d"%(i, n, len(rawdata)))
+            raise Exception("invalid png: %d %d %d" % (i, n, len(rawdata)))
         if rawdata[i-4:i] == b"IDAT":
             pngidat += rawdata[i:i+n]
         elif rawdata[i-4:i] == b"PLTE":
             for j in range(i, i+n, 3):
-                # with int.from_bytes() we would not have to prepend extra zeroes
+                # with int.from_bytes() we would not have to prepend extra
+                # zeroes
                 color, = struct.unpack('>I', b'\x00'+rawdata[j:j+3])
                 palette.append(color)
         i += n
         i += 12
     return pngidat, palette
+
 
 def read_images(rawdata, colorspace, first_frame_only=False):
     im = BytesIO(rawdata)
@@ -796,7 +805,8 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if color == Colorspace['RGBA']:
             raise JpegColorspaceError("jpeg can't have an alpha channel")
         im.close()
-        return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx, [], False)]
+        return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx, [],
+                 False)]
 
     # We can directly embed the IDAT chunk of PNG images if the PNG is not
     # interlaced
@@ -810,26 +820,29 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         pngidat, palette = parse_png(rawdata)
         im.close()
-        return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx, palette, False)]
+        return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx,
+                 palette, False)]
 
     # We can directly copy the data out of a CCITT Group 4 encoded TIFF, if it
     # only contains a single strip
     if imgformat == ImageFormat.TIFF \
-        and imgdata.info['compression'] == "group4" \
-        and len(imgdata.tag_v2[TiffImagePlugin.STRIPOFFSETS]) == 1:
+            and imgdata.info['compression'] == "group4" \
+            and len(imgdata.tag_v2[TiffImagePlugin.STRIPOFFSETS]) == 1:
         photo = imgdata.tag_v2[TiffImagePlugin.PHOTOMETRIC_INTERPRETATION]
         inverted = False
         if photo == 0:
             inverted = True
         elif photo != 1:
-            raise ValueError("unsupported photometric interpretation for group4 tiff: %d" % photo)
+            raise ValueError("unsupported photometric interpretation for "
+                             "group4 tiff: %d" % photo)
         color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         offset, length = ccitt_payload_location_from_pil(imgdata)
         im.seek(offset)
         rawdata = im.read(length)
         im.close()
-        return [(color, ndpi, ImageFormat.CCITTGroup4, rawdata, imgwidthpx, imgheightpx, [], inverted)]
+        return [(color, ndpi, ImageFormat.CCITTGroup4, rawdata, imgwidthpx,
+                 imgheightpx, [], inverted)]
 
     # Everything else has to be encoded
 
@@ -869,7 +882,8 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             logging.debug("Colorspace is OK: %s", color)
             newimg = imgdata
         else:
-            raise ValueError("unknown or unsupported colorspace: %s" % color.name)
+            raise ValueError("unknown or unsupported colorspace: %s"
+                             % color.name)
         # the PNG format does not support CMYK, so we fall back to normal
         # compression
         if color in [Colorspace.CMYK, Colorspace["CMYK;I"]]:
@@ -1194,7 +1208,7 @@ def convert(*images, **kwargs):
             try:
                 with open(img, "rb") as f:
                     rawdata = f.read()
-            except:
+            except Exception:
                 # whatever the exception is (string could contain NUL
                 # characters or the path could just not exist) it's not a file
                 # name so we now try treating it as raw image content
@@ -1698,7 +1712,7 @@ RGB.''')
              "to prevent decompression bomb denial of service attacks. If "
              "your input image contains more pixels than that, use this "
              "option to disable this safety measure during this run of img2pdf"
-             %Image.MAX_IMAGE_PIXELS)
+             % Image.MAX_IMAGE_PIXELS)
 
     sizeargs = parser.add_argument_group(
         title='Image and page size and layout arguments',
