@@ -1,6 +1,7 @@
 include README.md
 include test_comp.sh
 include CHANGES.rst
+include LICENSE
 recursive-include src *.jpg
 recursive-include src *.pdf
 recursive-include src *.png
