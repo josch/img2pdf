@@ -17,9 +17,9 @@ Conventional conversion software (like ImageMagick) would either:
  2. not be small because using wasteful flate encoding of raw pixel data
  3. not be fast because input data gets re-encoded
 
-Another advantage of not having to re-encode the input in most common
-situations is, that img2pdf is able to handle much larger input than other
-software.
+Another advantage of not having to re-encode the input (in most common
+situations) is, that img2pdf is able to handle much larger input than other
+software, because the raw pixel data never has to be loaded into memory.
 
 The following table shows how img2pdf handles different input depending on the
 input file format and image color space.
@@ -56,34 +56,35 @@ descriptor.
 If no output file is specified with the `-o`/`--output` option, output will be
 done to stdout. A typical invocation is:
 
-	img2pdf img1.png img2.jpg -o out.pdf
+	$ img2pdf img1.png img2.jpg -o out.pdf
 
 The detailed documentation can be accessed by running:
 
-	img2pdf --help
+	$ img2pdf --help
 
 Bugs
 ----
 
-If you find a JPEG, JPEG2000 or PNG file that, when embedded into the PDF
-cannot be read by the Adobe Acrobat Reader, please contact me.
+ - If you find a JPEG, JPEG2000, PNG or CCITT Group 4 encoded TIFF file that,
+   when embedded into the PDF cannot be read by the Adobe Acrobat Reader,
+   please contact me.
 
-I have not yet figured out how to determine the colorspace of JPEG2000 files.
-Therefore JPEG2000 files use DeviceRGB by default. For JPEG2000 files with
-other colorspaces, you must explicitly specify it using the `--colorspace`
-option.
+ - I have not yet figured out how to determine the colorspace of JPEG2000
+   files.  Therefore JPEG2000 files use DeviceRGB by default. For JPEG2000
+   files with other colorspaces, you must explicitly specify it using the
+   `--colorspace` option.
 
-Input images with alpha channels are not allowed. PDF doesn't support alpha
-channels in images and thus, the alpha channel of the input would have to be
-discarded. But img2pdf will always be lossless and thus, input images must not
-carry transparency information.
+ - Input images with alpha channels are not allowed. PDF doesn't support alpha
+   channels in images and thus, the alpha channel of the input would have to be
+   discarded. But img2pdf will always be lossless and thus, input images must
+   not carry transparency information.
 
-img2pdf uses PIL (or Pillow) to obtain image meta data and to convert the input
-if necessary. To prevent decompression bomb denial of service attacks, Pillow
-limits the maximum number of pixels an input image is allowed to have. If you
-are sure that you know what you are doing, then you can disable this safeguard
-by passing the `--pillow-limit-break` option to img2pdf. This allows one to
-process even very large input images.
+ - img2pdf uses PIL (or Pillow) to obtain image meta data and to convert the
+   input if necessary. To prevent decompression bomb denial of service attacks,
+   Pillow limits the maximum number of pixels an input image is allowed to
+   have. If you are sure that you know what you are doing, then you can disable
+   this safeguard by passing the `--pillow-limit-break` option to img2pdf. This
+   allows one to process even very large input images.
 
 Installation
 ------------
@@ -146,3 +147,72 @@ The package can also be used as a library:
 	layout_fun = img2pdf.get_layout_fun(a4inpt)
 	with open("name.pdf","wb") as f:
 		f.write(img2pdf.convert('test.jpg', layout_fun=layout_fun))
+
+Comparison to ImageMagick
+-------------------------
+
+Create a large test image:
+
+	$ convert logo: -resize 8000x original.jpg
+
+Convert it into PDF using ImageMagick and img2pdf:
+
+	$ time img2pdf original.jpg -o img2pdf.pdf
+	$ time convert original.jpg imagemagick.pdf
+
+Notice how ImageMagick took an order of magnitude longer to do the conversion
+than img2pdf. It also used twice the memory.
+
+Now extract the image data from both PDF documents and compare it to the
+original:
+
+	$ pdfimages -all img2pdf.pdf tmp
+	$ compare -metric AE original.jpg tmp-000.jpg null:
+	0
+	$ pdfimages -all imagemagick.pdf tmp
+	$ compare -metric AE original.jpg tmp-000.jpg null:
+	118716
+
+To get lossless output with ImageMagick we can use Zip compression but that
+unnecessarily increases the size of the output:
+
+	$ convert original.jpg -compress Zip imagemagick.pdf
+	$ pdfimages -all imagemagick.pdf tmp
+	$ compare -metric AE original.jpg tmp-000.png null:
+	0
+	$ stat --format="%s %n" original.jpg img2pdf.pdf imagemagick.pdf
+	1535837 original.jpg
+	1536683 img2pdf.pdf
+	9397809 imagemagick.pdf
+
+Comparison to pdfLaTeX
+----------------------
+
+pdfLaTeX performs a lossless conversion from included images to PDF by default.
+If the input is a JPEG, then it simply embeds the JPEG into the PDF in the same
+way as img2pdf does it. But for other image formats it uses flate compression
+of the plain pixel data and thus needlessly increases the output file size:
+
+	$ convert logo: -resize 8000x original.png
+	$ cat << END > pdflatex.tex
+	\documentclass{article}
+	\usepackage{graphicx}
+	\begin{document}
+	\includegraphics{original.png}
+	\end{document}
+	END
+	$ pdflatex pdflatex.tex
+	$ stat --format="%s %n" original.png pdflatex.pdf
+	4500182 original.png
+	9318120 pdflatex.pdf
+
+Comparison to Tesseract OCR
+---------------------------
+
+Tesseract OCR comes closest to the functionality img2pdf provides. It is able
+to convert JPEG and PNG input to PDF without needlessly increasing the filesize
+and is at the same time lossless. So if your input is JPEG and PNG images, then
+you should safely be able to use Tesseract instead of img2pdf. For other input,
+Tesseract might not do a lossless conversion. For example it converts CMYK
+input to RGB and removes the alpha channel from images with transparency. For
+multipage TIFF or animated GIF, it will only convert the first frame.
