@@ -2,6 +2,12 @@
 CHANGES
 =======
 
+0.3.1 (2018-08-04)
+------------------
+
+ - Directly copy data from CCITT Group 4 encoded TIFF images into the PDF
+   container without re-encoding
+
 0.3.0 (2018-06-18)
 ------------------
 
