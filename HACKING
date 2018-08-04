@@ -1,0 +1,44 @@
+Running img2pdf from source
+---------------------------
+
+img2pdf can be run directly from the cloned git repository:
+
+    $ python3 src/img2pdf.py img.jpg -o out.pdf
+
+Running the testsuite
+---------------------
+
+    $ python3 setup.py test
+
+Fixing the testsuite
+--------------------
+
+Sometimes your changes will break the testsuite. The testsuite works by
+comparing the images found in `src/tests/input` with the corresponding PDF
+documents in `src/tests/output`. The filename of the output file will be the
+same name the input has with the `.pdf` suffix appended to it. To generate the
+files in the `src/tests/output` directory via the command line, run:
+
+    $ src/img2pdf.py --producer="" --nodate src/tests/input/normal.jpg -o src/tests/output/normal.jpg.pdf
+
+This makes it easier to spot where the differences are and how to fix the
+issue.
+
+Making a new release
+--------------------
+
+ - Add a new entry to CHANGES.rst
+ - Bump VERSION in setup.py
+ - Bump __version__ in src/img2pdf.py
+ - Commit:
+
+    $ git commit -m "release version X.Y.Z"
+
+ - Add git tag:
+
+    $ git tag X.Y.Z
+
+ - Build and upload to pypi:
+
+    $ python3 setup.py sdist bdist_wheel
+    $ twine upload --sign dist/*

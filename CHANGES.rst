@@ -2,42 +2,42 @@
 CHANGES
 =======
 
-0.3.0
------
+0.3.0 (2018-06-18)
+------------------
 
  - Store non-jpeg images using PNG compression
  - Support arbitrarily large pages via PDF /UserUnit field
  - Disallow input with alpha channel as it cannot be preserved
  - Add option --pillow-limit-break to support very large input
 
-0.2.4
------
+0.2.4 (2017-05-23)
+------------------
 
  - Restore support for Python 2.7
  - Add support for PyPy
  - Add support for testing using tox
 
-0.2.3
------
+0.2.3 (2017-01-20)
+------------------
 
  - version number bump for botched pypi upload...
 
-0.2.2
------
+0.2.2 (2017-01-20)
+------------------
 
  - automatic monochrome CCITT Group4 encoding via Pillow/libtiff
 
-0.2.1
------
+0.2.1 (2016-05-04)
+------------------
 
  - set img2pdf as /producer value
  - support multi-frame images like multipage TIFF and animated GIF
  - support for palette images like GIF
- - support all colorspaces and imageformats knows by PIL
+ - support all colorspaces and imageformats known by PIL
  - read horizontal and vertical dpi from JPEG2000 files
 
-0.2.0
------
+0.2.0 (2015-05-10)
+------------------
 
  - now Python3 only
  - pep8 compliant code
@@ -72,34 +72,34 @@ CHANGES
  - explicitly store date in UTC and allow parsing all date formats understood
    by dateutil and `date --date`
 
-0.1.5
------
+0.1.5 (2015-02-16)
+------------------
 
 - Enable support for CMYK images
 - Rework test suite
 - support file objects as input
 
-0.1.4
------
+0.1.4 (2015-01-21)
+------------------
 
 - add Python 3 support
 - make output reproducible by sorting and --nodate option
 
-0.1.3
------
+0.1.3 (2014-11-10)
+------------------
 
 - Avoid leaking file descriptors
 - Convert unrecognized colorspaces to RGB
 
-0.1.1
------
+0.1.1 (2014-09-07)
+------------------
 
 - allow running src/img2pdf.py standalone
 - license change from GPL to LGPL
 - Add pillow 2.4.0 support
 - add options to specify pdf dimensions in points
 
-0.1.0 (unreleased)
+0.1.0 (2014-03-14, unreleased)
 ------------------
 
 - Initial PyPI release.
