@@ -861,45 +861,17 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx,
                  palette, False)]
 
-    # We can directly copy the data out of a CCITT Group 4 encoded TIFF, if it
-    # only contains a single strip
-    if imgformat == ImageFormat.TIFF \
-            and imgdata.info['compression'] == "group4" \
-            and len(imgdata.tag_v2[TiffImagePlugin.STRIPOFFSETS]) == 1:
-        photo = imgdata.tag_v2[TiffImagePlugin.PHOTOMETRIC_INTERPRETATION]
-        inverted = False
-        if photo == 0:
-            inverted = True
-        elif photo != 1:
-            raise ValueError("unsupported photometric interpretation for "
-                             "group4 tiff: %d" % photo)
-        color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
-                imgdata, imgformat, default_dpi, colorspace, rawdata)
-        offset, length = ccitt_payload_location_from_pil(imgdata)
-        im.seek(offset)
-        rawdata = im.read(length)
-        im.close()
-        fillorder = imgdata.tag_v2.get(TiffImagePlugin.FILLORDER)
-        if fillorder is None:
-            # no FillOrder: nothing to do
-            pass
-        elif fillorder == 1:
-            # msb-to-lsb: nothing to do
-            pass
-        elif fillorder == 2:
-            logging.debug("fillorder is lsb-to-msb => reverse bits")
-            # lsb-to-msb: reverse bits of each byte
-            rawdata = bytearray(rawdata)
-            for i in range(len(rawdata)):
-                rawdata[i] = TIFFBitRevTable[rawdata[i]]
-            rawdata = bytes(rawdata)
-        else:
-            raise ValueError("unsupported FillOrder: %d" % fillorder)
-        logging.debug("read_images() embeds a TIFF")
-        return [(color, ndpi, ImageFormat.CCITTGroup4, rawdata, imgwidthpx,
-                 imgheightpx, [], inverted)]
-
-    # Everything else has to be encoded
+    # If our input is not JPEG or PNG, then we might have a format that
+    # supports multiple frames (like TIFF or GIF), so we need a loop to
+    # iterate through all frames of the image.
+    #
+    # Each frame gets compressed using PNG compression *except* if:
+    #
+    #  * The image is monochrome => encode using CCITT group 4
+    #
+    #  * The image is CMYK => zip plain RGB data
+    #
+    #  * We are handling a CCITT encoded TIFF frame => embed data
 
     result = []
     img_page_count = 0
@@ -912,6 +884,45 @@ def read_images(rawdata, colorspace, first_frame_only=False):
 
         if first_frame_only and img_page_count > 0:
             break
+
+        # We can directly copy the data out of a CCITT Group 4 encoded TIFF, if it
+        # only contains a single strip
+        if imgformat == ImageFormat.TIFF \
+                and imgdata.info['compression'] == "group4" \
+                and len(imgdata.tag_v2[TiffImagePlugin.STRIPOFFSETS]) == 1:
+            photo = imgdata.tag_v2[TiffImagePlugin.PHOTOMETRIC_INTERPRETATION]
+            inverted = False
+            if photo == 0:
+                inverted = True
+            elif photo != 1:
+                raise ValueError("unsupported photometric interpretation for "
+                                 "group4 tiff: %d" % photo)
+            color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+                    imgdata, imgformat, default_dpi, colorspace, rawdata)
+            offset, length = ccitt_payload_location_from_pil(imgdata)
+            im.seek(offset)
+            rawdata = im.read(length)
+            fillorder = imgdata.tag_v2.get(TiffImagePlugin.FILLORDER)
+            if fillorder is None:
+                # no FillOrder: nothing to do
+                pass
+            elif fillorder == 1:
+                # msb-to-lsb: nothing to do
+                pass
+            elif fillorder == 2:
+                logging.debug("fillorder is lsb-to-msb => reverse bits")
+                # lsb-to-msb: reverse bits of each byte
+                rawdata = bytearray(rawdata)
+                for i in range(len(rawdata)):
+                    rawdata[i] = TIFFBitRevTable[rawdata[i]]
+                rawdata = bytes(rawdata)
+            else:
+                raise ValueError("unsupported FillOrder: %d" % fillorder)
+            logging.debug("read_images() embeds a TIFF")
+            result.append((color, ndpi, ImageFormat.CCITTGroup4, rawdata,
+                           imgwidthpx, imgheightpx, [], inverted))
+            img_page_count += 1
+            continue
 
         logging.debug("Converting frame: %d" % img_page_count)
 
