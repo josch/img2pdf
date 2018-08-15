@@ -750,6 +750,9 @@ def ccitt_payload_location_from_pil(img):
 
     (offset, ), (length, ) = strip_offsets, strip_bytes
 
+    logging.debug("TIFF strip_offsets: %d" % offset)
+    logging.debug("TIFF strip_bytes: %d" % length)
+
     return offset, length
 
 
@@ -838,6 +841,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if color == Colorspace['RGBA']:
             raise JpegColorspaceError("jpeg can't have an alpha channel")
         im.close()
+        logging.debug("read_images() embeds a JPEG")
         return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx, [],
                  False)]
 
@@ -853,6 +857,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         pngidat, palette = parse_png(rawdata)
         im.close()
+        logging.debug("read_images() embeds a PNG")
         return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx,
                  palette, False)]
 
@@ -882,6 +887,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             # msb-to-lsb: nothing to do
             pass
         elif fillorder == 2:
+            logging.debug("fillorder is lsb-to-msb => reverse bits")
             # lsb-to-msb: reverse bits of each byte
             rawdata = bytearray(rawdata)
             for i in range(len(rawdata)):
@@ -889,6 +895,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             rawdata = bytes(rawdata)
         else:
             raise ValueError("unsupported FillOrder: %d" % fillorder)
+        logging.debug("read_images() embeds a TIFF")
         return [(color, ndpi, ImageFormat.CCITTGroup4, rawdata, imgwidthpx,
                  imgheightpx, [], inverted)]
 
@@ -916,6 +923,8 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             try:
                 ccittdata = transcode_monochrome(imgdata)
                 imgformat = ImageFormat.CCITTGroup4
+                logging.debug(
+                        "read_images() encoded a B/W image as CCITT group 4")
                 result.append((color, ndpi, imgformat, ccittdata,
                                imgwidthpx, imgheightpx, [], False))
                 img_page_count += 1
@@ -936,6 +945,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         # compression
         if color in [Colorspace.CMYK, Colorspace["CMYK;I"]]:
             imggz = zlib.compress(newimg.tobytes())
+            logging.debug("read_images() encoded CMYK with flate compression")
             result.append((color, ndpi, imgformat, imggz, imgwidthpx,
                            imgheightpx, [], False))
         else:
@@ -946,6 +956,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             newimg.save(pngbuffer, format="png")
             pngidat, palette = parse_png(pngbuffer.getvalue())
             imgformat = ImageFormat.PNG
+            logging.debug("read_images() encoded an image as PNG")
             result.append((color, ndpi, imgformat, pngidat, imgwidthpx,
                            imgheightpx, palette, False))
         img_page_count += 1
