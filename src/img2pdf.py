@@ -688,7 +688,16 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
             if c.name == ics:
                 color = c
         if color is None:
-            color = Colorspace.other
+            # PIL does not provide the information about the original
+            # colorspace for 16bit grayscale PNG images. Thus, we retrieve
+            # that info manually by looking at byte 10 in the IHDR chunk. We
+            # know where to find that in the file because the IHDR chunk must
+            # be the first chunk
+            if rawdata is not None and imgformat == ImageFormat.PNG \
+                    and rawdata[25] == 0:
+                color = Colorspace.L
+            else:
+                raise ValueError("unknown colorspace")
         if color == Colorspace.CMYK and imgformat == ImageFormat.JPEG:
             # Adobe inverts CMYK JPEGs for some reason, and others
             # have followed suit as well. Some software assumes the
