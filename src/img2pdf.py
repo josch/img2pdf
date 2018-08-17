@@ -684,7 +684,7 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
         ndpi = (int(round(ndpi[0])), int(round(ndpi[1])))
         ics = imgdata.mode
 
-    if ics in ["LA", "PA", "RGBA"]:
+    if ics in ["LA", "PA", "RGBA"] or "transparency" in imgdata.info:
         logging.warning("Image contains transparency which cannot be retained "
                         "in PDF.")
         logging.warning("img2pdf will not perform a lossy operation.")
