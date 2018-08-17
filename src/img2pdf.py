@@ -409,7 +409,8 @@ class pdfdoc(object):
 
     def add_imagepage(self, color, imgwidthpx, imgheightpx, imgformat, imgdata,
                       imgwidthpdf, imgheightpdf, imgxpdf, imgypdf, pagewidth,
-                      pageheight, userunit=None, palette=None, inverted=False):
+                      pageheight, userunit=None, palette=None, inverted=False,
+                      depth=0):
         if self.with_pdfrw:
             from pdfrw import PdfDict, PdfName, PdfObject, PdfString
             from pdfrw.py23_diffs import convert_load
@@ -456,21 +457,7 @@ class pdfdoc(object):
         image[PdfName.Width] = imgwidthpx
         image[PdfName.Height] = imgheightpx
         image[PdfName.ColorSpace] = colorspace
-        # hardcoded as PIL doesn't provide bits for non-jpeg formats
-        if imgformat is ImageFormat.CCITTGroup4:
-            image[PdfName.BitsPerComponent] = 1
-        else:
-            if color == Colorspace['1']:
-                image[PdfName.BitsPerComponent] = 1
-            elif color == Colorspace.P:
-                if len(palette) <= 2**1:
-                    image[PdfName.BitsPerComponent] = 1
-                elif len(palette) <= 2**4:
-                    image[PdfName.BitsPerComponent] = 4
-                else:
-                    image[PdfName.BitsPerComponent] = 8
-            else:
-                image[PdfName.BitsPerComponent] = 8
+        image[PdfName.BitsPerComponent] = depth
 
         if color == Colorspace['CMYK;I']:
             # Inverts all four channels
@@ -496,17 +483,7 @@ class pdfdoc(object):
             else:
                 decodeparms[PdfName.Colors] = 3
             decodeparms[PdfName.Columns] = imgwidthpx
-            if color == Colorspace['1']:
-                decodeparms[PdfName.BitsPerComponent] = 1
-            elif color == Colorspace.P:
-                if len(palette) <= 2**1:
-                    decodeparms[PdfName.BitsPerComponent] = 1
-                elif len(palette) <= 2**4:
-                    decodeparms[PdfName.BitsPerComponent] = 4
-                else:
-                    decodeparms[PdfName.BitsPerComponent] = 8
-            else:
-                decodeparms[PdfName.BitsPerComponent] = 8
+            decodeparms[PdfName.BitsPerComponent] = depth
             image[PdfName.DecodeParms] = decodeparms
 
         text = ("q\n%0.4f 0 0 %0.4f %0.4f %0.4f cm\n/Im0 Do\nQ" %
@@ -843,7 +820,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         im.close()
         logging.debug("read_images() embeds a JPEG")
         return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx, [],
-                 False)]
+                 False, 8)]
 
     # We can directly embed the IDAT chunk of PNG images if the PNG is not
     # interlaced
@@ -857,9 +834,16 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         pngidat, palette = parse_png(rawdata)
         im.close()
+        # PIL does not provide the information about the original bits per
+        # sample. Thus, we retrieve that info manually by looking at byte 9 in
+        # the IHDR chunk. We know where to find that in the file because the
+        # IHDR chunk must be the first chunk
+        depth = rawdata[24]
+        if depth not in [1, 2, 4, 8, 16]:
+            raise ValueError("invalid bit depth: %d" % depth)
         logging.debug("read_images() embeds a PNG")
         return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx,
-                 palette, False)]
+                 palette, False, depth)]
 
     # If our input is not JPEG or PNG, then we might have a format that
     # supports multiple frames (like TIFF or GIF), so we need a loop to
@@ -920,7 +904,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 raise ValueError("unsupported FillOrder: %d" % fillorder)
             logging.debug("read_images() embeds a TIFF")
             result.append((color, ndpi, ImageFormat.CCITTGroup4, rawdata,
-                           imgwidthpx, imgheightpx, [], inverted))
+                           imgwidthpx, imgheightpx, [], inverted, 1))
             img_page_count += 1
             continue
 
@@ -937,7 +921,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 logging.debug(
                         "read_images() encoded a B/W image as CCITT group 4")
                 result.append((color, ndpi, imgformat, ccittdata,
-                               imgwidthpx, imgheightpx, [], False))
+                               imgwidthpx, imgheightpx, [], False, 1))
                 img_page_count += 1
                 continue
             except Exception as e:
@@ -958,7 +942,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             imggz = zlib.compress(newimg.tobytes())
             logging.debug("read_images() encoded CMYK with flate compression")
             result.append((color, ndpi, imgformat, imggz, imgwidthpx,
-                           imgheightpx, [], False))
+                           imgheightpx, [], False, 8))
         else:
             # cheapo version to retrieve a PNG encoding of the payload is to
             # just save it with PIL. In the future this could be replaced by
@@ -967,9 +951,17 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             newimg.save(pngbuffer, format="png")
             pngidat, palette = parse_png(pngbuffer.getvalue())
             imgformat = ImageFormat.PNG
+            # PIL does not provide the information about the original bits per
+            # sample. Thus, we retrieve that info manually by looking at byte 9 in
+            # the IHDR chunk. We know where to find that in the file because the
+            # IHDR chunk must be the first chunk
+            pngbuffer.seek(24)
+            depth = ord(pngbuffer.read(1))
+            if depth not in [1, 2, 4, 8, 16]:
+                raise ValueError("invalid bit depth: %d" % depth)
             logging.debug("read_images() encoded an image as PNG")
             result.append((color, ndpi, imgformat, pngidat, imgwidthpx,
-                           imgheightpx, palette, False))
+                           imgheightpx, palette, False, depth))
         img_page_count += 1
     # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
     # close() method
@@ -1285,7 +1277,7 @@ def convert(*images, **kwargs):
                 rawdata = img
 
         for color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx, \
-                palette, inverted in read_images(
+                palette, inverted, depth in read_images(
                     rawdata, kwargs['colorspace'], kwargs['first_frame_only']):
             pagewidth, pageheight, imgwidthpdf, imgheightpdf = \
                 kwargs['layout_fun'](imgwidthpx, imgheightpx, ndpi)
@@ -1310,7 +1302,7 @@ def convert(*images, **kwargs):
             pdf.add_imagepage(color, imgwidthpx, imgheightpx, imgformat,
                               imgdata, imgwidthpdf, imgheightpdf, imgxpdf,
                               imgypdf, pagewidth, pageheight, userunit,
-                              palette, inverted)
+                              palette, inverted, depth)
 
     if kwargs['outputstream']:
         pdf.tostream(kwargs['outputstream'])
