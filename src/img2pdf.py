@@ -682,6 +682,12 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
     if ndpi == (0, 0):
         ndpi = (default_dpi, default_dpi)
 
+    # PIL defaults to a dpi of 1 if a TIFF image does not specify the dpi.
+    # In that case, we want to use a different default.
+    if ndpi == (1, 1) and imgformat == ImageFormat.TIFF:
+        ndpi = (imgdata.tag_v2.get(TiffImagePlugin.X_RESOLUTION, default_dpi),
+                imgdata.tag_v2.get(TiffImagePlugin.Y_RESOLUTION, default_dpi))
+
     logging.debug("input dpi = %d x %d", *ndpi)
 
     if colorspace:
