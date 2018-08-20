@@ -317,6 +317,10 @@ if PY3:
                     string = string.encode('ascii')
                 except UnicodeEncodeError:
                     string = b"\xfe\xff"+string.encode("utf-16-be")
+                # We should probably encode more here because at least
+                # ghostscript interpretes a carriage return byte (0x0D) as a
+                # new line byte (0x0A)
+                # PDF supports: \n, \r, \t, \b and \f
                 string = string.replace(b'\\', b'\\\\')
                 string = string.replace(b'(', b'\\(')
                 string = string.replace(b')', b'\\)')
@@ -780,6 +784,15 @@ def parse_png(rawdata):
         if rawdata[i-4:i] == b"IDAT":
             pngidat += rawdata[i:i+n]
         elif rawdata[i-4:i] == b"PLTE":
+            # This could be as simple as saying "palette = rawdata[i:i+n]" but
+            # pdfrw does only escape parenthesis and backslashes in the raw
+            # byte stream. But raw carriage return bytes are interpreted as
+            # line feed bytes by ghostscript. So instead we use the hex string
+            # format. pdfrw cannot write it but at least ghostscript is happy
+            # with it. We would also write out the palette in binary format
+            # (and escape more bytes) but since we cannot use pdfrw anyways,
+            # we choose the more human readable variant.
+            # See https://github.com/pmaupin/pdfrw/issues/147
             for j in range(i, i+n, 3):
                 # with int.from_bytes() we would not have to prepend extra
                 # zeroes
