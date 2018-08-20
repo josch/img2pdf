@@ -957,10 +957,9 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if color == Colorspace['1']:
             try:
                 ccittdata = transcode_monochrome(imgdata)
-                imgformat = ImageFormat.CCITTGroup4
                 logging.debug(
                         "read_images() encoded a B/W image as CCITT group 4")
-                result.append((color, ndpi, imgformat, ccittdata,
+                result.append((color, ndpi, ImageFormat.CCITTGroup4, ccittdata,
                                imgwidthpx, imgheightpx, [], False, 1))
                 img_page_count += 1
                 continue
@@ -990,7 +989,6 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             pngbuffer = BytesIO()
             newimg.save(pngbuffer, format="png")
             pngidat, palette = parse_png(pngbuffer.getvalue())
-            imgformat = ImageFormat.PNG
             # PIL does not provide the information about the original bits per
             # sample. Thus, we retrieve that info manually by looking at byte 9 in
             # the IHDR chunk. We know where to find that in the file because the
@@ -1000,7 +998,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             if depth not in [1, 2, 4, 8, 16]:
                 raise ValueError("invalid bit depth: %d" % depth)
             logging.debug("read_images() encoded an image as PNG")
-            result.append((color, ndpi, imgformat, pngidat, imgwidthpx,
+            result.append((color, ndpi, ImageFormat.PNG, pngidat, imgwidthpx,
                            imgheightpx, palette, False, depth))
         img_page_count += 1
     # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
