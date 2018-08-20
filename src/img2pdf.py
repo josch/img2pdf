@@ -23,6 +23,7 @@ import os
 import zlib
 import argparse
 from PIL import Image, TiffImagePlugin
+#TiffImagePlugin.DEBUG = True
 from datetime import datetime
 from jp2 import parsejp2
 from enum import Enum
