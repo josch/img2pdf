@@ -942,7 +942,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 rawdata = bytes(rawdata)
             else:
                 raise ValueError("unsupported FillOrder: %d" % fillorder)
-            logging.debug("read_images() embeds a TIFF")
+            logging.debug("read_images() embeds Group4 from TIFF")
             result.append((color, ndpi, ImageFormat.CCITTGroup4, rawdata,
                            imgwidthpx, imgheightpx, [], inverted, 1))
             img_page_count += 1
