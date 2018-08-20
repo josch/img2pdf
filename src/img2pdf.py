@@ -898,6 +898,17 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if first_frame_only and img_page_count > 0:
             break
 
+        # PIL is unable to preserve the data of 16-bit RGB TIFF files and will
+        # convert it to 8-bit without the possibility to retrieve the original
+        # data
+        # https://github.com/python-pillow/Pillow/issues/1888
+        #
+        # Some tiff images do not have BITSPERSAMPLE set. Use this to create
+        # such a tiff: tiffset -u 258 test.tif
+        if imgformat == ImageFormat.TIFF \
+                and max(imgdata.tag_v2.get(TiffImagePlugin.BITSPERSAMPLE, [1])) > 8:
+            raise ValueError("PIL is unable to preserve more than 8 bits per sample")
+
         # We can directly copy the data out of a CCITT Group 4 encoded TIFF, if it
         # only contains a single strip
         if imgformat == ImageFormat.TIFF \
