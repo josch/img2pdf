@@ -79,7 +79,16 @@ compare_pdfimages()
 	rm "$tempdir/images-000.png"
 }
 
+error()
+{
+	echo test $j failed
+	echo intermediate data is left in $tempdir
+	exit 1
+}
+
 tempdir=$(mktemp --directory --tmpdir img2pdf.XXXXXXXXXX)
+
+trap error EXIT
 
 # we use -strip to remove all timestamps (tIME chunk and exif data)
 convert -size 60x60 \( xc:none -fill red -draw 'circle 30,21 30,3' -gaussian-blur 0x3 \) \
@@ -1360,3 +1369,5 @@ rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
 
 rm "$tempdir/alpha.png" "$tempdir/normal.png" "$tempdir/inverse.png" "$tempdir/palette1.png" "$tempdir/palette2.png" "$tempdir/palette4.png" "$tempdir/palette8.png" "$tempdir/gray8.png" "$tempdir/normal16.png" "$tempdir/gray16.png" "$tempdir/gray4.png" "$tempdir/gray2.png" "$tempdir/gray1.png"
 rmdir "$tempdir"
+
+trap - EXIT
