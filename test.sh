@@ -171,6 +171,9 @@ img2pdf "$tempdir/normal.jpg" "$tempdir/out.pdf"
 # We have to use jpegtopnm and cannot use djpeg because the latter produces
 # slightly different results as well when called like this:
 #    djpeg -dct int -pnm "$tempdir/normal.jpg" > "$tempdir/normal.pnm"
+# An alternative way to compare the JPG would be to require a different DCT
+# method when decoding by setting -define jpeg:dct-method=ifast in the
+# compare command.
 jpegtopnm -dct int "$tempdir/normal.jpg" > "$tempdir/normal.pnm" 2>/dev/null
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/normal.pnm"
