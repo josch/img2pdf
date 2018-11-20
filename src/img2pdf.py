@@ -736,7 +736,7 @@ def ccitt_payload_location_from_pil(img):
     # Read the TIFF tags to find the offset(s) of the compressed data strips.
     strip_offsets = img.tag_v2[TiffImagePlugin.STRIPOFFSETS]
     strip_bytes = img.tag_v2[TiffImagePlugin.STRIPBYTECOUNTS]
-    rows_per_strip = img.tag_v2[TiffImagePlugin.ROWSPERSTRIP]
+    rows_per_strip = img.tag_v2.get(TiffImagePlugin.ROWSPERSTRIP, 2**32 - 1)
 
     # PIL always seems to create a single strip even for very large TIFFs when
     # it saves images, so assume we only have to read a single strip.

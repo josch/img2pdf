@@ -146,7 +146,7 @@ img2pdf()
 	$img2pdfprog --without-pdfrw --producer="" --nodate "$1" > "$2" 2>/dev/null
 }
 
-tests=49 # number of tests
+tests=50 # number of tests
 j=1      # current test
 
 ###############################################################################
@@ -1368,7 +1368,47 @@ grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
 grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
 
 rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
+j=$((j+1))
 
+###############################################################################
+echo "Test $j/$tests TIFF CCITT Group4, without rows-per-strip"
+
+convert "$tempdir/gray1.png" -compress group4 -define tiff:endian=lsb -define tiff:fill-order=msb -define quantum:polarity=min-is-white -define tiff:rows-per-strip=4294967295 "$tempdir/group4.tiff"
+# remove RowsPerStrip (278)
+tiffset -u 278 "$tempdir/group4.tiff"
+tiffinfo "$tempdir/group4.tiff" | grep --quiet 'Bits/Sample: 1'
+tiffinfo "$tempdir/group4.tiff" | grep --quiet 'Compression Scheme: CCITT Group 4'
+tiffinfo "$tempdir/group4.tiff" | grep --quiet 'Photometric Interpretation: min-is-white'
+tiffinfo "$tempdir/group4.tiff" | grep --quiet 'FillOrder: msb-to-lsb'
+tiffinfo "$tempdir/group4.tiff" | grep --quiet 'Samples/Pixel: 1'
+tiffinfo "$tempdir/group4.tiff" | grep --quiet 'Rows/Strip:' && exit 1
+identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Type: Bilevel'
+identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Endianess: LSB'
+identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Depth: 1-bit'
+identify -verbose "$tempdir/group4.tiff" | grep --quiet 'gray: 1-bit'
+identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Compression: Group4'
+identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:endian: lsb'
+identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:photometric: min-is-white'
+
+img2pdf "$tempdir/group4.tiff" "$tempdir/out.pdf"
+
+compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
+
+compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
+
+grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
+grep --quiet '^    /BitsPerComponent 1$' "$tempdir/out.pdf"
+grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
+grep --quiet '^        /BlackIs1 false$' "$tempdir/out.pdf"
+grep --quiet '^        /Columns 60$' "$tempdir/out.pdf"
+grep --quiet '^        /K -1$' "$tempdir/out.pdf"
+grep --quiet '^        /Rows 60$' "$tempdir/out.pdf"
+grep --quiet '^    /Filter \[ /CCITTFaxDecode \]$' "$tempdir/out.pdf"
+grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
+grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+
+rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
+j=$((j+1))
 
 rm "$tempdir/alpha.png" "$tempdir/normal.png" "$tempdir/inverse.png" "$tempdir/palette1.png" "$tempdir/palette2.png" "$tempdir/palette4.png" "$tempdir/palette8.png" "$tempdir/gray8.png" "$tempdir/normal16.png" "$tempdir/gray16.png" "$tempdir/gray4.png" "$tempdir/gray2.png" "$tempdir/gray1.png"
 rmdir "$tempdir"
