@@ -2,6 +2,17 @@
 CHANGES
 =======
 
+0.3.2 (2018-11-20)
+------------------
+
+ - support big endian TIFF with lsb-to-msb FillOrder
+ - support multipage CCITT Group 4 TIFF
+ - also reject palette images with transparency
+ - support PNG images with 1, 2, 4 or 16 bits per sample
+ - support multipage TIFF with differently encoded images
+ - support CCITT Group4 TIFF without rows-per-strip
+ - add extensive test suite
+
 0.3.1 (2018-08-04)
 ------------------
 
