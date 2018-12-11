@@ -6,7 +6,7 @@ import struct
 import sys
 import zlib
 from PIL import Image
-from io import StringIO, BytesIO
+from io import StringIO, BytesIO, TextIOWrapper
 
 HERE = os.path.dirname(__file__)
 
@@ -433,6 +433,25 @@ def tiff_header_for_ccitt(width, height, img_size, ccitt_group=4):
         )
 
 
+class CommandLineTests(unittest.TestCase):
+    def test_main_help(self):
+        # silence output
+        sys_stdout = sys.stdout
+        if PY3:
+            sys.stdout = TextIOWrapper(BytesIO())
+        else:
+            sys.stdout = BytesIO()
+
+        try:
+            img2pdf.main(['img2pdf', '--help'])
+        except SystemExit:
+            # argparse does sys.exit(0) on --help
+            res = sys.stdout.getvalue()
+            self.assertIn('img2pdf', res)
+        finally:
+            sys.stdout = sys_stdout
+
+
 def test_suite():
     class TestImg2Pdf(unittest.TestCase):
         pass
@@ -656,4 +675,5 @@ def test_suite():
 
     return unittest.TestSuite((
             unittest.makeSuite(TestImg2Pdf),
+            unittest.makeSuite(CommandLineTests),
             ))
