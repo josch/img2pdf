@@ -1787,9 +1787,14 @@ Report bugs at https://gitlab.mister-muffin.de/josch/img2pdf/issues
             title='General output arguments',
             description='Arguments controlling the output format.')
 
+    # In Python3 we have to output to sys.stdout.buffer because we write are
+    # bytes and not strings. In certain situations, like when the main
+    # function is wrapped by contextlib.redirect_stdout(), sys.stdout does not
+    # have the buffer attribute. Thus we write to sys.stdout by default and
+    # to sys.stdout.buffer if it exists.
     outargs.add_argument(
         '-o', '--output', metavar='out', type=argparse.FileType('wb'),
-        default=sys.stdout.buffer if PY3 else sys.stdout,
+        default=sys.stdout.buffer if hasattr(sys.stdout, "buffer") else sys.stdout,
         help='Makes the program output to a file instead of standard output.')
     outargs.add_argument(
         '-C', '--colorspace', metavar='colorspace', type=parse_colorspacearg,
