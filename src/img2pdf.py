@@ -44,6 +44,8 @@ papersizes = {
     "a4":     "210mmx297mm",
     "a5":     "148mmx210mm",
     "a6":     "105mmx148mm",
+    "legal":  "8.5inx14in",
+    "tabloid": "11inx17in",
 }
 papernames = {
     "letter": "Letter",
@@ -54,6 +56,8 @@ papernames = {
     "a4":     "A4",
     "a5":     "A5",
     "a6":     "A6",
+    "legal":  "Legal",
+    "tabloid": "Tabloid",
 }
 
 
