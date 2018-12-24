@@ -435,21 +435,29 @@ def tiff_header_for_ccitt(width, height, img_size, ccitt_group=4):
 
 class CommandLineTests(unittest.TestCase):
     def test_main_help(self):
-        # silence output
-        sys_stdout = sys.stdout
         if PY3:
-            sys.stdout = TextIOWrapper(BytesIO())
+            from contextlib import redirect_stdout
+            f = StringIO()
+            with redirect_stdout(f):
+                try:
+                    img2pdf.main(['img2pdf', '--help'])
+                except SystemExit:
+                    pass
+            res = f.getvalue()
+            self.assertIn('img2pdf', res)
         else:
+            # silence output
+            sys_stdout = sys.stdout
             sys.stdout = BytesIO()
 
-        try:
-            img2pdf.main(['img2pdf', '--help'])
-        except SystemExit:
-            # argparse does sys.exit(0) on --help
-            res = sys.stdout.getvalue()
-            self.assertIn('img2pdf', res)
-        finally:
-            sys.stdout = sys_stdout
+            try:
+                img2pdf.main(['img2pdf', '--help'])
+            except SystemExit:
+                # argparse does sys.exit(0) on --help
+                res = sys.stdout.getvalue()
+                self.assertIn('img2pdf', res)
+            finally:
+                sys.stdout = sys_stdout
 
 
 def test_suite():
