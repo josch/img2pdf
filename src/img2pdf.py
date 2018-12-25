@@ -24,6 +24,7 @@ import zlib
 import argparse
 from PIL import Image, TiffImagePlugin
 #TiffImagePlugin.DEBUG = True
+from PIL.ExifTags import TAGS
 from datetime import datetime
 from jp2 import parsejp2
 from enum import Enum
@@ -419,7 +420,7 @@ class pdfdoc(object):
     def add_imagepage(self, color, imgwidthpx, imgheightpx, imgformat, imgdata,
                       imgwidthpdf, imgheightpdf, imgxpdf, imgypdf, pagewidth,
                       pageheight, userunit=None, palette=None, inverted=False,
-                      depth=0):
+                      depth=0, rotate=0):
         if self.with_pdfrw:
             from pdfrw import PdfDict, PdfName, PdfObject, PdfString
             from pdfrw.py23_diffs import convert_load
@@ -506,6 +507,8 @@ class pdfdoc(object):
         page[PdfName.MediaBox] = [0, 0, pagewidth, pageheight]
         page[PdfName.Resources] = resources
         page[PdfName.Contents] = content
+        if rotate != 0:
+            page[PdfName.Rotate] = rotate
         if userunit is not None:
             # /UserUnit requires PDF 1.6
             if self.writer.version < '1.6':
@@ -694,6 +697,29 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
 
     logging.debug("input dpi = %d x %d", *ndpi)
 
+    rotation = 0
+    if hasattr(imgdata, "_getexif") and imgdata._getexif() is not None:
+        for tag, value in imgdata._getexif().items():
+            if TAGS.get(tag, tag) == 'Orientation':
+                # Detailed information on EXIF rotation tags:
+                # http://impulseadventure.com/photo/exif-orientation.html
+                if value == 1:
+                    rotation = 0
+                elif value == 6:
+                    rotation = 90
+                elif value == 3:
+                    rotation = 180
+                elif value == 8:
+                    rotation = 270
+                elif value in (2, 4, 5, 7):
+                    raise Exception("Image \"%s\": Unsupported flipped "
+                                    "rotation mode (%d)"%(im.name, value))
+                else:
+                    raise Exception("Image \"%s\": invalid rotation (%d)"%
+                                    (im.name, value))
+
+    logging.debug("rotation = %d°", rotation)
+
     if colorspace:
         color = colorspace
         logging.debug("input colorspace (forced) = %s", color)
@@ -727,7 +753,7 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
 
     logging.debug("width x height = %dpx x %dpx", imgwidthpx, imgheightpx)
 
-    return (color, ndpi, imgwidthpx, imgheightpx)
+    return (color, ndpi, imgwidthpx, imgheightpx, rotation)
 
 
 def ccitt_payload_location_from_pil(img):
@@ -842,7 +868,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
 
     # JPEG and JPEG2000 can be embedded into the PDF as-is
     if imgformat == ImageFormat.JPEG or imgformat == ImageFormat.JPEG2000:
-        color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+        color, ndpi, imgwidthpx, imgheightpx, rotation = get_imgmetadata(
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         if color == Colorspace['1']:
             raise JpegColorspaceError("jpeg can't be monochrome")
@@ -853,7 +879,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         im.close()
         logging.debug("read_images() embeds a JPEG")
         return [(color, ndpi, imgformat, rawdata, imgwidthpx, imgheightpx, [],
-                 False, 8)]
+                 False, 8, rotation)]
 
     # We can directly embed the IDAT chunk of PNG images if the PNG is not
     # interlaced
@@ -863,7 +889,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
     # IHDR chunk. We know where to find that in the file because the IHDR chunk
     # must be the first chunk.
     if imgformat == ImageFormat.PNG and rawdata[28] == 0:
-        color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+        color, ndpi, imgwidthpx, imgheightpx, rotation = get_imgmetadata(
                 imgdata, imgformat, default_dpi, colorspace, rawdata)
         pngidat, palette = parse_png(rawdata)
         im.close()
@@ -876,7 +902,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             raise ValueError("invalid bit depth: %d" % depth)
         logging.debug("read_images() embeds a PNG")
         return [(color, ndpi, imgformat, pngidat, imgwidthpx, imgheightpx,
-                 palette, False, depth)]
+                 palette, False, depth, rotation)]
 
     # If our input is not JPEG or PNG, then we might have a format that
     # supports multiple frames (like TIFF or GIF), so we need a loop to
@@ -925,7 +951,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             elif photo != 1:
                 raise ValueError("unsupported photometric interpretation for "
                                  "group4 tiff: %d" % photo)
-            color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+            color, ndpi, imgwidthpx, imgheightpx, rotation = get_imgmetadata(
                     imgdata, imgformat, default_dpi, colorspace, rawdata)
             offset, length = ccitt_payload_location_from_pil(imgdata)
             im.seek(offset)
@@ -948,13 +974,13 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 raise ValueError("unsupported FillOrder: %d" % fillorder)
             logging.debug("read_images() embeds Group4 from TIFF")
             result.append((color, ndpi, ImageFormat.CCITTGroup4, rawdata,
-                           imgwidthpx, imgheightpx, [], inverted, 1))
+                           imgwidthpx, imgheightpx, [], inverted, 1, rotation))
             img_page_count += 1
             continue
 
         logging.debug("Converting frame: %d" % img_page_count)
 
-        color, ndpi, imgwidthpx, imgheightpx = get_imgmetadata(
+        color, ndpi, imgwidthpx, imgheightpx, rotation = get_imgmetadata(
                 imgdata, imgformat, default_dpi, colorspace)
 
         newimg = None
@@ -964,7 +990,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 logging.debug(
                         "read_images() encoded a B/W image as CCITT group 4")
                 result.append((color, ndpi, ImageFormat.CCITTGroup4, ccittdata,
-                               imgwidthpx, imgheightpx, [], False, 1))
+                               imgwidthpx, imgheightpx, [], False, 1, rotation))
                 img_page_count += 1
                 continue
             except Exception as e:
@@ -985,7 +1011,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             imggz = zlib.compress(newimg.tobytes())
             logging.debug("read_images() encoded CMYK with flate compression")
             result.append((color, ndpi, imgformat, imggz, imgwidthpx,
-                           imgheightpx, [], False, 8))
+                           imgheightpx, [], False, 8, rotation))
         else:
             # cheapo version to retrieve a PNG encoding of the payload is to
             # just save it with PIL. In the future this could be replaced by
@@ -1003,7 +1029,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 raise ValueError("invalid bit depth: %d" % depth)
             logging.debug("read_images() encoded an image as PNG")
             result.append((color, ndpi, ImageFormat.PNG, pngidat, imgwidthpx,
-                           imgheightpx, palette, False, depth))
+                           imgheightpx, palette, False, depth, rotation))
         img_page_count += 1
     # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
     # close() method
@@ -1319,7 +1345,7 @@ def convert(*images, **kwargs):
                 rawdata = img
 
         for color, ndpi, imgformat, imgdata, imgwidthpx, imgheightpx, \
-                palette, inverted, depth in read_images(
+                palette, inverted, depth, rotation in read_images(
                     rawdata, kwargs['colorspace'], kwargs['first_frame_only']):
             pagewidth, pageheight, imgwidthpdf, imgheightpdf = \
                 kwargs['layout_fun'](imgwidthpx, imgheightpx, ndpi)
@@ -1344,7 +1370,7 @@ def convert(*images, **kwargs):
             pdf.add_imagepage(color, imgwidthpx, imgheightpx, imgformat,
                               imgdata, imgwidthpdf, imgheightpdf, imgxpdf,
                               imgypdf, pagewidth, pageheight, userunit,
-                              palette, inverted, depth)
+                              palette, inverted, depth, rotation)
 
     if kwargs['outputstream']:
         pdf.tostream(kwargs['outputstream'])
