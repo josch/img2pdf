@@ -146,7 +146,7 @@ img2pdf()
 	$img2pdfprog --without-pdfrw --producer="" --nodate "$1" > "$2" 2>/dev/null
 }
 
-tests=50 # number of tests
+tests=51 # number of tests
 j=1      # current test
 
 ###############################################################################
@@ -190,6 +190,58 @@ grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
 grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
 
 rm "$tempdir/normal.jpg" "$tempdir/normal.pnm" "$tempdir/out.pdf"
+j=$((j+1))
+
+###############################################################################
+echo "Test $j/$tests JPEG (90° rotated)"
+
+convert "$tempdir/normal.png" "$tempdir/normal.jpg"
+exiftool -overwrite_original -all= "$tempdir/normal.jpg" -n >/dev/null
+exiftool -overwrite_original -Orientation=6 -XResolution=96 -YResolution=96 -n "$tempdir/normal.jpg" >/dev/null
+
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Format: JPEG (Joint Photographic Experts Group JFIF format)$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Mime type: image/jpeg$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Geometry: 60x60+0+0$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Colorspace: sRGB$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Type: TrueColor$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Depth: 8-bit$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Page geometry: 60x60+0+0$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Compression: JPEG$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^    exif:Orientation: 6$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^    exif:ResolutionUnit: 2$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^    exif:XResolution: 96/1$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^    exif:YResolution: 96/1$'
+
+img2pdf "$tempdir/normal.jpg" "$tempdir/out.pdf"
+
+# We have to use jpegtopnm with the original JPG before being able to compare
+# it with imagemagick because imagemagick will decode the JPG slightly
+# differently than ghostscript, poppler and mupdf do it.
+# We have to use jpegtopnm and cannot use djpeg because the latter produces
+# slightly different results as well when called like this:
+#    djpeg -dct int -pnm "$tempdir/normal.jpg" > "$tempdir/normal.pnm"
+# An alternative way to compare the JPG would be to require a different DCT
+# method when decoding by setting -define jpeg:dct-method=ifast in the
+# compare command.
+jpegtopnm -dct int "$tempdir/normal.jpg" > "$tempdir/normal.pnm" 2>/dev/null
+convert -rotate "90" "$tempdir/normal.pnm" "$tempdir/normal_rotated.png"
+#convert -rotate "0" "$tempdir/normal.pnm" "$tempdir/normal_rotated.png"
+
+compare_rendered "$tempdir/out.pdf" "$tempdir/normal_rotated.png"
+
+pdfimages -j "$tempdir/out.pdf" "$tempdir/images"
+cmp "$tempdir/normal.jpg" "$tempdir/images-000.jpg"
+rm "$tempdir/images-000.jpg"
+
+grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
+grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
+grep --quiet '^    /ColorSpace /DeviceRGB$' "$tempdir/out.pdf"
+grep --quiet '^    /Filter /DCTDecode$' "$tempdir/out.pdf"
+grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
+grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+grep --quiet '^    /Rotate 90$' "$tempdir/out.pdf"
+
+rm "$tempdir/normal.jpg" "$tempdir/normal.pnm" "$tempdir/out.pdf" "$tempdir/normal_rotated.png"
 j=$((j+1))
 
 ###############################################################################
