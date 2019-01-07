@@ -2,6 +2,14 @@
 CHANGES
 =======
 
+0.3.3 (2019-01-07)
+------------------
+
+ - restore basic support for Python 2
+ - also ship test.sh
+ - add legal and tabloid paper formats
+ - respect exif rotation tag
+
 0.3.2 (2018-11-20)
 ------------------
 

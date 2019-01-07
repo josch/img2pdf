@@ -3,7 +3,7 @@ from setuptools import setup
 
 PY3 = sys.version_info[0] >= 3
 
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 
 INSTALL_REQUIRES = (
     'Pillow',
