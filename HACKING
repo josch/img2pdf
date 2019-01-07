@@ -9,9 +9,10 @@ Running the testsuite
 ---------------------
 
     $ python3 setup.py test
+    $ ./test.sh
 
-Fixing the testsuite
---------------------
+Fixing the setup.py testsuite
+-----------------------------
 
 Sometimes your changes will break the testsuite. The testsuite works by
 comparing the images found in `src/tests/input` with the corresponding PDF
@@ -23,6 +24,15 @@ files in the `src/tests/output` directory via the command line, run:
 
 This makes it easier to spot where the differences are and how to fix the
 issue.
+
+Fixing the test.sh testsuite
+----------------------------
+
+If your changes break test.sh, then the script will abort immediately and tell
+you where it left the temporary files for you to inspect. You can also try
+running the script like this for maximum verbosity:
+
+    $ sh -x ./test.sh
 
 Making a new release
 --------------------
@@ -40,5 +50,5 @@ Making a new release
 
  - Build and upload to pypi:
 
-    $ python3 setup.py sdist bdist_wheel
+    $ python3 setup.py sdist
     $ twine upload --sign dist/*
