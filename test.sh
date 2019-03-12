@@ -90,48 +90,26 @@ tempdir=$(mktemp --directory --tmpdir img2pdf.XXXXXXXXXX)
 
 trap error EXIT
 
-# we use -strip to remove all timestamps (tIME chunk and exif data)
-convert -size 60x60 \( xc:none -fill red -draw 'circle 30,21 30,3' -gaussian-blur 0x3 \) \
-	\( \( xc:none -fill lime -draw 'circle 39,39 36,57' -gaussian-blur 0x3 \) \
-	   \( xc:none -fill blue -draw 'circle 21,39 24,57' -gaussian-blur 0x3 \) \
-	   -compose plus -composite \
-	\) -compose plus -composite \
-	-strip \
-	"$tempdir/alpha.png"
-
-convert "$tempdir/alpha.png" -background black -alpha remove -alpha off -strip "$tempdir/normal16.png"
-
-convert "$tempdir/normal16.png" -depth 8 -strip "$tempdir/normal.png"
-
-convert "$tempdir/normal.png" -negate -strip "$tempdir/inverse.png"
-
-convert "$tempdir/normal16.png" -colorspace Gray -depth 16 -strip "$tempdir/gray16.png"
-convert "$tempdir/normal16.png" -colorspace Gray -dither FloydSteinberg -colors 256 -depth 8 -strip "$tempdir/gray8.png"
-convert "$tempdir/normal16.png" -colorspace Gray -dither FloydSteinberg -colors 16 -depth 4 -strip "$tempdir/gray4.png"
-convert "$tempdir/normal16.png" -colorspace Gray -dither FloydSteinberg -colors 4 -depth 2 -strip "$tempdir/gray2.png"
-convert "$tempdir/normal16.png" -colorspace Gray -dither FloydSteinberg -colors 2 -depth 1 -strip "$tempdir/gray1.png"
-
-# use "-define png:exclude-chunk=bkgd" because otherwise, imagemagick will
-# add the background color (white) as an additional entry to the palette
-convert "$tempdir/normal.png" -dither FloydSteinberg -colors 2 -define png:exclude-chunk=bkgd -strip "$tempdir/palette1.png"
-convert "$tempdir/normal.png" -dither FloydSteinberg -colors 4 -define png:exclude-chunk=bkgd -strip "$tempdir/palette2.png"
-convert "$tempdir/normal.png" -dither FloydSteinberg -colors 16 -define png:exclude-chunk=bkgd -strip "$tempdir/palette4.png"
-convert "$tempdir/normal.png" -dither FloydSteinberg -colors 256 -define png:exclude-chunk=bkgd -strip "$tempdir/palette8.png"
+# instead of using imagemagick to craft the test input, we use a custom python
+# script. This is because the output of imagemagick is not bit-by-bit identical
+# across versions and architectures.
+# See https://gitlab.mister-muffin.de/josch/img2pdf/issues/56
+python3 magick.py "$tempdir"
 
 cat << END | ( cd "$tempdir"; md5sum --check --status - )
-a99ef2a356c315090b6939fa4ce70516  alpha.png
-0df21ebbce5292654119b17f6e52bc81  gray16.png
-6faee81b8db446caa5004ad71bddcb5b  gray1.png
-97e423da517ede069348484a1283aa6c  gray2.png
-cbed1b6da5183aec0b86909e82b77c41  gray4.png
-c0df42fdd69ae2a16ad0c23adb39895e  gray8.png
-ac6bb850fb5aaee9fa7dcb67525cd0fc  inverse.png
-3f3f8579f5054270e79a39e7cc4e89e0  normal16.png
-cbe63b21443af8321b213bde6666951f  normal.png
-2f00705cca05fd94406fc39ede4d7322  palette1.png
-6cb250d1915c2af99c324c43ff8286eb  palette2.png
-ab7b3d3907a851692ee36f5349ed0b2c  palette4.png
-03829af4af8776adf56ba2e68f5b111e  palette8.png
+7ed200c092c726c68e889514fff0d8f1  alpha.png
+bf56e00465b98fb738f6edd2c58dac3b  gray16.png
+f93c3e3c11dad3f8c11db4fd2d01c2cc  gray1.png
+d63167c66e8a65bd5c15f68c8d554c48  gray2.png
+6bceb845d9c9946adad1526954973945  gray4.png
+7ba8152b9146eb7d9d50529189baf7db  gray8.png
+75130ec7635919e40c7396d45899ddbe  inverse.png
+bd1a2c9f9dfc51a827eafa3877cf7f83  normal16.png
+329eac79fec2e1bc30d7a50ba2e3f2a5  normal.png
+9ffd3f592b399f9f9c23892db82369cd  palette1.png
+6d3a39fe5f2efea5975f048d11a5cb02  palette2.png
+57add39e5c278249b64ab23314a41c39  palette4.png
+192a3b298d812a156e6f248238d2bb52  palette8.png
 END
 
 # use img2pdfprog environment variable if it is set
