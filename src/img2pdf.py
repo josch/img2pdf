@@ -1021,14 +1021,9 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
                 elif value == 8:
                     rotation = 270
                 elif value in (2, 4, 5, 7):
-                    raise Exception(
-                        'Image "%s": Unsupported flipped '
-                        "rotation mode (%d)" % (im.name, value)
-                    )
+                    raise Exception("Unsupported flipped rotation mode (%d)" % value)
                 else:
-                    raise Exception(
-                        'Image "%s": invalid rotation (%d)' % (im.name, value)
-                    )
+                    raise Exception("Invalid rotation (%d)" % value)
 
     logging.debug("rotation = %d°", rotation)
 
