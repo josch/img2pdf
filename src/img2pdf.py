@@ -986,9 +986,7 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
         ics = imgdata.mode
 
     if ics in ["LA", "PA", "RGBA"] or "transparency" in imgdata.info:
-        logging.warning(
-            "Image contains transparency which cannot be retained " "in PDF."
-        )
+        logging.warning("Image contains transparency which cannot be retained in PDF.")
         logging.warning("img2pdf will not perform a lossy operation.")
         logging.warning("You can remove the alpha channel using imagemagick:")
         logging.warning(
@@ -1484,14 +1482,14 @@ def get_layout_fun(
             and fitheight < 0
         ):
             raise ValueError(
-                "cannot fit into a rectangle where both " "dimensions are negative"
+                "cannot fit into a rectangle where both dimensions are negative"
             )
         elif fit not in [FitMode.fill, FitMode.enlarge] and (
             (fitwidth is not None and fitwidth < 0)
             or (fitheight is not None and fitheight < 0)
         ):
             raise Exception(
-                "cannot fit into a rectangle where either " "dimensions are negative"
+                "cannot fit into a rectangle where either dimensions are negative"
             )
 
         def default():
@@ -1839,7 +1837,7 @@ def convert(*images, **kwargs):
             userunit = None
             if pagewidth < 3.00 or pageheight < 3.00:
                 logging.warning(
-                    "pdf width or height is below 3.00 - too " "small for some viewers!"
+                    "pdf width or height is below 3.00 - too small for some viewers!"
                 )
             elif pagewidth > 14400.0 or pageheight > 14400.0:
                 if kwargs["allow_oversized"]:
@@ -1993,7 +1991,7 @@ def parse_pagesize_rectarg(string):
     if transposed:
         w, h = h, w
     if w is None and h is None:
-        raise argparse.ArgumentTypeError("at least one dimension must be " "specified")
+        raise argparse.ArgumentTypeError("at least one dimension must be specified")
     return w, h
 
 
@@ -2015,7 +2013,7 @@ def parse_imgsize_rectarg(string):
     if transposed:
         w, h = h, w
     if w is None and h is None:
-        raise argparse.ArgumentTypeError("at least one dimension must be " "specified")
+        raise argparse.ArgumentTypeError("at least one dimension must be specified")
     return w, h
 
 
@@ -2025,7 +2023,7 @@ def parse_colorspacearg(string):
             return c
     allowed = ", ".join([c.name for c in Colorspace])
     raise argparse.ArgumentTypeError(
-        "Unsupported colorspace: %s. Must be one " "of: %s." % (string, allowed)
+        "Unsupported colorspace: %s. Must be one of: %s." % (string, allowed)
     )
 
 
@@ -2099,7 +2097,7 @@ def parse_panes(string):
             return m
     allowed = ", ".join([m.name for m in PageMode])
     raise argparse.ArgumentTypeError(
-        "Unsupported page mode: %s. Must be one " "of: %s." % (string, allowed)
+        "Unsupported page mode: %s. Must be one of: %s." % (string, allowed)
     )
 
 
@@ -2124,7 +2122,7 @@ def parse_layout(string):
             return l
     allowed = ", ".join([l.name for l in PageLayout])
     raise argparse.ArgumentTypeError(
-        "Unsupported page layout: %s. Must be " "one of: %s." % (string, allowed)
+        "Unsupported page layout: %s. Must be one of: %s." % (string, allowed)
     )
 
 
@@ -2609,7 +2607,7 @@ values set via the --border option.
     viewerargs.add_argument(
         "--viewer-fit-window",
         action="store_true",
-        help="Instruct the PDF viewer to resize the window to fit the page " "size",
+        help="Instruct the PDF viewer to resize the window to fit the page size",
     )
     viewerargs.add_argument(
         "--viewer-center-window",
