@@ -363,6 +363,14 @@ class PdfTooLargeError(Exception):
     pass
 
 
+class AlphaChannelError(Exception):
+    pass
+
+
+class ExifOrientationError(Exception):
+    pass
+
+
 # without pdfrw this function is a no-op
 def my_convert_load(string):
     return string
@@ -987,7 +995,7 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
             "  $ convert input.png -background white -alpha "
             "remove -alpha off output.png"
         )
-        raise Exception("Refusing to work on images with alpha channel")
+        raise AlphaChannelError("Refusing to work on images with alpha channel")
 
     # Since commit 07a96209597c5e8dfe785c757d7051ce67a980fb or release 4.1.0
     # Pillow retrieves the DPI from EXIF if it cannot find the DPI in the JPEG
@@ -1021,9 +1029,11 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
                 elif value == 8:
                     rotation = 270
                 elif value in (2, 4, 5, 7):
-                    raise Exception("Unsupported flipped rotation mode (%d)" % value)
+                    raise ExifOrientationError(
+                        "Unsupported flipped rotation mode (%d)" % value
+                    )
                 else:
-                    raise Exception("Invalid rotation (%d)" % value)
+                    raise ExifOrientationError("Invalid rotation (%d)" % value)
 
     logging.debug("rotation = %d°", rotation)
 
