@@ -455,6 +455,9 @@ class MyPdfDict(object):
     def __getitem__(self, key):
         return self.content[key]
 
+    def __contains__(self, key):
+        return key in self.content
+
 
 class MyPdfName:
     def __getattr__(self, name):
@@ -717,6 +720,10 @@ class pdfdoc(object):
         inverted=False,
         depth=0,
         rotate=0,
+        cropborder=None,
+        bleedborder=None,
+        trimborder=None,
+        artborder=None,
     ):
         if self.with_pdfrw:
             from pdfrw import PdfDict, PdfName, PdfObject, PdfString
@@ -809,6 +816,48 @@ class pdfdoc(object):
         page = PdfDict(indirect=True)
         page[PdfName.Type] = PdfName.Page
         page[PdfName.MediaBox] = [0, 0, pagewidth, pageheight]
+        # 14.11.2 Page Boundaries
+        # ...
+        # The crop, bleed, trim, and art boxes shall not ordinarily extend
+        # beyond the boundaries of the media box. If they do, they are
+        # effectively reduced to their intersection with the media box.
+        if cropborder is not None:
+            page[PdfName.CropBox] = [
+                cropborder[1],
+                cropborder[0],
+                pagewidth - 2 * cropborder[1],
+                pageheight - 2 * cropborder[0],
+            ]
+        if bleedborder is None:
+            if PdfName.CropBox in page:
+                page[PdfName.BleedBox] = page[PdfName.CropBox]
+        else:
+            page[PdfName.BleedBox] = [
+                bleedborder[1],
+                bleedborder[0],
+                pagewidth - 2 * bleedborder[1],
+                pageheight - 2 * bleedborder[0],
+            ]
+        if trimborder is None:
+            if PdfName.CropBox in page:
+                page[PdfName.TrimBox] = page[PdfName.CropBox]
+        else:
+            page[PdfName.TrimBox] = [
+                trimborder[1],
+                trimborder[0],
+                pagewidth - 2 * trimborder[1],
+                pageheight - 2 * trimborder[0],
+            ]
+        if artborder is None:
+            if PdfName.CropBox in page:
+                page[PdfName.ArtBox] = page[PdfName.CropBox]
+        else:
+            page[PdfName.ArtBox] = [
+                artborder[1],
+                artborder[0],
+                pagewidth - 2 * artborder[1],
+                pageheight - 2 * artborder[0],
+            ]
         page[PdfName.Resources] = resources
         page[PdfName.Contents] = content
         if rotate != 0:
@@ -1763,6 +1812,10 @@ def convert(*images, **kwargs):
         outputstream=None,
         first_frame_only=False,
         allow_oversized=True,
+        cropborder=None,
+        bleedborder=None,
+        trimborder=None,
+        artborder=None,
     )
     for kwname, default in _default_kwargs.items():
         if kwname not in kwargs:
@@ -1870,6 +1923,10 @@ def convert(*images, **kwargs):
                 inverted,
                 depth,
                 rotation,
+                kwargs["cropborder"],
+                kwargs["bleedborder"],
+                kwargs["trimborder"],
+                kwargs["artborder"],
             )
 
     if kwargs["outputstream"]:
@@ -2442,6 +2499,8 @@ the image size will be calculated from the page size, respecting the border
 setting. If the --border option is given while both the --pagesize and
 --imgsize options are passed, then the --border option will be ignored.
 
+The --pagesize option or the --imgsize option with the --border option will
+determine the MediaBox size of the resulting PDF document.
 """
         % default_dpi,
     )
@@ -2509,6 +2568,50 @@ If both dimensions of the page are given via --pagesize, conditionally swaps
 these dimensions such that the page orientation is the same as the orientation
 of the input image. If the orientation of a page gets flipped, then so do the
 values set via the --border option.
+""",
+    )
+    sizeargs.add_argument(
+        "--crop-border",
+        metavar="L[:L]",
+        type=parse_borderarg,
+        help="""
+Specifies the border between the CropBox and the MediaBox. One, or two length
+values can be given as an argument, separated by a colon. One value specifies
+the border on all four sides. Two values specify the border on the top/bottom
+and left/right, respectively. It is not possible to specify asymmetric borders.
+""",
+    )
+    sizeargs.add_argument(
+        "--bleed-border",
+        metavar="L[:L]",
+        type=parse_borderarg,
+        help="""
+Specifies the border between the BleedBox and the MediaBox. One, or two length
+values can be given as an argument, separated by a colon. One value specifies
+the border on all four sides. Two values specify the border on the top/bottom
+and left/right, respectively. It is not possible to specify asymmetric borders.
+""",
+    )
+    sizeargs.add_argument(
+        "--trim-border",
+        metavar="L[:L]",
+        type=parse_borderarg,
+        help="""
+Specifies the border between the TrimBox and the MediaBox. One, or two length
+values can be given as an argument, separated by a colon. One value specifies
+the border on all four sides. Two values specify the border on the top/bottom
+and left/right, respectively. It is not possible to specify asymmetric borders.
+""",
+    )
+    sizeargs.add_argument(
+        "--art-border",
+        metavar="L[:L]",
+        type=parse_borderarg,
+        help="""
+Specifies the border between the ArtBox and the MediaBox. One, or two length
+values can be given as an argument, separated by a colon. One value specifies
+the border on all four sides. Two values specify the border on the top/bottom
+and left/right, respectively. It is not possible to specify asymmetric borders.
 """,
     )
 
@@ -2685,7 +2788,11 @@ values set via the --border option.
             viewer_fullscreen=args.viewer_fullscreen,
             with_pdfrw=not args.without_pdfrw,
             outputstream=args.output,
-            first_frame_only=args.first_frame_only
+            first_frame_only=args.first_frame_only,
+            cropborder=args.crop_border,
+            bleedborder=args.bleed_border,
+            trimborder=args.trim_border,
+            artborder=args.art_border,
         )
     except Exception as e:
         logging.error("error: " + str(e))
