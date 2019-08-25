@@ -32,6 +32,7 @@ from enum import Enum
 from io import BytesIO
 import logging
 import struct
+import platform
 
 PY3 = sys.version_info[0] >= 3
 
@@ -2222,6 +2223,423 @@ def valid_date(string):
     raise argparse.ArgumentTypeError("cannot parse date: %s" % string)
 
 
+def gui():
+    import tkinter
+    import tkinter.filedialog
+
+    # from Python 3.7 Lib/idlelib/configdialog.py
+    # Copyright 2015-2017 Terry Jan Reedy
+    # Python License
+    class VerticalScrolledFrame(tkinter.Frame):
+        """A pure Tkinter vertically scrollable frame.
+
+        * Use the 'interior' attribute to place widgets inside the scrollable frame
+        * Construct and pack/place/grid normally
+        * This frame only allows vertical scrolling
+        """
+
+        def __init__(self, parent, *args, **kw):
+            tkinter.Frame.__init__(self, parent, *args, **kw)
+
+            # Create a canvas object and a vertical scrollbar for scrolling it.
+            vscrollbar = tkinter.Scrollbar(self, orient=tkinter.VERTICAL)
+            vscrollbar.pack(fill=tkinter.Y, side=tkinter.RIGHT, expand=tkinter.FALSE)
+            canvas = tkinter.Canvas(
+                self,
+                borderwidth=0,
+                highlightthickness=0,
+                yscrollcommand=vscrollbar.set,
+                width=240,
+            )
+            canvas.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=tkinter.TRUE)
+            vscrollbar.config(command=canvas.yview)
+
+            # Reset the view.
+            canvas.xview_moveto(0)
+            canvas.yview_moveto(0)
+
+            # Create a frame inside the canvas which will be scrolled with it.
+            self.interior = interior = tkinter.Frame(canvas)
+            interior_id = canvas.create_window(0, 0, window=interior, anchor=tkinter.NW)
+
+            # Track changes to the canvas and frame width and sync them,
+            # also updating the scrollbar.
+            def _configure_interior(event):
+                # Update the scrollbars to match the size of the inner frame.
+                size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
+                canvas.config(scrollregion="0 0 %s %s" % size)
+
+            interior.bind("<Configure>", _configure_interior)
+
+            def _configure_canvas(event):
+                if interior.winfo_reqwidth() != canvas.winfo_width():
+                    # Update the inner frame's width to fill the canvas.
+                    canvas.itemconfigure(interior_id, width=canvas.winfo_width())
+
+            canvas.bind("<Configure>", _configure_canvas)
+
+            return
+
+    # From Python 3.7 Lib/tkinter/__init__.py
+    # Copyright 2000 Fredrik Lundh
+    # Python License
+    #
+    # add support for 'state' and 'name' kwargs
+    # add support for updating list of options
+    class OptionMenu(tkinter.Menubutton):
+        """OptionMenu which allows the user to select a value from a menu."""
+
+        def __init__(self, master, variable, value, *values, **kwargs):
+            """Construct an optionmenu widget with the parent MASTER, with
+            the resource textvariable set to VARIABLE, the initially selected
+            value VALUE, the other menu values VALUES and an additional
+            keyword argument command."""
+            kw = {
+                "borderwidth": 2,
+                "textvariable": variable,
+                "indicatoron": 1,
+                "relief": tkinter.RAISED,
+                "anchor": "c",
+                "highlightthickness": 2,
+            }
+            if "state" in kwargs:
+                kw["state"] = kwargs["state"]
+                del kwargs["state"]
+            if "name" in kwargs:
+                kw["name"] = kwargs["name"]
+                del kwargs["name"]
+            tkinter.Widget.__init__(self, master, "menubutton", kw)
+            self.widgetName = "tk_optionMenu"
+            self.callback = kwargs.get("command")
+            self.variable = variable
+            if "command" in kwargs:
+                del kwargs["command"]
+            if kwargs:
+                raise tkinter.TclError("unknown option -" + list(kwargs.keys())[0])
+            self.set_values([value] + list(values))
+
+        def __getitem__(self, name):
+            if name == "menu":
+                return self.__menu
+            return tkinter.Widget.__getitem__(self, name)
+
+        def set_values(self, values):
+            menu = self.__menu = tkinter.Menu(self, name="menu", tearoff=0)
+            self.menuname = menu._w
+            for v in values:
+                menu.add_command(
+                    label=v, command=tkinter._setit(self.variable, v, self.callback)
+                )
+            self["menu"] = menu
+
+        def destroy(self):
+            """Destroy this widget and the associated menu."""
+            tkinter.Menubutton.destroy(self)
+            self.__menu = None
+
+    root = tkinter.Tk()
+    app = tkinter.Frame(master=root)
+
+    filenames = []
+
+    def on_open_button():
+        filenames.clear()
+        filenames.extend(
+            tkinter.filedialog.askopenfilenames(
+                parent=root,
+                title="open image",
+                filetypes=[
+                    (
+                        "images",
+                        "*.bmp *.eps *.gif *.ico *.jpeg *.jpg *.jp2 *.pcx *.png *.ppm *.tiff",
+                    ),
+                    ("all files", "*"),
+                ],
+                # initialdir="/home/josch/git/plakativ",
+                # initialfile="test.pdf",
+            )
+        )
+
+    def on_save_button():
+        filename = tkinter.filedialog.asksaveasfilename(
+            parent=root,
+            title="save PDF",
+            defaultextension=".pdf",
+            filetypes=[("pdf documents", "*.pdf"), ("all files", "*")],
+            # initialdir="/home/josch/git/plakativ",
+            # initialfile=base + "_poster" + ext,
+        )
+        with open(filename, "wb") as f:
+            convert(*filenames, outputstream=f)
+
+    root.title("img2pdf")
+    app.pack(fill=tkinter.BOTH, expand=tkinter.TRUE)
+    tkinter.Button(app, text="Open Image", command=on_open_button).pack(
+        side=tkinter.TOP, expand=tkinter.FALSE, fill=tkinter.X
+    )
+    frame1 = VerticalScrolledFrame(app)
+    frame1.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.BOTH)
+
+    output_options = tkinter.LabelFrame(frame1.interior, text="Output Options")
+    output_options.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
+    tkinter.Label(output_options, text="colorspace", state=tkinter.DISABLED).grid(
+        row=0, column=0, sticky=tkinter.W
+    )
+    OptionMenu(output_options, tkinter.StringVar(), ["foo", "bar"]).grid(
+        row=0, column=1, sticky=tkinter.W
+    )
+    tkinter.Checkbutton(
+        output_options, text="Suppress timestamp", state=tkinter.DISABLED
+    ).grid(row=1, column=0, columnspan=2, sticky=tkinter.W)
+    tkinter.Checkbutton(
+        output_options, text="without pdfrw", state=tkinter.DISABLED
+    ).grid(row=2, column=0, columnspan=2, sticky=tkinter.W)
+    tkinter.Checkbutton(
+        output_options, text="only first frame", state=tkinter.DISABLED
+    ).grid(row=3, column=0, columnspan=2, sticky=tkinter.W)
+    tkinter.Checkbutton(
+        output_options, text="force large input", state=tkinter.DISABLED
+    ).grid(row=4, column=0, columnspan=2, sticky=tkinter.W)
+    image_size_frame = tkinter.LabelFrame(frame1.interior, text="Image size")
+    image_size_frame.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
+    OptionMenu(image_size_frame, tkinter.StringVar(), [""]).grid(
+        row=1, column=0, columnspan=3, sticky=tkinter.W
+    )
+
+    tkinter.Label(
+        image_size_frame, text="Width:", state=tkinter.DISABLED, name="size_label_width"
+    ).grid(row=2, column=0, sticky=tkinter.W)
+    tkinter.Spinbox(
+        image_size_frame,
+        format="%.2f",
+        increment=0.01,
+        from_=0,
+        to=100,
+        width=5,
+        state=tkinter.DISABLED,
+        name="spinbox_width",
+    ).grid(row=2, column=1, sticky=tkinter.W)
+    tkinter.Label(
+        image_size_frame, text="mm", state=tkinter.DISABLED, name="size_label_width_mm"
+    ).grid(row=2, column=2, sticky=tkinter.W)
+
+    tkinter.Label(
+        image_size_frame,
+        text="Height:",
+        state=tkinter.DISABLED,
+        name="size_label_height",
+    ).grid(row=3, column=0, sticky=tkinter.W)
+    tkinter.Spinbox(
+        image_size_frame,
+        format="%.2f",
+        increment=0.01,
+        from_=0,
+        to=100,
+        width=5,
+        state=tkinter.DISABLED,
+        name="spinbox_height",
+    ).grid(row=3, column=1, sticky=tkinter.W)
+    tkinter.Label(
+        image_size_frame, text="mm", state=tkinter.DISABLED, name="size_label_height_mm"
+    ).grid(row=3, column=2, sticky=tkinter.W)
+
+    page_size_frame = tkinter.LabelFrame(frame1.interior, text="Page size")
+    page_size_frame.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
+    OptionMenu(page_size_frame, tkinter.StringVar(), [""]).grid(
+        row=1, column=0, columnspan=3, sticky=tkinter.W
+    )
+
+    tkinter.Label(
+        page_size_frame, text="Width:", state=tkinter.DISABLED, name="size_label_width"
+    ).grid(row=2, column=0, sticky=tkinter.W)
+    tkinter.Spinbox(
+        page_size_frame,
+        format="%.2f",
+        increment=0.01,
+        from_=0,
+        to=100,
+        width=5,
+        state=tkinter.DISABLED,
+        name="spinbox_width",
+    ).grid(row=2, column=1, sticky=tkinter.W)
+    tkinter.Label(
+        page_size_frame, text="mm", state=tkinter.DISABLED, name="size_label_width_mm"
+    ).grid(row=2, column=2, sticky=tkinter.W)
+
+    tkinter.Label(
+        page_size_frame,
+        text="Height:",
+        state=tkinter.DISABLED,
+        name="size_label_height",
+    ).grid(row=3, column=0, sticky=tkinter.W)
+    tkinter.Spinbox(
+        page_size_frame,
+        format="%.2f",
+        increment=0.01,
+        from_=0,
+        to=100,
+        width=5,
+        state=tkinter.DISABLED,
+        name="spinbox_height",
+    ).grid(row=3, column=1, sticky=tkinter.W)
+    tkinter.Label(
+        page_size_frame, text="mm", state=tkinter.DISABLED, name="size_label_height_mm"
+    ).grid(row=3, column=2, sticky=tkinter.W)
+    layout_frame = tkinter.LabelFrame(frame1.interior, text="Layout")
+    layout_frame.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
+    tkinter.Label(layout_frame, text="border", state=tkinter.DISABLED).grid(
+        row=0, column=0, sticky=tkinter.W
+    )
+    tkinter.Spinbox(layout_frame, state=tkinter.DISABLED).grid(
+        row=0, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(layout_frame, text="fit", state=tkinter.DISABLED).grid(
+        row=1, column=0, sticky=tkinter.W
+    )
+    OptionMenu(layout_frame, tkinter.StringVar(), [""]).grid(
+        row=1, column=1, sticky=tkinter.W
+    )
+    tkinter.Checkbutton(layout_frame, text="auto orient", state=tkinter.DISABLED).grid(
+        row=2, column=0, columnspan=2, sticky=tkinter.W
+    )
+    tkinter.Label(layout_frame, text="crop border", state=tkinter.DISABLED).grid(
+        row=3, column=0, sticky=tkinter.W
+    )
+    tkinter.Spinbox(layout_frame, state=tkinter.DISABLED).grid(
+        row=3, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(layout_frame, text="bleed border", state=tkinter.DISABLED).grid(
+        row=4, column=0, sticky=tkinter.W
+    )
+    tkinter.Spinbox(layout_frame, state=tkinter.DISABLED).grid(
+        row=4, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(layout_frame, text="trim border", state=tkinter.DISABLED).grid(
+        row=5, column=0, sticky=tkinter.W
+    )
+    tkinter.Spinbox(layout_frame, state=tkinter.DISABLED).grid(
+        row=5, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(layout_frame, text="art border", state=tkinter.DISABLED).grid(
+        row=6, column=0, sticky=tkinter.W
+    )
+    tkinter.Spinbox(layout_frame, state=tkinter.DISABLED).grid(
+        row=6, column=1, sticky=tkinter.W
+    )
+    metadata_frame = tkinter.LabelFrame(frame1.interior, text="PDF metadata")
+    metadata_frame.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
+    tkinter.Label(metadata_frame, text="title", state=tkinter.DISABLED).grid(
+        row=0, column=0, sticky=tkinter.W
+    )
+    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
+        row=0, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(metadata_frame, text="author", state=tkinter.DISABLED).grid(
+        row=1, column=0, sticky=tkinter.W
+    )
+    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
+        row=1, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(metadata_frame, text="creator", state=tkinter.DISABLED).grid(
+        row=2, column=0, sticky=tkinter.W
+    )
+    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
+        row=2, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(metadata_frame, text="producer", state=tkinter.DISABLED).grid(
+        row=3, column=0, sticky=tkinter.W
+    )
+    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
+        row=3, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(metadata_frame, text="creation date", state=tkinter.DISABLED).grid(
+        row=4, column=0, sticky=tkinter.W
+    )
+    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
+        row=4, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(
+        metadata_frame, text="modification date", state=tkinter.DISABLED
+    ).grid(row=5, column=0, sticky=tkinter.W)
+    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
+        row=5, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(metadata_frame, text="subject", state=tkinter.DISABLED).grid(
+        row=6, column=0, sticky=tkinter.W
+    )
+    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
+        row=6, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(metadata_frame, text="keywords", state=tkinter.DISABLED).grid(
+        row=7, column=0, sticky=tkinter.W
+    )
+    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
+        row=7, column=1, sticky=tkinter.W
+    )
+    viewer_frame = tkinter.LabelFrame(frame1.interior, text="PDF viewer options")
+    viewer_frame.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
+    tkinter.Label(viewer_frame, text="panes", state=tkinter.DISABLED).grid(
+        row=0, column=0, sticky=tkinter.W
+    )
+    OptionMenu(viewer_frame, tkinter.StringVar(), [""]).grid(
+        row=0, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(viewer_frame, text="initial page", state=tkinter.DISABLED).grid(
+        row=1, column=0, sticky=tkinter.W
+    )
+    OptionMenu(viewer_frame, tkinter.StringVar(), ["1"]).grid(
+        row=1, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(viewer_frame, text="magnification", state=tkinter.DISABLED).grid(
+        row=2, column=0, sticky=tkinter.W
+    )
+    OptionMenu(viewer_frame, tkinter.StringVar(), [""]).grid(
+        row=2, column=1, sticky=tkinter.W
+    )
+    tkinter.Label(viewer_frame, text="page layout", state=tkinter.DISABLED).grid(
+        row=3, column=0, sticky=tkinter.W
+    )
+    OptionMenu(viewer_frame, tkinter.StringVar(), [""]).grid(
+        row=3, column=1, sticky=tkinter.W
+    )
+    tkinter.Checkbutton(
+        viewer_frame, text="fit window to page size", state=tkinter.DISABLED
+    ).grid(row=4, column=0, columnspan=2, sticky=tkinter.W)
+    tkinter.Checkbutton(
+        viewer_frame, text="center window", state=tkinter.DISABLED
+    ).grid(row=5, column=0, columnspan=2, sticky=tkinter.W)
+    tkinter.Checkbutton(
+        viewer_frame, text="open in fullscreen", state=tkinter.DISABLED
+    ).grid(row=6, column=0, columnspan=2, sticky=tkinter.W)
+
+    option_frame = tkinter.LabelFrame(frame1.interior, text="Program options")
+    option_frame.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
+
+    tkinter.Label(option_frame, text="Unit:", state=tkinter.DISABLED).grid(
+        row=0, column=0, sticky=tkinter.W
+    )
+    unit = tkinter.StringVar()
+    unit.set("mm")
+    OptionMenu(option_frame, unit, ["mm"], state=tkinter.DISABLED).grid(
+        row=0, column=1, sticky=tkinter.W
+    )
+
+    tkinter.Label(option_frame, text="Language:", state=tkinter.DISABLED).grid(
+        row=1, column=0, sticky=tkinter.W
+    )
+    language = tkinter.StringVar()
+    language.set("English")
+    OptionMenu(option_frame, language, ["English"], state=tkinter.DISABLED).grid(
+        row=1, column=1, sticky=tkinter.W
+    )
+
+    tkinter.Button(app, text="Save PDF", command=on_save_button).pack(
+        side=tkinter.TOP, expand=tkinter.FALSE, fill=tkinter.X
+    )
+
+    app.mainloop()
+
+
 def main(argv=sys.argv):
     rendered_papersizes = ""
     for k, v in sorted(papersizes.items()):
@@ -2381,6 +2799,23 @@ Report bugs at https://gitlab.mister-muffin.de/josch/img2pdf/issues
         version="%(prog)s " + __version__,
         help="Prints version information and exits.",
     )
+    gui_group = parser.add_mutually_exclusive_group(required=False)
+    gui_group.add_argument(
+        "--gui",
+        dest="gui",
+        action="store_true",
+        help="run tkinter gui (default on Windows)",
+    )
+    gui_group.add_argument(
+        "--nogui",
+        dest="gui",
+        action="store_false",
+        help="don't run tkinter gui (default elsewhere)",
+    )
+    if platform.system() == "Windows":
+        parser.set_defaults(gui=True)
+    else:
+        parser.set_defaults(gui=False)
 
     outargs = parser.add_argument_group(
         title="General output arguments",
@@ -2734,6 +3169,10 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
     layout_fun = get_layout_fun(
         args.pagesize, args.imgsize, args.border, args.fit, args.auto_orient
     )
+
+    if args.gui:
+        gui()
+        sys.exit(0)
 
     # if no positional arguments were supplied, read a single image from
     # standard input

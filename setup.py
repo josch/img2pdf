@@ -54,9 +54,11 @@ setup(
     tests_requires=TESTS_REQUIRE,
     extras_require={
         'test': TESTS_REQUIRE,
+        'gui': ('tkinter'),
     },
-    entry_points='''
-    [console_scripts]
-    img2pdf = img2pdf:main
-    ''',
+    entry_points={
+        "setuptools.installation": ["eggsecutable = img2pdf:main"],
+        "console_scripts": ["img2pdf = img2pdf:main"],
+        "gui_scripts": ["img2pdf-gui = img2pdf:gui"],
+    },
     )
