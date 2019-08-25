@@ -1,3 +1,6 @@
+[![Travis Status](https://travis-ci.org/josch/img2pdf.svg?branch=master)](https://travis-ci.org/josch/img2pdf)
+[![Appveyor Status](https://ci.appveyor.com/api/projects/status/2kws3wkqvi526llj/branch/master?svg=true)](https://ci.appveyor.com/project/josch/img2pdf/branch/master)
+
 img2pdf
 =======
 
