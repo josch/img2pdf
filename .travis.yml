@@ -1,0 +1,30 @@
+language: python
+matrix:
+  include:
+    - name: "python 3.7 Xenial"
+      dist: xenial
+      python: 3.7
+    - name: "python 3.7 Windows"
+      os: windows
+      language: shell       # 'language: python' is an error on Travis CI Windows
+      before_install: choco install python
+      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+    - name: "python 3.7 MacOs"
+      os: osx
+      language: shell       # 'language: python' is an error on Travis CI macOS
+      cache:
+        directories:
+          - "$HOME/Library/Caches/Homebrew"
+          - "$HOME/Library/Caches/pip"
+      addons:
+        homebrew:
+          #update: true
+          packages: python3
+      before_install:
+        - python3 -m pip install --upgrade virtualenv
+        - virtualenv -p python3 --system-site-packages "$HOME/venv"
+        - source "$HOME/venv/bin/activate"
+install: pip install wheel pillow pytest pdfrw
+script:
+  - python --version
+  - python setup.py test
