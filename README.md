@@ -114,6 +114,21 @@ You can then test the converter using:
 
 	$ ve/bin/img2pdf -o test.pdf src/tests/test.jpg
 
+For Microsoft Windows users, PyInstaller based .exe files are produced by
+appveyor. If you don't want to install Python before using img2pdf you can head
+to appveyor and click on "Artifacts" to download the latest version:
+https://ci.appveyor.com/project/josch/img2pdf
+
+GUI
+---
+
+There exists an experimental GUI with all settings currently disabled. You can
+directly convert images to PDF but you cannot set any options via the GUI yet.
+If you are interested in adding more features to the PDF, please submit a merge
+request. The GUI is based on tkinter and works on Linux, Windows and MacOS.
+
+![](screenshot.png)
+
 The package can also be used as a library:
 
 	import img2pdf
