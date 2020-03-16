@@ -156,6 +156,36 @@ The package can also be used as a library:
 	with open("name.pdf","wb") as f:
 		f.write(img2pdf.convert(["test1.jpg", "test2.png"]))
 
+	# convert all files ending in .jpg inside a directory
+	dirname = "/path/to/images"
+	with open("name.pdf","wb") as f:
+		imgs = []
+		for fname in os.listdir(dirname):
+			if not fname.endswith(".jpg"):
+				continue
+			path = os.path.join(dirname, fname)
+			if os.path.isdir(path):
+				continue
+			imgs.append(path)
+		f.write(img2pdf.convert(imgs))
+
+	# convert all files ending in .jpg in a directory and its subdirectories
+	dirname = "/path/to/images"
+	with open("name.pdf","wb") as f:
+		imgs = []
+		for r, _, f in os.walk(dirname):
+			for fname in f:
+				if not fname.endswith(".jpg"):
+					continue
+				imgs.append(os.path.join(r, fname))
+		f.write(img2pdf.convert(imgs))
+
+
+	# convert all files matching a glob
+	import glob
+	with open("name.pdf","wb") as f:
+		f.write(img2pdf.convert(glob.glob("/path/to/*.jpg")))
+
 	# writing to file descriptor
 	with open("name.pdf","wb") as f1, open("test.jpg") as f2:
 		img2pdf.convert(f2, outputstream=f1)
