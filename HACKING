@@ -37,11 +37,12 @@ running the script like this for maximum verbosity:
 Making a new release
 --------------------
 
- - Add a new entry to CHANGES.rst
- - Bump VERSION in setup.py
- - Bump __version__ in src/img2pdf.py
+ - CHANGES.rst: Add a new entry
+ - setup.py: Bump VERSION
+ - src/img2pdf.py: Bump __version__
  - Commit:
 
+    $ git add CHANGES.rst setup.py src/img2pdf.py
     $ git commit -m "release version X.Y.Z"
 
  - Add git tag:
@@ -50,5 +51,6 @@ Making a new release
 
  - Build and upload to pypi:
 
+    $ rm dist/*
     $ python3 setup.py sdist
     $ twine upload --sign dist/*
