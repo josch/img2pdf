@@ -132,6 +132,9 @@ request. The GUI is based on tkinter and works on Linux, Windows and MacOS.
 
 ![](screenshot.png)
 
+Library
+-------
+
 The package can also be used as a library:
 
 	import img2pdf
