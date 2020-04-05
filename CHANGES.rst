@@ -2,6 +2,14 @@
 CHANGES
 =======
 
+0.3.4 (2020-04-05)
+------------------
+
+ - test.sh: replace imagemagick with custom python script to produce bit-by-bit
+   identical results on all architectures
+ - add --crop-border, --bleed-border, --trim-border and --art-border options
+ - first draft of a rudimentary tkinter gui (run with --gui)
+
 0.3.3 (2019-01-07)
 ------------------
 
