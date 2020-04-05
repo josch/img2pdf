@@ -47,7 +47,7 @@ Making a new release
 
  - Add git tag:
 
-    $ git tag X.Y.Z
+    $ git tag X.Y.Z -m X.Y.Z
 
  - Build and upload to pypi:
 
