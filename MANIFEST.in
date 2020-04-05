@@ -1,6 +1,7 @@
 include README.md
 include test_comp.sh
 include test.sh
+include magick.py
 include CHANGES.rst
 include LICENSE
 recursive-include src *.jpg
