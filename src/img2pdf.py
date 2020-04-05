@@ -1864,13 +1864,19 @@ def convert(*images, **kwargs):
             # the thing doesn't have a read() function, so try if we can treat
             # it as a file name
             try:
-                with open(img, "rb") as f:
-                    rawdata = f.read()
+                f = open(img, "rb")
             except Exception:
                 # whatever the exception is (string could contain NUL
                 # characters or the path could just not exist) it's not a file
                 # name so we now try treating it as raw image content
                 rawdata = img
+            else:
+                # we are not using a "with" block here because we only want to
+                # catch exceptions thrown by open(). The read() may throw its
+                # own exceptions like MemoryError which should be handled
+                # differently.
+                rawdata = f.read()
+                f.close()
 
         for (
             color,
