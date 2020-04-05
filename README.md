@@ -257,6 +257,24 @@ of the plain pixel data and thus needlessly increases the output file size:
 	4500182 original.png
 	9318120 pdflatex.pdf
 
+Comparison to podofoimg2pdf
+---------------------------
+
+Like pdfLaTeX, podofoimg2pdf is able to perform a lossless conversion from JPEG
+to PDF by plainly embedding the JPEG data into the pdf container. But just like
+pdfLaTeX it uses flate compression for all other file formats, thus sometimes
+resulting in larger files than necessary.
+
+	$ convert logo: -resize 8000x original.png
+	$ podofoimg2pdf out.pdf original.png
+	stat --format="%s %n" original.png out.pdf
+	4500181 original.png
+	9335629 out.pdf
+
+It also only supports JPEG, PNG and TIF as input and lacks many of the
+convenience features of img2pdf like page sizes, borders, rotation and
+metadata.
+
 Comparison to Tesseract OCR
 ---------------------------
 
@@ -267,3 +285,4 @@ you should safely be able to use Tesseract instead of img2pdf. For other input,
 Tesseract might not do a lossless conversion. For example it converts CMYK
 input to RGB and removes the alpha channel from images with transparency. For
 multipage TIFF or animated GIF, it will only convert the first frame.
+
