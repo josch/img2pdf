@@ -24,6 +24,7 @@ setup(
     author_email='josch@mister-muffin.de',
     description="Convert images to PDF via direct JPEG inclusion.",
     long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     license="LGPL",
     keywords="jpeg pdf converter",
     classifiers=[
