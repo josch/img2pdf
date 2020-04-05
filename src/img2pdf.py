@@ -2233,6 +2233,12 @@ def gui():
     import tkinter
     import tkinter.filedialog
 
+    have_fitz = True
+    try:
+        import fitz
+    except ImportError:
+        have_fitz = False
+
     # from Python 3.7 Lib/idlelib/configdialog.py
     # Copyright 2015-2017 Terry Jan Reedy
     # Python License
@@ -2346,24 +2352,177 @@ def gui():
     root = tkinter.Tk()
     app = tkinter.Frame(master=root)
 
-    filenames = []
+    infiles = []
+    maxpagewidth = 0
+    maxpageheight = 0
+    doc = None
+
+    args = {
+        "without_pdfrw": tkinter.BooleanVar(),
+        "first_frame_only": tkinter.BooleanVar(),
+        "auto_orient": tkinter.BooleanVar(),
+        "fit": tkinter.StringVar(),
+        "title": tkinter.StringVar(),
+        "author": tkinter.StringVar(),
+        "creator": tkinter.StringVar(),
+        "producer": tkinter.StringVar(),
+        "subject": tkinter.StringVar(),
+        "keywords": tkinter.StringVar(),
+        "nodate": tkinter.BooleanVar(),
+        "creationdate": tkinter.StringVar(),
+        "moddate": tkinter.StringVar(),
+        "viewer_panes": tkinter.StringVar(),
+        "viewer_initial_page": tkinter.IntVar(),
+        "viewer_magnification": tkinter.StringVar(),
+        "viewer_page_layout": tkinter.StringVar(),
+        "viewer_fit_window": tkinter.BooleanVar(),
+        "viewer_center_window": tkinter.BooleanVar(),
+        "viewer_fullscreen": tkinter.BooleanVar(),
+        "pagesize_dropdown": tkinter.StringVar(),
+        "pagesize_width": tkinter.DoubleVar(),
+        "pagesize_height": tkinter.DoubleVar(),
+        "imgsize_dropdown": tkinter.StringVar(),
+        "imgsize_width": tkinter.DoubleVar(),
+        "imgsize_height": tkinter.DoubleVar(),
+        "colorspace": tkinter.StringVar(),
+        "first_frame_only": tkinter.BooleanVar(),
+    }
+    args["title"].set("")
+    args["auto_orient"].set(False)
+    args["fit"].set("into")
+    args["colorspace"].set("auto")
+    args["viewer_panes"].set("auto")
+    args["viewer_initial_page"].set(1)
+    args["viewer_magnification"].set("auto")
+    args["viewer_page_layout"].set("auto")
+    args["first_frame_only"].set(False)
+    args["pagesize_dropdown"].set("auto")
+    args["imgsize_dropdown"].set("auto")
 
     def on_open_button():
-        filenames.clear()
-        filenames.extend(
-            tkinter.filedialog.askopenfilenames(
-                parent=root,
-                title="open image",
-                filetypes=[
-                    (
-                        "images",
-                        "*.bmp *.eps *.gif *.ico *.jpeg *.jpg *.jp2 *.pcx *.png *.ppm *.tiff",
-                    ),
-                    ("all files", "*"),
-                ],
-                # initialdir="/home/josch/git/plakativ",
-                # initialfile="test.pdf",
+        nonlocal infiles
+        nonlocal doc
+        nonlocal maxpagewidth
+        nonlocal maxpageheight
+        infiles = tkinter.filedialog.askopenfilenames(
+            parent=root,
+            title="open image",
+            filetypes=[
+                (
+                    "images",
+                    "*.bmp *.eps *.gif *.ico *.jpeg *.jpg *.jp2 *.pcx *.png *.ppm *.tiff",
+                ),
+                ("all files", "*"),
+            ],
+            # initialdir="/home/josch/git/plakativ",
+            # initialfile="test.pdf",
+        )
+        if have_fitz:
+            with BytesIO() as f:
+                save_pdf(f)
+                f.seek(0)
+                doc = fitz.open(stream=f, filetype="pdf")
+            for page in doc:
+                if page.getDisplayList().rect.width > maxpagewidth:
+                    maxpagewidth = page.getDisplayList().rect.width
+                if page.getDisplayList().rect.height > maxpageheight:
+                    maxpageheight = page.getDisplayList().rect.height
+        draw()
+
+    def save_pdf(stream):
+        pagesizearg = None
+        if args["pagesize_dropdown"].get() == "auto":
+            # nothing to do
+            pass
+        elif args["pagesize_dropdown"].get() == "custom":
+            pagesizearg = args["pagesize_width"].get(), args["pagesize_height"].get()
+        elif args["pagesize_dropdown"].get() in papernames.values():
+            raise NotImplemented()
+        else:
+            raise Exception("no such pagesize: %s" % args["pagesize_dropdown"].get())
+        imgsizearg = None
+        if args["imgsize_dropdown"].get() == "auto":
+            # nothing to do
+            pass
+        elif args["imgsize_dropdown"].get() == "custom":
+            imgsizearg = args["imgsize_width"].get(), args["imgsize_height"].get()
+        elif args["imgsize_dropdown"].get() in papernames.values():
+            raise NotImplemented()
+        else:
+            raise Exception("no such imgsize: %s" % args["imgsize_dropdown"].get())
+        borderarg = None
+        layout_fun = get_layout_fun(
+            pagesizearg,
+            imgsizearg,
+            borderarg,
+            args["fit"].get(),
+            args["auto_orient"].get(),
+        )
+        viewer_panesarg = None
+        if args["viewer_panes"].get() == "auto":
+            # nothing to do
+            pass
+        elif args["viewer_panes"].get() in PageMode:
+            viewer_panesarg = args["viewer_panes"].get()
+        else:
+            raise Exception("no such viewer_panes: %s" % args["viewer_panes"].get())
+        viewer_magnificationarg = None
+        if args["viewer_magnification"].get() == "auto":
+            # nothing to do
+            pass
+        elif args["viewer_magnification"].get() in Magnification:
+            viewer_magnificationarg = args["viewer_magnification"].get()
+        else:
+            raise Exception(
+                "no such viewer_magnification: %s" % args["viewer_magnification"].get()
             )
+        viewer_page_layoutarg = None
+        if args["viewer_page_layout"].get() == "auto":
+            # nothing to do
+            pass
+        elif args["viewer_page_layout"].get() in PageLayout:
+            viewer_page_layoutarg = args["viewer_page_layout"].get()
+        else:
+            raise Exception(
+                "no such viewer_page_layout: %s" % args["viewer_page_layout"].get()
+            )
+        colorspacearg = None
+        if args["colorspace"].get() != "auto":
+            colorspacearg = next(
+                v for v in Colorspace if v.name == args["colorspace"].get()
+            )
+
+        convert(
+            *infiles,
+            title=args["title"].get() if args["title"].get() else None,
+            author=args["author"].get() if args["author"].get() else None,
+            creator=args["creator"].get() if args["creator"].get() else None,
+            producer=args["producer"].get() if args["producer"].get() else None,
+            creationdate=args["creationdate"].get()
+            if args["creationdate"].get()
+            else None,
+            moddate=args["moddate"].get() if args["moddate"].get() else None,
+            subject=args["subject"].get() if args["subject"].get() else None,
+            keywords=args["keywords"].get() if args["keywords"].get() else None,
+            colorspace=colorspacearg,
+            nodate=args["nodate"].get(),
+            layout_fun=layout_fun,
+            viewer_panes=viewer_panesarg,
+            viewer_initial_page=args["viewer_initial_page"].get()
+            if args["viewer_initial_page"].get() > 1
+            else None,
+            viewer_magnification=viewer_magnificationarg,
+            viewer_page_layout=viewer_page_layoutarg,
+            viewer_fit_window=(args["viewer_fit_window"].get() or None),
+            viewer_center_window=(args["viewer_center_window"].get() or None),
+            viewer_fullscreen=(args["viewer_fullscreen"].get() or None),
+            with_pdfrw=not args["without_pdfrw"].get(),
+            outputstream=stream,
+            first_frame_only=args["first_frame_only"].get(),
+            cropborder=None,
+            bleedborder=None,
+            trimborder=None,
+            artborder=None,
         )
 
     def on_save_button():
@@ -2376,41 +2535,125 @@ def gui():
             # initialfile=base + "_poster" + ext,
         )
         with open(filename, "wb") as f:
-            convert(*filenames, outputstream=f)
+            save_pdf(f)
 
     root.title("img2pdf")
     app.pack(fill=tkinter.BOTH, expand=tkinter.TRUE)
-    tkinter.Button(app, text="Open Image", command=on_open_button).pack(
-        side=tkinter.TOP, expand=tkinter.FALSE, fill=tkinter.X
+
+    canvas = tkinter.Canvas(app, bg="black")
+
+    def draw():
+        canvas.delete(tkinter.ALL)
+        if not infiles:
+            canvas.create_text(
+                canvas.size[0] / 2,
+                canvas.size[1] / 2,
+                text='Click on the "Open Image(s)" button in the upper right.',
+                fill="white",
+            )
+            return
+
+        if not doc:
+            canvas.create_text(
+                canvas.size[0] / 2,
+                canvas.size[1] / 2,
+                text="PyMuPDF not available. Install the Python fitz module\n"
+                + "for preview functionality.",
+                fill="white",
+            )
+            return
+
+        canvas_padding = 10
+        # factor to convert from pdf dimensions (given in pt) into canvas
+        # dimensions (given in pixels)
+        zoom = min(
+            (canvas.size[0] - canvas_padding) / maxpagewidth,
+            (canvas.size[1] - canvas_padding) / maxpageheight,
+        )
+
+        pagenum = 0
+        mat_0 = fitz.Matrix(zoom, zoom)
+        canvas.image = tkinter.PhotoImage(
+            data=doc[pagenum]
+            .getDisplayList()
+            .getPixmap(matrix=mat_0, alpha=False)
+            .getImageData("ppm")
+        )
+        canvas.create_image(
+            (canvas.size[0] - maxpagewidth * zoom) / 2,
+            (canvas.size[1] - maxpageheight * zoom) / 2,
+            anchor=tkinter.NW,
+            image=canvas.image,
+        )
+
+        canvas.create_rectangle(
+            (canvas.size[0] - maxpagewidth * zoom) / 2,
+            (canvas.size[1] - maxpageheight * zoom) / 2,
+            (canvas.size[0] - maxpagewidth * zoom) / 2 + canvas.image.width(),
+            (canvas.size[1] - maxpageheight * zoom) / 2 + canvas.image.height(),
+            outline="red",
+        )
+
+    def on_resize(event):
+        canvas.size = (event.width, event.height)
+        draw()
+
+    canvas.pack(fill=tkinter.BOTH, side=tkinter.LEFT, expand=tkinter.TRUE)
+    canvas.bind("<Configure>", on_resize)
+
+    frame_right = tkinter.Frame(app)
+    frame_right.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.Y)
+
+    top_frame = tkinter.Frame(frame_right)
+    top_frame.pack(fill=tkinter.X)
+
+    tkinter.Button(top_frame, text="Open Image(s)", command=on_open_button).pack(
+        side=tkinter.LEFT, expand=tkinter.TRUE, fill=tkinter.X
     )
-    frame1 = VerticalScrolledFrame(app)
-    frame1.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.BOTH)
+    tkinter.Button(top_frame, text="Help", state=tkinter.DISABLED).pack(
+        side=tkinter.RIGHT, expand=tkinter.TRUE, fill=tkinter.X
+    )
+
+    frame1 = VerticalScrolledFrame(frame_right)
+    frame1.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.Y)
 
     output_options = tkinter.LabelFrame(frame1.interior, text="Output Options")
     output_options.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
-    tkinter.Label(output_options, text="colorspace", state=tkinter.DISABLED).grid(
+    tkinter.Label(output_options, text="colorspace").grid(
         row=0, column=0, sticky=tkinter.W
     )
-    OptionMenu(output_options, tkinter.StringVar(), ["foo", "bar"]).grid(
+    OptionMenu(output_options, args["colorspace"], "auto", state=tkinter.DISABLED).grid(
         row=0, column=1, sticky=tkinter.W
     )
     tkinter.Checkbutton(
-        output_options, text="Suppress timestamp", state=tkinter.DISABLED
+        output_options,
+        text="Suppress timestamp",
+        variable=args["nodate"],
+        state=tkinter.DISABLED,
     ).grid(row=1, column=0, columnspan=2, sticky=tkinter.W)
     tkinter.Checkbutton(
-        output_options, text="without pdfrw", state=tkinter.DISABLED
+        output_options,
+        text="without pdfrw",
+        variable=args["without_pdfrw"],
+        state=tkinter.DISABLED,
     ).grid(row=2, column=0, columnspan=2, sticky=tkinter.W)
     tkinter.Checkbutton(
-        output_options, text="only first frame", state=tkinter.DISABLED
+        output_options,
+        text="only first frame",
+        variable=args["first_frame_only"],
+        state=tkinter.DISABLED,
     ).grid(row=3, column=0, columnspan=2, sticky=tkinter.W)
     tkinter.Checkbutton(
         output_options, text="force large input", state=tkinter.DISABLED
     ).grid(row=4, column=0, columnspan=2, sticky=tkinter.W)
     image_size_frame = tkinter.LabelFrame(frame1.interior, text="Image size")
     image_size_frame.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
-    OptionMenu(image_size_frame, tkinter.StringVar(), [""]).grid(
-        row=1, column=0, columnspan=3, sticky=tkinter.W
-    )
+    OptionMenu(
+        image_size_frame,
+        args["imgsize_dropdown"],
+        *(["auto", "custom"] + sorted(papernames.values())),
+        state=tkinter.DISABLED,
+    ).grid(row=1, column=0, columnspan=3, sticky=tkinter.W)
 
     tkinter.Label(
         image_size_frame, text="Width:", state=tkinter.DISABLED, name="size_label_width"
@@ -2451,9 +2694,12 @@ def gui():
 
     page_size_frame = tkinter.LabelFrame(frame1.interior, text="Page size")
     page_size_frame.pack(side=tkinter.TOP, expand=tkinter.TRUE, fill=tkinter.X)
-    OptionMenu(page_size_frame, tkinter.StringVar(), [""]).grid(
-        row=1, column=0, columnspan=3, sticky=tkinter.W
-    )
+    OptionMenu(
+        page_size_frame,
+        args["pagesize_dropdown"],
+        *(["auto", "custom"] + sorted(papernames.values())),
+        state=tkinter.DISABLED,
+    ).grid(row=1, column=0, columnspan=3, sticky=tkinter.W)
 
     tkinter.Label(
         page_size_frame, text="Width:", state=tkinter.DISABLED, name="size_label_width"
@@ -2502,12 +2748,15 @@ def gui():
     tkinter.Label(layout_frame, text="fit", state=tkinter.DISABLED).grid(
         row=1, column=0, sticky=tkinter.W
     )
-    OptionMenu(layout_frame, tkinter.StringVar(), [""]).grid(
-        row=1, column=1, sticky=tkinter.W
-    )
-    tkinter.Checkbutton(layout_frame, text="auto orient", state=tkinter.DISABLED).grid(
-        row=2, column=0, columnspan=2, sticky=tkinter.W
-    )
+    OptionMenu(
+        layout_frame, args["fit"], *[v.name for v in FitMode], state=tkinter.DISABLED
+    ).grid(row=1, column=1, sticky=tkinter.W)
+    tkinter.Checkbutton(
+        layout_frame,
+        text="auto orient",
+        state=tkinter.DISABLED,
+        variable=args["auto_orient"],
+    ).grid(row=2, column=0, columnspan=2, sticky=tkinter.W)
     tkinter.Label(layout_frame, text="crop border", state=tkinter.DISABLED).grid(
         row=3, column=0, sticky=tkinter.W
     )
@@ -2537,39 +2786,39 @@ def gui():
     tkinter.Label(metadata_frame, text="title", state=tkinter.DISABLED).grid(
         row=0, column=0, sticky=tkinter.W
     )
-    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
-        row=0, column=1, sticky=tkinter.W
-    )
+    tkinter.Entry(
+        metadata_frame, textvariable=args["title"], state=tkinter.DISABLED
+    ).grid(row=0, column=1, sticky=tkinter.W)
     tkinter.Label(metadata_frame, text="author", state=tkinter.DISABLED).grid(
         row=1, column=0, sticky=tkinter.W
     )
-    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
-        row=1, column=1, sticky=tkinter.W
-    )
+    tkinter.Entry(
+        metadata_frame, textvariable=args["author"], state=tkinter.DISABLED
+    ).grid(row=1, column=1, sticky=tkinter.W)
     tkinter.Label(metadata_frame, text="creator", state=tkinter.DISABLED).grid(
         row=2, column=0, sticky=tkinter.W
     )
-    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
-        row=2, column=1, sticky=tkinter.W
-    )
+    tkinter.Entry(
+        metadata_frame, textvariable=args["creator"], state=tkinter.DISABLED
+    ).grid(row=2, column=1, sticky=tkinter.W)
     tkinter.Label(metadata_frame, text="producer", state=tkinter.DISABLED).grid(
         row=3, column=0, sticky=tkinter.W
     )
-    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
-        row=3, column=1, sticky=tkinter.W
-    )
+    tkinter.Entry(
+        metadata_frame, textvariable=args["producer"], state=tkinter.DISABLED
+    ).grid(row=3, column=1, sticky=tkinter.W)
     tkinter.Label(metadata_frame, text="creation date", state=tkinter.DISABLED).grid(
         row=4, column=0, sticky=tkinter.W
     )
-    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
-        row=4, column=1, sticky=tkinter.W
-    )
+    tkinter.Entry(
+        metadata_frame, textvariable=args["creationdate"], state=tkinter.DISABLED
+    ).grid(row=4, column=1, sticky=tkinter.W)
     tkinter.Label(
         metadata_frame, text="modification date", state=tkinter.DISABLED
     ).grid(row=5, column=0, sticky=tkinter.W)
-    tkinter.Entry(metadata_frame, state=tkinter.DISABLED).grid(
-        row=5, column=1, sticky=tkinter.W
-    )
+    tkinter.Entry(
+        metadata_frame, textvariable=args["moddate"], state=tkinter.DISABLED
+    ).grid(row=5, column=1, sticky=tkinter.W)
     tkinter.Label(metadata_frame, text="subject", state=tkinter.DISABLED).grid(
         row=6, column=0, sticky=tkinter.W
     )
@@ -2587,35 +2836,60 @@ def gui():
     tkinter.Label(viewer_frame, text="panes", state=tkinter.DISABLED).grid(
         row=0, column=0, sticky=tkinter.W
     )
-    OptionMenu(viewer_frame, tkinter.StringVar(), [""]).grid(
-        row=0, column=1, sticky=tkinter.W
-    )
+    OptionMenu(
+        viewer_frame,
+        args["viewer_panes"],
+        *(["auto"] + [v.name for v in PageMode]),
+        state=tkinter.DISABLED,
+    ).grid(row=0, column=1, sticky=tkinter.W)
     tkinter.Label(viewer_frame, text="initial page", state=tkinter.DISABLED).grid(
         row=1, column=0, sticky=tkinter.W
     )
-    OptionMenu(viewer_frame, tkinter.StringVar(), ["1"]).grid(
-        row=1, column=1, sticky=tkinter.W
-    )
+    tkinter.Spinbox(
+        viewer_frame,
+        increment=1,
+        from_=1,
+        to=10000,
+        width=6,
+        textvariable=args["viewer_initial_page"],
+        state=tkinter.DISABLED,
+        name="viewer_initial_page_spinbox",
+    ).grid(row=1, column=1, sticky=tkinter.W)
     tkinter.Label(viewer_frame, text="magnification", state=tkinter.DISABLED).grid(
         row=2, column=0, sticky=tkinter.W
     )
-    OptionMenu(viewer_frame, tkinter.StringVar(), [""]).grid(
-        row=2, column=1, sticky=tkinter.W
-    )
+    OptionMenu(
+        viewer_frame,
+        args["viewer_magnification"],
+        *(["auto", "custom"] + [v.name for v in Magnification]),
+        state=tkinter.DISABLED,
+    ).grid(row=2, column=1, sticky=tkinter.W)
     tkinter.Label(viewer_frame, text="page layout", state=tkinter.DISABLED).grid(
         row=3, column=0, sticky=tkinter.W
     )
-    OptionMenu(viewer_frame, tkinter.StringVar(), [""]).grid(
-        row=3, column=1, sticky=tkinter.W
-    )
+    OptionMenu(
+        viewer_frame,
+        args["viewer_page_layout"],
+        *(["auto"] + [v.name for v in PageLayout]),
+        state=tkinter.DISABLED,
+    ).grid(row=3, column=1, sticky=tkinter.W)
     tkinter.Checkbutton(
-        viewer_frame, text="fit window to page size", state=tkinter.DISABLED
+        viewer_frame,
+        text="fit window to page size",
+        variable=args["viewer_fit_window"],
+        state=tkinter.DISABLED,
     ).grid(row=4, column=0, columnspan=2, sticky=tkinter.W)
     tkinter.Checkbutton(
-        viewer_frame, text="center window", state=tkinter.DISABLED
+        viewer_frame,
+        text="center window",
+        variable=args["viewer_center_window"],
+        state=tkinter.DISABLED,
     ).grid(row=5, column=0, columnspan=2, sticky=tkinter.W)
     tkinter.Checkbutton(
-        viewer_frame, text="open in fullscreen", state=tkinter.DISABLED
+        viewer_frame,
+        text="open in fullscreen",
+        variable=args["viewer_fullscreen"],
+        state=tkinter.DISABLED,
     ).grid(row=6, column=0, columnspan=2, sticky=tkinter.W)
 
     option_frame = tkinter.LabelFrame(frame1.interior, text="Program options")
@@ -2639,8 +2913,14 @@ def gui():
         row=1, column=1, sticky=tkinter.W
     )
 
-    tkinter.Button(app, text="Save PDF", command=on_save_button).pack(
-        side=tkinter.TOP, expand=tkinter.FALSE, fill=tkinter.X
+    bottom_frame = tkinter.Frame(frame_right)
+    bottom_frame.pack(fill=tkinter.X)
+
+    tkinter.Button(bottom_frame, text="Save PDF", command=on_save_button).pack(
+        side=tkinter.LEFT, expand=tkinter.TRUE, fill=tkinter.X
+    )
+    tkinter.Button(bottom_frame, text="Exit", command=root.destroy).pack(
+        side=tkinter.RIGHT, expand=tkinter.TRUE, fill=tkinter.X
     )
 
     app.mainloop()
@@ -3172,13 +3452,13 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
     if args.pillow_limit_break:
         Image.MAX_IMAGE_PIXELS = None
 
-    layout_fun = get_layout_fun(
-        args.pagesize, args.imgsize, args.border, args.fit, args.auto_orient
-    )
-
     if args.gui:
         gui()
         sys.exit(0)
+
+    layout_fun = get_layout_fun(
+        args.pagesize, args.imgsize, args.border, args.fit, args.auto_orient
+    )
 
     # if no positional arguments were supplied, read a single image from
     # standard input
