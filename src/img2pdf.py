@@ -3084,23 +3084,12 @@ Report bugs at https://gitlab.mister-muffin.de/josch/img2pdf/issues
         version="%(prog)s " + __version__,
         help="Prints version information and exits.",
     )
-    gui_group = parser.add_mutually_exclusive_group(required=False)
-    gui_group.add_argument(
+    parser.add_argument(
         "--gui",
         dest="gui",
         action="store_true",
-        help="run tkinter gui (default on Windows)",
+        help="run experimental tkinter gui",
     )
-    gui_group.add_argument(
-        "--nogui",
-        dest="gui",
-        action="store_false",
-        help="don't run tkinter gui (default elsewhere)",
-    )
-    if platform.system() == "Windows":
-        parser.set_defaults(gui=True)
-    else:
-        parser.set_defaults(gui=False)
 
     outargs = parser.add_argument_group(
         title="General output arguments",
