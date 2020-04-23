@@ -554,12 +554,17 @@ def test_suite():
         assert os.path.isfile(outputf)
 
         def handle(self, f=inputf, out=outputf, with_pdfrw=with_pdfrw):
+            try:
+                from pdfrw import PdfReader, PdfName, PdfWriter
+                from pdfrw.py23_diffs import convert_load, convert_store
+            except ImportError:
+                # the test requires pdfrw
+                self.skipTest("this test requires pdfrw")
+                return
             with open(f, "rb") as inf:
                 orig_imgdata = inf.read()
             output = img2pdf.convert(orig_imgdata, nodate=True,
                                      with_pdfrw=with_pdfrw)
-            from pdfrw import PdfReader, PdfName, PdfWriter
-            from pdfrw.py23_diffs import convert_load, convert_store
             x = PdfReader(PdfReaderIO(convert_load(output)))
             self.assertEqual(sorted(x.keys()), [PdfName.Info, PdfName.Root,
                              PdfName.Size])

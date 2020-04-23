@@ -34,6 +34,14 @@ import logging
 import struct
 import platform
 
+with_pdfrw = False
+try:
+    import pdfrw
+
+    with_pdfrw = True
+except ImportError:
+    pass
+
 PY3 = sys.version_info[0] >= 3
 
 __version__ = "0.3.4"
@@ -631,25 +639,14 @@ class pdfdoc(object):
         fit_window=False,
         center_window=False,
         fullscreen=False,
-        with_pdfrw=True,
     ):
         if with_pdfrw:
-            try:
-                from pdfrw import PdfWriter, PdfDict, PdfName, PdfString
-
-                self.with_pdfrw = True
-            except ImportError:
-                PdfWriter = MyPdfWriter
-                PdfDict = MyPdfDict
-                PdfName = MyPdfName
-                PdfString = MyPdfString
-                self.with_pdfrw = False
+            from pdfrw import PdfWriter, PdfDict, PdfName, PdfString
         else:
             PdfWriter = MyPdfWriter
             PdfDict = MyPdfDict
             PdfName = MyPdfName
             PdfString = MyPdfString
-            self.with_pdfrw = False
 
         now = datetime.now()
         self.info = PdfDict(indirect=True)
@@ -690,7 +687,7 @@ class pdfdoc(object):
         self.writer.version = version
         # this is done because pdfrw adds info, catalog and pages as the first
         # three objects in this order
-        if not self.with_pdfrw:
+        if not with_pdfrw:
             self.writer.addobj(self.info)
             self.writer.addobj(self.writer.catalog)
             self.writer.addobj(self.writer.pages)
@@ -726,7 +723,7 @@ class pdfdoc(object):
         trimborder=None,
         artborder=None,
     ):
-        if self.with_pdfrw:
+        if with_pdfrw:
             from pdfrw import PdfDict, PdfName, PdfObject, PdfString
             from pdfrw.py23_diffs import convert_load
         else:
@@ -743,7 +740,7 @@ class pdfdoc(object):
         elif color == Colorspace.CMYK or color == Colorspace["CMYK;I"]:
             colorspace = PdfName.DeviceCMYK
         elif color == Colorspace.P:
-            if self.with_pdfrw:
+            if with_pdfrw:
                 raise Exception(
                     "pdfrw does not support hex strings for "
                     "palette image input, re-run with "
@@ -871,7 +868,7 @@ class pdfdoc(object):
 
         self.writer.addpage(page)
 
-        if not self.with_pdfrw:
+        if not with_pdfrw:
             self.writer.addobj(content)
             self.writer.addobj(image)
 
@@ -881,7 +878,7 @@ class pdfdoc(object):
         return stream.getvalue()
 
     def tostream(self, outputstream):
-        if self.with_pdfrw:
+        if with_pdfrw:
             from pdfrw import PdfDict, PdfName, PdfArray, PdfObject
         else:
             PdfDict = MyPdfDict
@@ -899,7 +896,7 @@ class pdfdoc(object):
         # is added, so we can only start using it after all pages have been
         # written.
 
-        if self.with_pdfrw:
+        if with_pdfrw:
             catalog = self.writer.trailer.Root
         else:
             catalog = self.writer.catalog
@@ -1005,7 +1002,7 @@ class pdfdoc(object):
             raise ValueError("unknown page layout: %s" % self.page_layout)
 
         # now write out the PDF
-        if self.with_pdfrw:
+        if with_pdfrw:
             self.writer.trailer.Info = self.info
             self.writer.write(outputstream)
         else:
@@ -1809,7 +1806,6 @@ def convert(*images, **kwargs):
         viewer_fit_window=False,
         viewer_center_window=False,
         viewer_fullscreen=False,
-        with_pdfrw=True,
         outputstream=None,
         first_frame_only=False,
         allow_oversized=True,
@@ -1821,6 +1817,9 @@ def convert(*images, **kwargs):
     for kwname, default in _default_kwargs.items():
         if kwname not in kwargs:
             kwargs[kwname] = default
+    if 'with_pdfrw' in kwargs:
+        global with_pdfrw
+        with_pdfrw = kwargs['with_pdfrw']
 
     pdf = pdfdoc(
         "1.3",
@@ -1840,7 +1839,6 @@ def convert(*images, **kwargs):
         kwargs["viewer_fit_window"],
         kwargs["viewer_center_window"],
         kwargs["viewer_fullscreen"],
-        kwargs["with_pdfrw"],
     )
 
     # backwards compatibility with older img2pdf versions where the first
@@ -2492,6 +2490,8 @@ def gui():
                 v for v in Colorspace if v.name == args["colorspace"].get()
             )
 
+        global with_pdfrw
+        with_pdfrw = (not args["without_pdfrw"].get(),)
         convert(
             *infiles,
             title=args["title"].get() if args["title"].get() else None,
@@ -2516,7 +2516,6 @@ def gui():
             viewer_fit_window=(args["viewer_fit_window"].get() or None),
             viewer_center_window=(args["viewer_center_window"].get() or None),
             viewer_fullscreen=(args["viewer_fullscreen"].get() or None),
-            with_pdfrw=not args["without_pdfrw"].get(),
             outputstream=stream,
             first_frame_only=args["first_frame_only"].get(),
             cropborder=None,
@@ -3490,6 +3489,8 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
             )
             exit(2)
 
+    global with_pdfrw
+    with_pdfrw = (not args.without_pdfrw,)
     try:
         convert(
             *args.images,
@@ -3511,7 +3512,6 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
             viewer_fit_window=args.viewer_fit_window,
             viewer_center_window=args.viewer_center_window,
             viewer_fullscreen=args.viewer_fullscreen,
-            with_pdfrw=not args.without_pdfrw,
             outputstream=args.output,
             first_frame_only=args.first_frame_only,
             cropborder=args.crop_border,
