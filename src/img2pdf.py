@@ -2450,7 +2450,8 @@ def gui():
             )
 
         global with_pdfrw
-        with_pdfrw = (not args["without_pdfrw"].get(),)
+        if with_pdfrw:
+            with_pdfrw = not args["without_pdfrw"].get()
         convert(
             *infiles,
             title=args["title"].get() if args["title"].get() else None,
@@ -2589,6 +2590,7 @@ def gui():
         variable=args["nodate"],
         state=tkinter.DISABLED,
     ).grid(row=1, column=0, columnspan=2, sticky=tkinter.W)
+    # TODO: only have this checkbox enabled if pdfrw is installed
     tkinter.Checkbutton(
         output_options,
         text="without pdfrw",
@@ -3432,7 +3434,8 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
             exit(2)
 
     global with_pdfrw
-    with_pdfrw = (not args.without_pdfrw,)
+    if with_pdfrw:
+        with_pdfrw = not args.without_pdfrw
     try:
         convert(
             *args.images,
