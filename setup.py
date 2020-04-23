@@ -1,8 +1,6 @@
 import sys
 from setuptools import setup
 
-PY3 = sys.version_info[0] >= 3
-
 VERSION = "0.3.4"
 
 INSTALL_REQUIRES = (
@@ -12,9 +10,6 @@ INSTALL_REQUIRES = (
 TESTS_REQUIRE = (
     'pdfrw',
 )
-
-if not PY3:
-    INSTALL_REQUIRES += ('enum34',)
 
 
 setup(

@@ -42,8 +42,6 @@ try:
 except ImportError:
     pass
 
-PY3 = sys.version_info[0] >= 3
-
 __version__ = "0.3.4"
 default_dpi = 96.0
 papersizes = {
@@ -574,49 +572,26 @@ class MyPdfWriter:
         self.addobj(page)
 
 
-if PY3:
-
-    class MyPdfString:
-        @classmethod
-        def encode(cls, string, hextype=False):
-            if hextype:
-                return (
-                    b"< "
-                    + b" ".join(("%06x" % c).encode("ascii") for c in string)
-                    + b" >"
-                )
-            else:
-                try:
-                    string = string.encode("ascii")
-                except UnicodeEncodeError:
-                    string = b"\xfe\xff" + string.encode("utf-16-be")
-                # We should probably encode more here because at least
-                # ghostscript interpretes a carriage return byte (0x0D) as a
-                # new line byte (0x0A)
-                # PDF supports: \n, \r, \t, \b and \f
-                string = string.replace(b"\\", b"\\\\")
-                string = string.replace(b"(", b"\\(")
-                string = string.replace(b")", b"\\)")
-                return b"(" + string + b")"
-
-
-else:
-
-    class MyPdfString(object):
-        @classmethod
-        def encode(cls, string, hextype=False):
-            if hextype:
-                return (
-                    b"< "
-                    + b" ".join(("%06x" % c).encode("ascii") for c in string)
-                    + b" >"
-                )
-            else:
-                # This mimics exactely to what pdfrw does.
-                string = string.replace(b"\\", b"\\\\")
-                string = string.replace(b"(", b"\\(")
-                string = string.replace(b")", b"\\)")
-                return b"(" + string + b")"
+class MyPdfString:
+    @classmethod
+    def encode(cls, string, hextype=False):
+        if hextype:
+            return (
+                b"< " + b" ".join(("%06x" % c).encode("ascii") for c in string) + b" >"
+            )
+        else:
+            try:
+                string = string.encode("ascii")
+            except UnicodeEncodeError:
+                string = b"\xfe\xff" + string.encode("utf-16-be")
+            # We should probably encode more here because at least
+            # ghostscript interpretes a carriage return byte (0x0D) as a
+            # new line byte (0x0A)
+            # PDF supports: \n, \r, \t, \b and \f
+            string = string.replace(b"\\", b"\\\\")
+            string = string.replace(b"(", b"\\(")
+            string = string.replace(b")", b"\\)")
+            return b"(" + string + b")"
 
 
 class pdfdoc(object):
@@ -1817,9 +1792,9 @@ def convert(*images, **kwargs):
     for kwname, default in _default_kwargs.items():
         if kwname not in kwargs:
             kwargs[kwname] = default
-    if 'with_pdfrw' in kwargs:
+    if "with_pdfrw" in kwargs:
         global with_pdfrw
-        with_pdfrw = kwargs['with_pdfrw']
+        with_pdfrw = kwargs["with_pdfrw"]
 
     pdf = pdfdoc(
         "1.3",
@@ -2109,39 +2084,23 @@ def parse_borderarg(string):
 def input_images(path):
     if path == "-":
         # we slurp in all data from stdin because we need to seek in it later
-        if PY3:
-            result = sys.stdin.buffer.read()
-        else:
-            result = sys.stdin.read()
+        result = sys.stdin.buffer.read()
         if len(result) == 0:
             raise argparse.ArgumentTypeError('"%s" is empty' % path)
     else:
-        if PY3:
-            try:
-                if os.path.getsize(path) == 0:
-                    raise argparse.ArgumentTypeError('"%s" is empty' % path)
-                # test-read a byte from it so that we can abort early in case
-                # we cannot read data from the file
-                with open(path, "rb") as im:
-                    im.read(1)
-            except IsADirectoryError:
-                raise argparse.ArgumentTypeError('"%s" is a directory' % path)
-            except PermissionError:
-                raise argparse.ArgumentTypeError('"%s" permission denied' % path)
-            except FileNotFoundError:
-                raise argparse.ArgumentTypeError('"%s" does not exist' % path)
-        else:
-            try:
-                if os.path.getsize(path) == 0:
-                    raise argparse.ArgumentTypeError('"%s" is empty' % path)
-                # test-read a byte from it so that we can abort early in case
-                # we cannot read data from the file
-                with open(path, "rb") as im:
-                    im.read(1)
-            except IOError as err:
-                raise argparse.ArgumentTypeError(str(err))
-            except OSError as err:
-                raise argparse.ArgumentTypeError(str(err))
+        try:
+            if os.path.getsize(path) == 0:
+                raise argparse.ArgumentTypeError('"%s" is empty' % path)
+            # test-read a byte from it so that we can abort early in case
+            # we cannot read data from the file
+            with open(path, "rb") as im:
+                im.read(1)
+        except IsADirectoryError:
+            raise argparse.ArgumentTypeError('"%s" is a directory' % path)
+        except PermissionError:
+            raise argparse.ArgumentTypeError('"%s" permission denied' % path)
+        except FileNotFoundError:
+            raise argparse.ArgumentTypeError('"%s" does not exist' % path)
         result = path
     return result
 
@@ -3085,10 +3044,7 @@ Report bugs at https://gitlab.mister-muffin.de/josch/img2pdf/issues
         help="Prints version information and exits.",
     )
     parser.add_argument(
-        "--gui",
-        dest="gui",
-        action="store_true",
-        help="run experimental tkinter gui",
+        "--gui", dest="gui", action="store_true", help="run experimental tkinter gui"
     )
 
     outargs = parser.add_argument_group(
@@ -3453,10 +3409,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
     if len(args.images) == 0:
         logging.info("reading image from standard input")
         try:
-            if PY3:
-                args.images = [sys.stdin.buffer.read()]
-            else:
-                args.images = [sys.stdin.read()]
+            args.images = [sys.stdin.buffer.read()]
         except KeyboardInterrupt:
             exit(0)
 

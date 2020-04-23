@@ -10,12 +10,7 @@ from io import StringIO, BytesIO, TextIOWrapper
 
 HERE = os.path.dirname(__file__)
 
-PY3 = sys.version_info[0] >= 3
-
-if PY3:
-    PdfReaderIO = StringIO
-else:
-    PdfReaderIO = BytesIO
+PdfReaderIO = StringIO
 
 # Recompressing the image stream makes the comparison robust against output
 # preserving changes in the zlib compress output bitstream
@@ -480,29 +475,15 @@ def tiff_header_for_ccitt(width, height, img_size, ccitt_group=4):
 
 class CommandLineTests(unittest.TestCase):
     def test_main_help(self):
-        if PY3:
-            from contextlib import redirect_stdout
-            f = StringIO()
-            with redirect_stdout(f):
-                try:
-                    img2pdf.main(['img2pdf', '--help'])
-                except SystemExit:
-                    pass
-            res = f.getvalue()
-            self.assertIn('img2pdf', res)
-        else:
-            # silence output
-            sys_stdout = sys.stdout
-            sys.stdout = BytesIO()
-
+        from contextlib import redirect_stdout
+        f = StringIO()
+        with redirect_stdout(f):
             try:
                 img2pdf.main(['img2pdf', '--help'])
             except SystemExit:
-                # argparse does sys.exit(0) on --help
-                res = sys.stdout.getvalue()
-                self.assertIn('img2pdf', res)
-            finally:
-                sys.stdout = sys_stdout
+                pass
+        res = f.getvalue()
+        self.assertIn('img2pdf', res)
 
 
 def test_suite():
