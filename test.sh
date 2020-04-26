@@ -180,15 +180,14 @@ exiftool -overwrite_original -Orientation=6 -XResolution=96 -YResolution=96 -n "
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Format: JPEG (Joint Photographic Experts Group JFIF format)$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Mime type: image/jpeg$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Geometry: 60x60+0+0$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Resolution: 96x96$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Units: PixelsPerInch$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Colorspace: sRGB$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Type: TrueColor$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Depth: 8-bit$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Page geometry: 60x60+0+0$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Compression: JPEG$'
-identify -verbose "$tempdir/normal.jpg" | grep --quiet '^    exif:Orientation: 6$'
-identify -verbose "$tempdir/normal.jpg" | grep --quiet '^    exif:ResolutionUnit: 2$'
-identify -verbose "$tempdir/normal.jpg" | grep --quiet '^    exif:XResolution: 96/1$'
-identify -verbose "$tempdir/normal.jpg" | grep --quiet '^    exif:YResolution: 96/1$'
+identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Orientation: RightTop$'
 
 img2pdf "$tempdir/normal.jpg" "$tempdir/out.pdf"
 
@@ -1187,7 +1186,11 @@ for i in 12 14 16; do
 	identify -verbose "$tempdir/normal$i.tiff" | grep --quiet '^  Colorspace: sRGB$'
 	identify -verbose "$tempdir/normal$i.tiff" | grep --quiet '^  Type: TrueColor$'
 	identify -verbose "$tempdir/normal$i.tiff" | grep --quiet '^  Endianess: LSB$'
-	identify -verbose "$tempdir/normal$i.tiff" | grep --quiet "^  Depth: $i-bit$"
+	if [ $i -eq 16 ]; then
+		identify -verbose "$tempdir/normal$i.tiff" | grep --quiet "^  Depth: $i-bit$"
+	else
+		identify -verbose "$tempdir/normal$i.tiff" | egrep --quiet "^  Depth: $i(/16)?-bit$"
+	fi
 	identify -verbose "$tempdir/normal$i.tiff" | grep --quiet '^  Page geometry: 60x60+0+0$'
 	identify -verbose "$tempdir/normal$i.tiff" | grep --quiet '^  Compression: Zip$'
 	identify -verbose "$tempdir/normal$i.tiff" | grep --quiet '^    tiff:alpha: unspecified$'
