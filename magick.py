@@ -71,6 +71,51 @@ def palettize(img, pal):
     return result
 
 
+# we cannot use zlib.compress() because different compressors may compress the
+# same data differently, for example by using different optimizations on
+# different architectures:
+# https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/thread/R7GD4L5Z6HELCDAL2RDESWR2F3ZXHWVX/
+#
+# to make the compressed representation of the uncompressed data bit-by-bit
+# identical on all platforms we make use of the compression method 0, that is,
+# no compression at all :)
+def compress(data):
+    # two-byte zlib header (rfc1950)
+    # common header for lowest compression level
+    # bits 0-3: Compression info, base-2 logarithm of the LZ77 window size,
+    #           minus eight -- 7 indicates a 32K window size
+    # bits 4-7: Compression method -- 8 is deflate
+    # bits 8-9: Compression level -- 0 is fastest
+    # bit 10:   preset dictionary -- 0 is none
+    # bits 11-15: check bits so that the 16-bit unsigned integer stored in MSB
+    #             order is a multiple of 31
+    result = b"\x78\x01"
+    # content is stored in deflate format (rfc1951)
+    # maximum chunk size is the largest 16 bit unsigned integer
+    chunksize = 0xFFFF
+    for i in range(0, len(data), chunksize):
+        # bits 0-4 are unused
+        # bits 5-6 indicate compression method -- 0 is no compression
+        # bit 7 indicates the last chunk
+        if i * chunksize < len(data) - chunksize:
+            result += b"\x00"
+        else:
+            # last chunck
+            result += b"\x01"
+        chunk = data[i : i + chunksize]
+        # the chunk length as little endian 16 bit unsigned integer
+        result += struct.pack("<H", len(chunk))
+        # the one's complement of the chunk length
+        # one's complement is all bits inverted which is the result of
+        # xor with 0xffff for a 16 bit unsigned integer
+        result += struct.pack("<H", len(chunk) ^ 0xFFFF)
+        result += chunk
+    # adler32 checksum of the uncompressed data as big endian 32 bit unsigned
+    # integer
+    result += struct.pack(">I", zlib.adler32(data))
+    return result
+
+
 def write_png(data, path, bitdepth, colortype, palette=None):
     with open(path, "wb") as f:
         f.write(b"\x89PNG\r\n\x1A\n")
@@ -124,7 +169,7 @@ def write_png(data, path, bitdepth, colortype, palette=None):
                     raw += struct.pack(">B", val)
             else:
                 raise Exception()
-        compressed = zlib.compress(raw)
+        compressed = compress(raw)
         block = b"IDAT" + compressed
         f.write(
             struct.pack(">I", len(compressed))

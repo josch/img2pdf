@@ -97,19 +97,19 @@ trap error EXIT
 python3 magick.py "$tempdir"
 
 cat << END | ( cd "$tempdir"; md5sum --check --status - )
-7ed200c092c726c68e889514fff0d8f1  alpha.png
-bf56e00465b98fb738f6edd2c58dac3b  gray16.png
-f93c3e3c11dad3f8c11db4fd2d01c2cc  gray1.png
-d63167c66e8a65bd5c15f68c8d554c48  gray2.png
-6bceb845d9c9946adad1526954973945  gray4.png
-7ba8152b9146eb7d9d50529189baf7db  gray8.png
-75130ec7635919e40c7396d45899ddbe  inverse.png
-bd1a2c9f9dfc51a827eafa3877cf7f83  normal16.png
-329eac79fec2e1bc30d7a50ba2e3f2a5  normal.png
-9ffd3f592b399f9f9c23892db82369cd  palette1.png
-6d3a39fe5f2efea5975f048d11a5cb02  palette2.png
-57add39e5c278249b64ab23314a41c39  palette4.png
-192a3b298d812a156e6f248238d2bb52  palette8.png
+cc611e80cde3b9b7adb7723801a4e5d4  alpha.png
+706175887af8ca1a33cfd93449f970df  gray16.png
+198e3333d7dc6158f94d1007e75c5bd3  gray1.png
+795ff9c5c59cdc95f5a0b9191a7247d9  gray2.png
+722223ba74be9cba1af4a549076b70d3  gray4.png
+2320216faa5a10bf0f5f04ebce07f8e1  gray8.png
+35a47d6ae6de8c9d0b31aa0cda8648f3  inverse.png
+6ad810399058a87d8145d8d9a7734da5  normal16.png
+c8d2e1f116f31ecdeae050524efca7b6  normal.png
+c69edd665ee3546d9eb57fe10cd8095a  palette1.png
+504ecab83662aa2394042a62b1d2eafb  palette2.png
+90d1bbe7b26e210d8846cf8692a98b72  palette4.png
+50bf09eb3571901f0bf642b9a733038c  palette8.png
 END
 
 # use img2pdfprog environment variable if it is set
