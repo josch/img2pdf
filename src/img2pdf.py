@@ -42,7 +42,7 @@ try:
 except ImportError:
     pass
 
-__version__ = "0.3.5"
+__version__ = "0.3.6"
 default_dpi = 96.0
 papersizes = {
     "letter": "8.5inx11in",

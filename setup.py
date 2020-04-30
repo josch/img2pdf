@@ -1,7 +1,7 @@
 import sys
 from setuptools import setup
 
-VERSION = "0.3.5"
+VERSION = "0.3.6"
 
 INSTALL_REQUIRES = (
     'Pillow',
