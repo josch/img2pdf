@@ -77,10 +77,10 @@ Bugs
    files with other colorspaces, you must explicitly specify it using the
    `--colorspace` option.
 
- - Input images with alpha channels are not allowed. PDF doesn't support alpha
-   channels in images and thus, the alpha channel of the input would have to be
-   discarded. But img2pdf will always be lossless and thus, input images must
-   not carry transparency information.
+ - Input images with alpha channels are not allowed. PDF only supports
+   transparency using binary masks but is unable to store 8-bit transparency
+   information as part of the image itself. But img2pdf will always be lossless
+   and thus, input images must not carry transparency information.
 
  - img2pdf uses PIL (or Pillow) to obtain image meta data and to convert the
    input if necessary. To prevent decompression bomb denial of service attacks,
