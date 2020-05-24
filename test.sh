@@ -18,8 +18,9 @@ similar()
 
 	# The lower PSNR value, the fewer the similarities
 	# The lowest (and worst) value is 1.0
+	# head -n == --lines, but more portable (MacOS)
 	min_psnr=50
-	if [ "$min_psnr" != "$( printf "$psnr\n$min_psnr\n" | sort --general-numeric-sort | head --lines=1)" ]; then
+	if [ "$min_psnr" != "$( printf "$psnr\n$min_psnr\n" | sort --general-numeric-sort | head -n1)" ]; then
 		echo "pdf wrongly rendered"
 		return 1
 	fi
@@ -66,7 +67,9 @@ compare_mupdf()
 	pdf="$1"
 	img="$2"
 	mutool draw -o "$tempdir/mupdf.png" -r 96 "$pdf" 2>/dev/null
-	compare -metric AE "$img" "$tempdir/mupdf.png" null: 2>/dev/null
+	if [ "$(uname)" != "Darwin" ]; then  # mupdf is not pixel perfect on Darwin
+		compare -metric AE "$img" "$tempdir/mupdf.png" null: 2>/dev/null
+	fi
 	rm "$tempdir/mupdf.png"
 }
 
@@ -91,7 +94,8 @@ error()
 	exit 1
 }
 
-tempdir=$(mktemp --directory --tmpdir img2pdf.XXXXXXXXXX)
+# -d == --directory, -t == --template, but more portable (MacOS, FreeBSD)
+tempdir=$(mktemp -d -t img2pdf.XXXXXXXXXX)
 
 trap error EXIT
 
@@ -101,7 +105,13 @@ trap error EXIT
 # See https://gitlab.mister-muffin.de/josch/img2pdf/issues/56
 python3 magick.py "$tempdir"
 
-cat << END | ( cd "$tempdir"; md5sum --check --status - )
+if [ "$(uname)" = "Darwin" ]; then
+	status_arg=
+else
+	status_arg=--status
+fi
+
+cat << END | ( cd "$tempdir"; md5sum --check $status_arg - )
 cc611e80cde3b9b7adb7723801a4e5d4  alpha.png
 706175887af8ca1a33cfd93449f970df  gray16.png
 198e3333d7dc6158f94d1007e75c5bd3  gray1.png
