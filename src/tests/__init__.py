@@ -7,56 +7,10 @@ import sys
 import zlib
 from PIL import Image
 from io import StringIO, BytesIO, TextIOWrapper
+import pikepdf
+import decimal
 
 HERE = os.path.dirname(__file__)
-
-PdfReaderIO = StringIO
-
-# Recompressing the image stream makes the comparison robust against output
-# preserving changes in the zlib compress output bitstream
-# (e.g. between different zlib implementations/versions/releases).
-# Without this, some img2pdf 0.3.2 tests fail on Fedora 29/aarch64.
-# See also:
-# https://gitlab.mister-muffin.de/josch/img2pdf/issues/51
-# https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/thread/R7GD4L5Z6HELCDAL2RDESWR2F3ZXHWVX/
-def recompress_last_stream(bs):
-    length_pos = bs.rindex(b'/Length')
-    li = length_pos + 8
-    lj = bs.index(b' ', li)
-    n = int(bs[li:lj])
-    stream_pos = bs.index(b'\nstream\n', lj)
-    si = stream_pos + 8
-    sj = si + n
-    startx_pos = bs.rindex(b'\nstartxref\n')
-    xi = startx_pos + 11
-    xj = bs.index(b'\n', xi)
-    m = int(bs[xi:xj])
-
-    unc_t = zlib.decompress(bs[si:sj])
-    t = zlib.compress(unc_t)
-
-    new_len = str(len(t)).encode('ascii')
-    u = (lj-li) + n
-    v = len(new_len) + len(t)
-    off = v - u
-
-    rs = (bs[:li] + new_len + bs[lj:si] + t + bs[sj:xi]
-            + str(m+off).encode('ascii') + bs[xj:])
-
-    return rs
-
-def compare_pdf(outx, outy):
-    if b'/FlateDecode' in outx:
-        x = recompress_last_stream(outx)
-        y = recompress_last_stream(outy)
-        if x != y:
-            print('original outx:\n{}\nouty:\n{}\n'.format(outx, outy), file=sys.stderr)
-            print('recompressed outx:\n{}\nouty:\n{}\n'.format(x, y), file=sys.stderr)
-            return False
-    else:
-        if outx != outy:
-            print('original outx:\n{}\nouty:\n{}\n'.format(outx, outy), file=sys.stderr)
-    return True
 
 # convert +set date:create +set date:modify -define png:exclude-chunk=time
 
@@ -535,34 +489,24 @@ def test_suite():
         assert os.path.isfile(outputf)
 
         def handle(self, f=inputf, out=outputf, with_pdfrw=with_pdfrw):
-            try:
-                from pdfrw import PdfReader, PdfName, PdfWriter
-                from pdfrw.py23_diffs import convert_load, convert_store
-            except ImportError:
-                # the test requires pdfrw
-                self.skipTest("this test requires pdfrw")
-                return
             with open(f, "rb") as inf:
                 orig_imgdata = inf.read()
             output = img2pdf.convert(orig_imgdata, nodate=True,
                                      with_pdfrw=with_pdfrw)
-            x = PdfReader(PdfReaderIO(convert_load(output)))
-            self.assertEqual(sorted(x.keys()), [PdfName.Info, PdfName.Root,
-                             PdfName.Size])
-            self.assertIn(x.Root.Pages.Count, ('1', '2'))
+            x = pikepdf.open(BytesIO(output))
+            self.assertIn(x.Root.Pages.Count, (1, 2))
             if len(x.Root.Pages.Kids) == '1':
                 self.assertEqual(x.Size, '7')
                 self.assertEqual(len(x.Root.Pages.Kids), 1)
             elif len(x.Root.Pages.Kids) == '2':
                 self.assertEqual(x.Size, '10')
                 self.assertEqual(len(x.Root.Pages.Kids), 2)
-            self.assertEqual(x.Info, {})
-            self.assertEqual(sorted(x.Root.keys()), [PdfName.Pages,
-                                                     PdfName.Type])
-            self.assertEqual(x.Root.Type, PdfName.Catalog)
+            self.assertEqual(sorted(x.Root.keys()), ["/Pages",
+                                                     "/Type"])
+            self.assertEqual(x.Root.Type, "/Catalog")
             self.assertEqual(sorted(x.Root.Pages.keys()),
-                             [PdfName.Count, PdfName.Kids, PdfName.Type])
-            self.assertEqual(x.Root.Pages.Type, PdfName.Pages)
+                             ["/Count", "/Kids", "/Type"])
+            self.assertEqual(x.Root.Pages.Type, "/Pages")
             orig_img = Image.open(f)
             for pagenum in range(len(x.Root.Pages.Kids)):
                 # retrieve the original image frame that this page was
@@ -583,57 +527,54 @@ def test_suite():
 
                 def format_float(f):
                     if int(f) == f:
-                        return str(int(f))
+                        return int(f)
                     else:
-                        return ("%.4f" % f).rstrip("0")
+                        return decimal.Decimal("%.4f" % f)
 
                 self.assertEqual(sorted(cur_page.keys()),
-                                 [PdfName.Contents, PdfName.MediaBox,
-                                  PdfName.Parent, PdfName.Resources,
-                                  PdfName.Type])
+                                 ["/Contents", "/MediaBox",
+                                  "/Parent", "/Resources",
+                                  "/Type"])
                 self.assertEqual(cur_page.MediaBox,
-                                 ['0', '0', format_float(pagewidth),
-                                  format_float(pageheight)])
+                                 pikepdf.Array([0, 0, format_float(pagewidth),
+                                  format_float(pageheight)]))
                 self.assertEqual(cur_page.Parent, x.Root.Pages)
-                self.assertEqual(cur_page.Type, PdfName.Page)
+                self.assertEqual(cur_page.Type, "/Page")
                 self.assertEqual(cur_page.Resources.keys(),
-                                 [PdfName.XObject])
+                        {"/XObject"})
                 self.assertEqual(cur_page.Resources.XObject.keys(),
-                                 [PdfName.Im0])
-                self.assertEqual(cur_page.Contents.keys(),
-                                 [PdfName.Length])
+                        {"/Im0"})
                 self.assertEqual(cur_page.Contents.Length,
-                                 str(len(cur_page.Contents.stream)))
-                self.assertEqual(cur_page.Contents.stream,
-                                 "q\n%.4f 0 0 %.4f 0.0000 0.0000 cm\n"
-                                 "/Im0 Do\nQ" % (pagewidth, pageheight))
+                                 len(cur_page.Contents.read_bytes()))
+                self.assertEqual(cur_page.Contents.read_bytes(),
+                                 b"q\n%.4f 0 0 %.4f 0.0000 0.0000 cm\n"
+                                 b"/Im0 Do\nQ" % (pagewidth, pageheight))
 
                 imgprops = cur_page.Resources.XObject.Im0
 
                 # test if the filter is valid:
                 self.assertIn(
-                    imgprops.Filter, [PdfName.DCTDecode, PdfName.JPXDecode,
-                                      PdfName.FlateDecode,
-                                      [PdfName.CCITTFaxDecode]])
+                    imgprops.Filter, ["/DCTDecode", "/JPXDecode",
+                                      "/FlateDecode",
+                                      pikepdf.Array([ pikepdf.Name.CCITTFaxDecode ])])
 
                 # test if the image has correct size
-                self.assertEqual(imgprops.Width, str(orig_img.size[0]))
-                self.assertEqual(imgprops.Height, str(orig_img.size[1]))
+                self.assertEqual(imgprops.Width, orig_img.size[0])
+                self.assertEqual(imgprops.Height, orig_img.size[1])
                 # if the input file is a jpeg then it should've been copied
                 # verbatim into the PDF
-                if imgprops.Filter in [PdfName.DCTDecode,
-                                       PdfName.JPXDecode]:
+                if imgprops.Filter in ["/DCTDecode",
+                                       "/JPXDecode"]:
                     self.assertEqual(
-                        cur_page.Resources.XObject.Im0.stream,
-                        convert_load(orig_imgdata))
-                elif imgprops.Filter == [PdfName.CCITTFaxDecode]:
+                        cur_page.Resources.XObject.Im0.read_raw_bytes(),
+                        orig_imgdata)
+                elif imgprops.Filter == pikepdf.Array([ pikepdf.Name.CCITTFaxDecode ]):
                     tiff_header = tiff_header_for_ccitt(
                         int(imgprops.Width), int(imgprops.Height),
                         int(imgprops.Length), 4)
                     imgio = BytesIO()
                     imgio.write(tiff_header)
-                    imgio.write(convert_store(
-                        cur_page.Resources.XObject.Im0.stream))
+                    imgio.write(cur_page.Resources.XObject.Im0.read_raw_bytes())
                     imgio.seek(0)
                     im = Image.open(imgio)
                     self.assertEqual(im.tobytes(), orig_img.tobytes())
@@ -641,13 +582,12 @@ def test_suite():
                         im.close()
                     except AttributeError:
                         pass
-
-                elif imgprops.Filter == PdfName.FlateDecode:
+                elif imgprops.Filter == "/FlateDecode":
                     # otherwise, the data is flate encoded and has to be equal
                     # to the pixel data of the input image
                     imgdata = zlib.decompress(
-                        convert_store(cur_page.Resources.XObject.Im0.stream))
-                    if imgprops.DecodeParms:
+                        cur_page.Resources.XObject.Im0.read_raw_bytes())
+                    if hasattr(imgprops, "DecodeParms"):
                         if orig_img.format == 'PNG':
                             pngidat, palette = img2pdf.parse_png(orig_imgdata)
                         elif orig_img.format == 'TIFF' \
@@ -664,11 +604,11 @@ def test_suite():
                         self.assertEqual(zlib.decompress(pngidat), imgdata)
                     else:
                         colorspace = imgprops.ColorSpace
-                        if colorspace == PdfName.DeviceGray:
+                        if colorspace == "/DeviceGray":
                             colorspace = 'L'
-                        elif colorspace == PdfName.DeviceRGB:
+                        elif colorspace == "/DeviceRGB":
                             colorspace = 'RGB'
-                        elif colorspace == PdfName.DeviceCMYK:
+                        elif colorspace == "/DeviceCMYK":
                             colorspace = 'CMYK'
                         else:
                             raise Exception("invalid colorspace")
@@ -689,18 +629,17 @@ def test_suite():
                             im.close()
                         except AttributeError:
                             pass
+                else:
+                    raise Exception("unknown filter")
+
             # now use pdfrw to parse and then write out both pdfs and check the
             # result for equality
-            y = PdfReader(out)
+            y = pikepdf.open(out)
             outx = BytesIO()
             outy = BytesIO()
-            xwriter = PdfWriter()
-            ywriter = PdfWriter()
-            xwriter.trailer = x
-            ywriter.trailer = y
-            xwriter.write(outx)
-            ywriter.write(outy)
-            self.assertEqual(compare_pdf(outx.getvalue(), outy.getvalue()), True)
+            x.save(outx, compress_streams = False, static_id=True)
+            y.save(outy, compress_streams = False, static_id=True)
+            self.assertEqual(outx.getvalue(), outy.getvalue())
             # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
             # close() method
             try:
