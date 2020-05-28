@@ -489,7 +489,7 @@ def test_suite():
                 self.skipTest("pdfrw not available")
             # we do not test animation.gif with pdfrw because it doesn't support
             # saving hexadecimal palette data
-            if f.endswith("/animation.gif") and engine == img2pdf.Engine.pdfrw:
+            if f.endswith(os.path.sep+"animation.gif") and engine == img2pdf.Engine.pdfrw:
                 self.skipTest("pdfrw does not support palletes")
             with open(f, "rb") as inf:
                 orig_imgdata = inf.read()
