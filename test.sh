@@ -122,11 +122,15 @@ if [ -z ${img2pdfprog+x} ]; then
 	img2pdfprog=src/img2pdf.py
 fi
 
+available_engines="internal"
+
+if python3 -c "import pdfrw" 2>/dev/null; then
+	available_engines="$available_engines pdfrw"
+fi
+
 img2pdf()
 {
-	# we use --without-pdfrw to better "grep" the result and because we
-	# cannot write palette based images otherwise
-	$img2pdfprog --without-pdfrw --producer="" --nodate "$1" > "$2" 2>/dev/null
+	$img2pdfprog --producer="" --nodate --engine="$1" "$2" > "$3" 2>/dev/null
 }
 
 tests=51 # number of tests
@@ -146,7 +150,8 @@ identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Depth: 8-bit$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Page geometry: 60x60+0+0$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Compression: JPEG$'
 
-img2pdf "$tempdir/normal.jpg" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/normal.jpg" "$tempdir/out.pdf"
 
 # We have to use jpegtopnm with the original JPG before being able to compare
 # it with imagemagick because imagemagick will decode the JPG slightly
@@ -173,8 +178,10 @@ Resources.XObject.Im0.Filter == "/DCTDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/normal.jpg" "$tempdir/normal.pnm" "$tempdir/out.pdf"
+rm "$tempdir/normal.jpg" "$tempdir/normal.pnm"
 j=$((j+1))
 
 ###############################################################################
@@ -196,7 +203,8 @@ identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Page geometry: 60x60+
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Compression: JPEG$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Orientation: RightTop$'
 
-img2pdf "$tempdir/normal.jpg" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/normal.jpg" "$tempdir/out.pdf"
 
 # We have to use jpegtopnm with the original JPG before being able to compare
 # it with imagemagick because imagemagick will decode the JPG slightly
@@ -226,8 +234,10 @@ Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 Rotate == 90
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/normal.jpg" "$tempdir/normal.pnm" "$tempdir/out.pdf" "$tempdir/normal_rotated.png"
+rm "$tempdir/normal.jpg" "$tempdir/normal.pnm" "$tempdir/normal_rotated.png"
 j=$((j+1))
 
 ###############################################################################
@@ -244,7 +254,8 @@ identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Depth: 8-bit$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Page geometry: 60x60+0+0$'
 identify -verbose "$tempdir/normal.jpg" | grep --quiet '^  Compression: JPEG$'
 
-img2pdf "$tempdir/normal.jpg" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/normal.jpg" "$tempdir/out.pdf"
 
 gs -dQUIET -dNOPAUSE -dBATCH -sDEVICE=tiff32nc -r96 -sOutputFile="$tempdir/gs-%00d.tiff" "$tempdir/out.pdf"
 similar "$tempdir/normal.jpg" "$tempdir/gs-1.tiff"
@@ -269,8 +280,10 @@ Resources.XObject.Im0.Filter == "/DCTDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/normal.jpg" "$tempdir/out.pdf"
+rm "$tempdir/normal.jpg"
 j=$((j+1))
 
 ###############################################################################
@@ -287,7 +300,8 @@ identify -verbose "$tempdir/normal.jp2" | grep --quiet '^  Depth: 8-bit$'
 identify -verbose "$tempdir/normal.jp2" | grep --quiet '^  Page geometry: 60x60+0+0$'
 identify -verbose "$tempdir/normal.jp2" | grep --quiet '^  Compression: JPEG2000$'
 
-img2pdf "$tempdir/normal.jp2" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/normal.jp2" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/normal.jp2"
 
@@ -303,8 +317,10 @@ Resources.XObject.Im0.Filter == "/JPXDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/normal.jp2" "$tempdir/out.pdf"
+rm "$tempdir/normal.jp2"
 j=$((j+1))
 
 ###############################################################################
@@ -329,7 +345,8 @@ identify -verbose "$tempdir/normal.png" | grep --quiet '^    png:IHDR.color-type
 identify -verbose "$tempdir/normal.png" | grep --quiet '^    png:IHDR.color_type: 2 (Truecolor)$'
 identify -verbose "$tempdir/normal.png" | grep --quiet '^    png:IHDR.interlace_method: 0 (Not interlaced)$'
 
-img2pdf "$tempdir/normal.png" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/normal.png" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/normal.png"
 
@@ -346,8 +363,9 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
-
 rm "$tempdir/out.pdf"
+done
+
 j=$((j+1))
 
 ###############################################################################
@@ -367,7 +385,8 @@ identify -verbose "$tempdir/normal16.png" | grep --quiet '^    png:IHDR.color-ty
 identify -verbose "$tempdir/normal16.png" | grep --quiet '^    png:IHDR.color_type: 2 (Truecolor)$'
 identify -verbose "$tempdir/normal16.png" | grep --quiet '^    png:IHDR.interlace_method: 0 (Not interlaced)$'
 
-img2pdf "$tempdir/normal16.png" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/normal16.png" "$tempdir/out.pdf"
 
 compare_ghostscript "$tempdir/out.pdf" "$tempdir/normal16.png" tiff48nc
 
@@ -389,8 +408,9 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
-
 rm "$tempdir/out.pdf"
+done
+
 j=$((j+1))
 
 ###############################################################################
@@ -412,11 +432,13 @@ identify -verbose "$tempdir/alpha8.png" | grep --quiet '^    png:IHDR.color-type
 identify -verbose "$tempdir/alpha8.png" | grep --quiet '^    png:IHDR.color_type: 6 (RGBA)$'
 identify -verbose "$tempdir/alpha8.png" | grep --quiet '^    png:IHDR.interlace_method: 0 (Not interlaced)$'
 
-img2pdf "$tempdir/alpha8.png" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/alpha8.png" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 rm "$tempdir/alpha8.png"
 j=$((j+1))
@@ -438,11 +460,13 @@ identify -verbose "$tempdir/alpha.png" | grep --quiet '^    png:IHDR.color-type-
 identify -verbose "$tempdir/alpha.png" | grep --quiet '^    png:IHDR.color_type: 6 (RGBA)$'
 identify -verbose "$tempdir/alpha.png" | grep --quiet '^    png:IHDR.interlace_method: 0 (Not interlaced)$'
 
-img2pdf "$tempdir/alpha.png" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/alpha.png" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 j=$((j+1))
 
@@ -465,11 +489,13 @@ identify -verbose "$tempdir/alpha_gray8.png" | grep --quiet '^    png:IHDR.color
 identify -verbose "$tempdir/alpha_gray8.png" | grep --quiet '^    png:IHDR.color_type: 4 (GrayAlpha)$'
 identify -verbose "$tempdir/alpha_gray8.png" | grep --quiet '^    png:IHDR.interlace_method: 0 (Not interlaced)$'
 
-img2pdf "$tempdir/alpha_gray8.png" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/alpha_gray8.png" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 rm "$tempdir/alpha_gray8.png"
 j=$((j+1))
@@ -493,11 +519,13 @@ identify -verbose "$tempdir/alpha_gray16.png" | grep --quiet '^    png:IHDR.colo
 identify -verbose "$tempdir/alpha_gray16.png" | grep --quiet '^    png:IHDR.color_type: 4 (GrayAlpha)$'
 identify -verbose "$tempdir/alpha_gray16.png" | grep --quiet '^    png:IHDR.interlace_method: 0 (Not interlaced)$'
 
-img2pdf "$tempdir/alpha_gray16.png" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/alpha_gray16.png" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 rm "$tempdir/alpha_gray16.png"
 j=$((j+1))
@@ -521,7 +549,8 @@ identify -verbose "$tempdir/interlace.png" | grep --quiet '^    png:IHDR.color-t
 identify -verbose "$tempdir/interlace.png" | grep --quiet '^    png:IHDR.color_type: 2 (Truecolor)$'
 identify -verbose "$tempdir/interlace.png" | grep --quiet '^    png:IHDR.interlace_method: 1 (Adam7 method)$'
 
-img2pdf "$tempdir/interlace.png" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/interlace.png" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/normal.png"
 
@@ -538,8 +567,10 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/interlace.png" "$tempdir/out.pdf"
+rm "$tempdir/interlace.png"
 j=$((j+1))
 
 ###############################################################################
@@ -568,7 +599,8 @@ for i in 1 2 4 8; do
 	identify -verbose "$tempdir/gray$i.png" | grep --quiet '^    png:IHDR.color_type: 0 (Grayscale)$'
 	identify -verbose "$tempdir/gray$i.png" | grep --quiet '^    png:IHDR.interlace_method: 0 (Not interlaced)$'
 
-	img2pdf "$tempdir/gray$i.png" "$tempdir/out.pdf"
+	for engine in $available_engines; do
+	img2pdf $engine "$tempdir/gray$i.png" "$tempdir/out.pdf"
 
 	compare_rendered "$tempdir/out.pdf" "$tempdir/gray$i.png" pnggray
 
@@ -586,8 +618,9 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
-
 	rm "$tempdir/out.pdf"
+	done
+
 	j=$((j+1))
 done
 
@@ -608,7 +641,8 @@ identify -verbose "$tempdir/gray16.png" | grep --quiet '^    png:IHDR.color-type
 identify -verbose "$tempdir/gray16.png" | grep --quiet '^    png:IHDR.color_type: 0 (Grayscale)$'
 identify -verbose "$tempdir/gray16.png" | grep --quiet '^    png:IHDR.interlace_method: 0 (Not interlaced)$'
 
-img2pdf "$tempdir/gray16.png" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/gray16.png" "$tempdir/out.pdf"
 
 # ghostscript outputs 8-bit grayscale, so the comparison will not be exact
 gs -dQUIET -dNOPAUSE -dBATCH -sDEVICE=pnggray -r96 -sOutputFile="$tempdir/gs-%00d.png" "$tempdir/out.pdf"
@@ -636,8 +670,9 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
-
 rm "$tempdir/out.pdf"
+done
+
 j=$((j+1))
 
 ###############################################################################
@@ -658,7 +693,11 @@ for i in 1 2 4 8; do
 	identify -verbose "$tempdir/palette$i.png" | grep --quiet '^    png:IHDR.color_type: 3 (Indexed)$'
 	identify -verbose "$tempdir/palette$i.png" | grep --quiet '^    png:IHDR.interlace_method: 0 (Not interlaced)$'
 
-	img2pdf "$tempdir/palette$i.png" "$tempdir/out.pdf"
+	for engine in $available_engines; do
+	if [ $engine = "pdfrw" ]; then
+		continue
+	fi
+	img2pdf $engine "$tempdir/palette$i.png" "$tempdir/out.pdf"
 
 	compare_rendered "$tempdir/out.pdf" "$tempdir/palette$i.png"
 
@@ -676,8 +715,9 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
-
 	rm "$tempdir/out.pdf"
+	done
+
 	j=$((j+1))
 done
 
@@ -696,11 +736,13 @@ identify -verbose "$tempdir/alpha.gif" | grep --quiet '^  Colormap entries: 256$
 identify -verbose "$tempdir/alpha.gif" | grep --quiet '^  Page geometry: 60x60+0+0$'
 identify -verbose "$tempdir/alpha.gif" | grep --quiet '^  Compression: LZW$'
 
-img2pdf "$tempdir/alpha.gif" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/alpha.gif" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 rm "$tempdir/alpha.gif"
 j=$((j+1))
@@ -726,7 +768,11 @@ for i in 1 2 4 8; do
 	identify -verbose "$tempdir/palette$i.gif" | grep --quiet '^  Page geometry: 60x60+0+0$'
 	identify -verbose "$tempdir/palette$i.gif" | grep --quiet '^  Compression: LZW$'
 
-	img2pdf "$tempdir/palette$i.gif" "$tempdir/out.pdf"
+	for engine in $available_engines; do
+	if [ $engine = "pdfrw" ]; then
+		continue
+	fi
+	img2pdf $engine "$tempdir/palette$i.gif" "$tempdir/out.pdf"
 
 	compare_rendered "$tempdir/out.pdf" "$tempdir/palette$i.png"
 
@@ -744,8 +790,10 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+	rm "$tempdir/out.pdf"
+	done
 
-	rm "$tempdir/out.pdf" "$tempdir/palette$i.gif"
+	rm "$tempdir/palette$i.gif"
 	j=$((j+1))
 done
 
@@ -775,7 +823,11 @@ identify -verbose "$tempdir/animation.gif[1]" | grep --quiet '^  Page geometry: 
 identify -verbose "$tempdir/animation.gif[1]" | grep --quiet '^  Compression: LZW$'
 identify -verbose "$tempdir/animation.gif[1]" | grep --quiet '^  Scene: 1$'
 
-img2pdf "$tempdir/animation.gif" "$tempdir/out.pdf"
+for engine in $available_engines; do
+if [ $engine = "pdfrw" ]; then
+	continue
+fi
+img2pdf $engine "$tempdir/animation.gif" "$tempdir/out.pdf"
 
 if [ "$(pdfinfo "$tempdir/out.pdf" | awk '/Pages:/ {print $2}')" != 2 ]; then
 	echo "pdf does not have 2 pages"
@@ -805,6 +857,7 @@ END
 
 	rm "$tempdir/page-$page.pdf"
 done
+done
 
 rm "$tempdir/animation.gif"
 j=$((j+1))
@@ -828,11 +881,13 @@ identify -verbose "$tempdir/float.tiff" | grep --quiet '^    tiff:alpha: unspeci
 identify -verbose "$tempdir/float.tiff" | grep --quiet '^    tiff:endian: lsb$'
 identify -verbose "$tempdir/float.tiff" | grep --quiet '^    tiff:photometric: RGB$'
 
-img2pdf "$tempdir/float.tiff" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/float.tiff" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 rm "$tempdir/float.tiff"
 j=$((j+1))
@@ -855,7 +910,8 @@ identify -verbose "$tempdir/cmyk8.tiff" | grep --quiet '^    tiff:alpha: unspeci
 identify -verbose "$tempdir/cmyk8.tiff" | grep --quiet '^    tiff:endian: lsb$'
 identify -verbose "$tempdir/cmyk8.tiff" | grep --quiet '^    tiff:photometric: separated$'
 
-img2pdf "$tempdir/cmyk8.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/cmyk8.tiff" "$tempdir/out.pdf"
 
 compare_ghostscript "$tempdir/out.pdf" "$tempdir/cmyk8.tiff" tiff32nc
 
@@ -877,8 +933,10 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/cmyk8.tiff" "$tempdir/out.pdf"
+rm "$tempdir/cmyk8.tiff"
 j=$((j+1))
 
 ###############################################################################
@@ -900,11 +958,13 @@ identify -verbose "$tempdir/cmyk16.tiff" | grep --quiet '^    tiff:endian: lsb$'
 identify -verbose "$tempdir/cmyk16.tiff" | grep --quiet '^    tiff:photometric: separated$'
 
 # PIL is unable to read 16 bit CMYK images
-img2pdf "$tempdir/cmyk16.gif" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/cmyk16.gif" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 rm "$tempdir/cmyk16.tiff"
 j=$((j+1))
@@ -927,7 +987,8 @@ identify -verbose "$tempdir/normal.tiff" | grep --quiet '^    tiff:alpha: unspec
 identify -verbose "$tempdir/normal.tiff" | grep --quiet '^    tiff:endian: lsb$'
 identify -verbose "$tempdir/normal.tiff" | grep --quiet '^    tiff:photometric: RGB$'
 
-img2pdf "$tempdir/normal.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/normal.tiff" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/normal.tiff" tiff24nc
 
@@ -944,8 +1005,10 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/normal.tiff" "$tempdir/out.pdf"
+rm "$tempdir/normal.tiff"
 j=$((j+1))
 
 ###############################################################################
@@ -966,11 +1029,13 @@ identify -verbose "$tempdir/alpha8.tiff" | grep --quiet '^    tiff:alpha: unasso
 identify -verbose "$tempdir/alpha8.tiff" | grep --quiet '^    tiff:endian: lsb$'
 identify -verbose "$tempdir/alpha8.tiff" | grep --quiet '^    tiff:photometric: RGB$'
 
-img2pdf "$tempdir/alpha8.tiff" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/alpha8.tiff" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 rm "$tempdir/alpha8.tiff"
 j=$((j+1))
@@ -993,11 +1058,13 @@ identify -verbose "$tempdir/alpha16.tiff" | grep --quiet '^    tiff:alpha: unass
 identify -verbose "$tempdir/alpha16.tiff" | grep --quiet '^    tiff:endian: lsb$'
 identify -verbose "$tempdir/alpha16.tiff" | grep --quiet '^    tiff:photometric: RGB$'
 
-img2pdf "$tempdir/alpha16.tiff" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/alpha16.tiff" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 rm "$tempdir/alpha16.tiff"
 j=$((j+1))
@@ -1020,7 +1087,8 @@ identify -verbose "$tempdir/gray1.tiff" | grep --quiet '^    tiff:alpha: unspeci
 identify -verbose "$tempdir/gray1.tiff" | grep --quiet '^    tiff:endian: lsb$'
 identify -verbose "$tempdir/gray1.tiff" | grep --quiet '^    tiff:photometric: min-is-black$'
 
-img2pdf "$tempdir/gray1.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/gray1.tiff" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/gray1.png" pnggray
 
@@ -1038,8 +1106,10 @@ Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/gray1.tiff" "$tempdir/out.pdf"
+rm "$tempdir/gray1.tiff"
 j=$((j+1))
 
 ###############################################################################
@@ -1061,7 +1131,8 @@ for i in 2 4 8; do
 	identify -verbose "$tempdir/gray$i.tiff" | grep --quiet '^    tiff:endian: lsb$'
 	identify -verbose "$tempdir/gray$i.tiff" | grep --quiet '^    tiff:photometric: min-is-black$'
 
-	img2pdf "$tempdir/gray$i.tiff" "$tempdir/out.pdf"
+	for engine in $available_engines; do
+	img2pdf $engine "$tempdir/gray$i.tiff" "$tempdir/out.pdf"
 
 	compare_rendered "$tempdir/out.pdf" "$tempdir/gray$i.png" pnggray
 
@@ -1079,8 +1150,10 @@ Resources.XObject.Im0.Filter == "/FlateDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+	rm "$tempdir/out.pdf"
+	done
 
-	rm "$tempdir/gray$i.tiff" "$tempdir/out.pdf"
+	rm "$tempdir/gray$i.tiff"
 	j=$((j+1))
 done
 
@@ -1102,11 +1175,13 @@ identify -verbose "$tempdir/gray16.tiff" | grep --quiet '^    tiff:alpha: unspec
 identify -verbose "$tempdir/gray16.tiff" | grep --quiet '^    tiff:endian: lsb$'
 identify -verbose "$tempdir/gray16.tiff" | grep --quiet '^    tiff:photometric: min-is-black$'
 
-img2pdf "$tempdir/gray16.tiff" /dev/null && rc=$? || rc=$?
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/gray16.tiff" /dev/null && rc=$? || rc=$?
 if [ "$rc" -eq 0 ]; then
 	echo needs to fail here
 	exit 1
 fi
+done
 
 rm "$tempdir/gray16.tiff"
 j=$((j+1))
@@ -1143,7 +1218,8 @@ identify -verbose "$tempdir/multipage.tiff[1]" | grep --quiet '^    tiff:endian:
 identify -verbose "$tempdir/multipage.tiff[1]" | grep --quiet '^    tiff:photometric: RGB$'
 identify -verbose "$tempdir/multipage.tiff[1]" | grep --quiet '^  Scene: 1$'
 
-img2pdf "$tempdir/multipage.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/multipage.tiff" "$tempdir/out.pdf"
 
 if [ "$(pdfinfo "$tempdir/out.pdf" | awk '/Pages:/ {print $2}')" != 2 ]; then
 	echo "pdf does not have 2 pages"
@@ -1171,6 +1247,7 @@ Resources.XObject.Im0.Width == 60
 END
 
 	rm "$tempdir/page-$page.pdf"
+done
 done
 
 rm "$tempdir/multipage.tiff"
@@ -1205,7 +1282,11 @@ for i in 1 2 4 8; do
 	identify -verbose "$tempdir/palette$i.tiff" | grep --quiet '^    tiff:endian: lsb$'
 	identify -verbose "$tempdir/palette$i.tiff" | grep --quiet '^    tiff:photometric: palette$'
 
-	img2pdf "$tempdir/palette$i.tiff" "$tempdir/out.pdf"
+	for engine in $available_engines; do
+	if [ $engine = "pdfrw" ]; then
+		continue
+	fi
+	img2pdf $engine "$tempdir/palette$i.tiff" "$tempdir/out.pdf"
 
 	compare_rendered "$tempdir/out.pdf" "$tempdir/palette$i.png"
 
@@ -1225,6 +1306,7 @@ Resources.XObject.Im0.Width == 60
 END
 
 	rm "$tempdir/out.pdf"
+	done
 
 	rm "$tempdir/palette$i.tiff"
 	j=$((j+1))
@@ -1253,11 +1335,13 @@ for i in 12 14 16; do
 	identify -verbose "$tempdir/normal$i.tiff" | grep --quiet '^    tiff:endian: lsb$'
 	identify -verbose "$tempdir/normal$i.tiff" | grep --quiet '^    tiff:photometric: RGB$'
 
-	img2pdf "$tempdir/normal$i.tiff" /dev/null && rc=$? || rc=$?
+	for engine in $available_engines; do
+	img2pdf $engine "$tempdir/normal$i.tiff" /dev/null && rc=$? || rc=$?
 	if [ "$rc" -eq 0 ]; then
 		echo needs to fail here
 		exit 1
 	fi
+	done
 
 	rm "$tempdir/normal$i.tiff"
 	j=$((j+1))
@@ -1280,7 +1364,8 @@ identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Compression: Group4'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:endian: lsb'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:photometric: min-is-white'
 
-img2pdf "$tempdir/group4.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/group4.tiff" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
@@ -1298,8 +1383,10 @@ Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
+rm "$tempdir/group4.tiff"
 j=$((j+1))
 
 ###############################################################################
@@ -1319,7 +1406,8 @@ identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Compression: Group4'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:endian: msb'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:photometric: min-is-white'
 
-img2pdf "$tempdir/group4.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/group4.tiff" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
@@ -1337,8 +1425,10 @@ Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
+rm "$tempdir/group4.tiff"
 j=$((j+1))
 
 ###############################################################################
@@ -1358,7 +1448,8 @@ identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Compression: Group4'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:endian: msb'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:photometric: min-is-white'
 
-img2pdf "$tempdir/group4.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/group4.tiff" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
@@ -1376,8 +1467,10 @@ Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
+rm "$tempdir/group4.tiff"
 j=$((j+1))
 
 ###############################################################################
@@ -1402,7 +1495,8 @@ identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Compression: Group4'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:endian: lsb'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:photometric: min-is-black'
 
-img2pdf "$tempdir/group4.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/group4.tiff" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
@@ -1420,8 +1514,10 @@ Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
+rm "$tempdir/group4.tiff"
 j=$((j+1))
 
 ###############################################################################
@@ -1447,7 +1543,8 @@ identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Compression: Group4'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:endian: lsb'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:photometric: min-is-white'
 
-img2pdf "$tempdir/group4.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/group4.tiff" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
@@ -1465,8 +1562,10 @@ Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
+rm "$tempdir/group4.tiff"
 j=$((j+1))
 
 ###############################################################################
@@ -1489,7 +1588,8 @@ identify -verbose "$tempdir/group4.tiff" | grep --quiet 'Compression: Group4'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:endian: lsb'
 identify -verbose "$tempdir/group4.tiff" | grep --quiet 'tiff:photometric: min-is-white'
 
-img2pdf "$tempdir/group4.tiff" "$tempdir/out.pdf"
+for engine in $available_engines; do
+img2pdf $engine "$tempdir/group4.tiff" "$tempdir/out.pdf"
 
 compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
@@ -1507,8 +1607,10 @@ Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
 Resources.XObject.Im0.Height == 60
 Resources.XObject.Im0.Width == 60
 END
+rm "$tempdir/out.pdf"
+done
 
-rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
+rm "$tempdir/group4.tiff"
 j=$((j+1))
 
 rm "$tempdir/alpha.png" "$tempdir/normal.png" "$tempdir/inverse.png" "$tempdir/palette1.png" "$tempdir/palette2.png" "$tempdir/palette4.png" "$tempdir/palette8.png" "$tempdir/gray8.png" "$tempdir/normal16.png" "$tempdir/gray16.png" "$tempdir/gray4.png" "$tempdir/gray2.png" "$tempdir/gray1.png"

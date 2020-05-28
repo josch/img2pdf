@@ -34,13 +34,11 @@ import logging
 import struct
 import platform
 
-with_pdfrw = False
+have_pdfrw = True
 try:
     import pdfrw
-
-    with_pdfrw = True
 except ImportError:
-    pass
+    have_pdfrw = False
 
 __version__ = "0.3.6"
 default_dpi = 96.0
@@ -69,6 +67,7 @@ papernames = {
     "tabloid": "Tabloid",
 }
 
+Engine = Enum("Engine", "internal pdfrw pikepdf")
 
 FitMode = Enum("FitMode", "into fill exact shrink enlarge")
 
@@ -597,6 +596,7 @@ class MyPdfString:
 class pdfdoc(object):
     def __init__(
         self,
+        engine=Engine.internal,
         version="1.3",
         title=None,
         author=None,
@@ -615,13 +615,21 @@ class pdfdoc(object):
         center_window=False,
         fullscreen=False,
     ):
-        if with_pdfrw:
+        if engine is None:
+            if have_pdfrw:
+                engine = Engine.pdfrw
+            else:
+                engine = Engine.internal
+
+        if engine == Engine.pdfrw:
             from pdfrw import PdfWriter, PdfDict, PdfName, PdfString
-        else:
+        elif engine == Engine.internal:
             PdfWriter = MyPdfWriter
             PdfDict = MyPdfDict
             PdfName = MyPdfName
             PdfString = MyPdfString
+        else:
+            raise ValueError("unknown engine: %s" % engine)
 
         now = datetime.now()
         self.info = PdfDict(indirect=True)
@@ -662,7 +670,7 @@ class pdfdoc(object):
         self.writer.version = version
         # this is done because pdfrw adds info, catalog and pages as the first
         # three objects in this order
-        if not with_pdfrw:
+        if engine == Engine.internal:
             self.writer.addobj(self.info)
             self.writer.addobj(self.writer.catalog)
             self.writer.addobj(self.writer.pages)
@@ -674,6 +682,7 @@ class pdfdoc(object):
         self.fit_window = fit_window
         self.center_window = center_window
         self.fullscreen = fullscreen
+        self.engine = engine
 
     def add_imagepage(
         self,
@@ -698,15 +707,17 @@ class pdfdoc(object):
         trimborder=None,
         artborder=None,
     ):
-        if with_pdfrw:
+        if self.engine == Engine.pdfrw:
             from pdfrw import PdfDict, PdfName, PdfObject, PdfString
             from pdfrw.py23_diffs import convert_load
-        else:
+        elif self.engine == Engine.internal:
             PdfDict = MyPdfDict
             PdfName = MyPdfName
             PdfObject = MyPdfObject
             PdfString = MyPdfString
             convert_load = my_convert_load
+        else:
+            raise ValueError("unknown engine: %s" % self.engine)
 
         if color == Colorspace["1"] or color == Colorspace.L:
             colorspace = PdfName.DeviceGray
@@ -715,11 +726,11 @@ class pdfdoc(object):
         elif color == Colorspace.CMYK or color == Colorspace["CMYK;I"]:
             colorspace = PdfName.DeviceCMYK
         elif color == Colorspace.P:
-            if with_pdfrw:
+            if self.engine == Engine.pdfrw:
                 raise Exception(
                     "pdfrw does not support hex strings for "
                     "palette image input, re-run with "
-                    "--without-pdfrw"
+                    "--engine=internal"
                 )
             colorspace = [
                 PdfName.Indexed,
@@ -843,7 +854,7 @@ class pdfdoc(object):
 
         self.writer.addpage(page)
 
-        if not with_pdfrw:
+        if self.engine == Engine.internal:
             self.writer.addobj(content)
             self.writer.addobj(image)
 
@@ -853,13 +864,15 @@ class pdfdoc(object):
         return stream.getvalue()
 
     def tostream(self, outputstream):
-        if with_pdfrw:
+        if self.engine == Engine.pdfrw:
             from pdfrw import PdfDict, PdfName, PdfArray, PdfObject
-        else:
+        elif self.engine == Engine.internal:
             PdfDict = MyPdfDict
             PdfName = MyPdfName
             PdfObject = MyPdfObject
             PdfArray = MyPdfArray
+        else:
+            raise ValueError("unknown engine: %s" % self.engine)
         NullObject = PdfObject("null")
         TrueObject = PdfObject("true")
 
@@ -871,10 +884,12 @@ class pdfdoc(object):
         # is added, so we can only start using it after all pages have been
         # written.
 
-        if with_pdfrw:
+        if self.engine == Engine.pdfrw:
             catalog = self.writer.trailer.Root
-        else:
+        elif self.engine == Engine.internal:
             catalog = self.writer.catalog
+        else:
+            raise ValueError("unknown engine: %s" % self.engine)
 
         if (
             self.fullscreen
@@ -977,11 +992,13 @@ class pdfdoc(object):
             raise ValueError("unknown page layout: %s" % self.page_layout)
 
         # now write out the PDF
-        if with_pdfrw:
+        if self.engine == Engine.pdfrw:
             self.writer.trailer.Info = self.info
             self.writer.write(outputstream)
-        else:
+        elif self.engine == Engine.internal:
             self.writer.tostream(self.info, outputstream)
+        else:
+            raise ValueError("unknown engine: %s" % self.engine)
 
 
 def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
@@ -1763,6 +1780,7 @@ def find_scale(pagewidth, pageheight):
 def convert(*images, **kwargs):
 
     _default_kwargs = dict(
+        engine=None,
         title=None,
         author=None,
         creator=None,
@@ -1792,11 +1810,9 @@ def convert(*images, **kwargs):
     for kwname, default in _default_kwargs.items():
         if kwname not in kwargs:
             kwargs[kwname] = default
-    if "with_pdfrw" in kwargs:
-        global with_pdfrw
-        with_pdfrw = kwargs["with_pdfrw"]
 
     pdf = pdfdoc(
+        kwargs["engine"],
         "1.3",
         kwargs["title"],
         kwargs["author"],
@@ -2064,6 +2080,16 @@ def parse_colorspacearg(string):
     )
 
 
+def parse_enginearg(string):
+    for c in Engine:
+        if c.name == string:
+            return c
+    allowed = ", ".join([c.name for c in Engine])
+    raise argparse.ArgumentTypeError(
+        "Unsupported engine: %s. Must be one of: %s." % (string, allowed)
+    )
+
+
 def parse_borderarg(string):
     if ":" in string:
         h, v = string.split(":", 1)
@@ -2315,7 +2341,7 @@ def gui():
     doc = None
 
     args = {
-        "without_pdfrw": tkinter.BooleanVar(),
+        "engine": tkinter.StringVar(),
         "first_frame_only": tkinter.BooleanVar(),
         "auto_orient": tkinter.BooleanVar(),
         "fit": tkinter.StringVar(),
@@ -2344,6 +2370,7 @@ def gui():
         "colorspace": tkinter.StringVar(),
         "first_frame_only": tkinter.BooleanVar(),
     }
+    args["engine"].set("auto")
     args["title"].set("")
     args["auto_orient"].set(False)
     args["fit"].set("into")
@@ -2448,12 +2475,13 @@ def gui():
             colorspacearg = next(
                 v for v in Colorspace if v.name == args["colorspace"].get()
             )
+        enginearg = None
+        if args["engine"].get() != "auto":
+            enginearg = next(v for v in Engine if v.name == args["engine"].get())
 
-        global with_pdfrw
-        if with_pdfrw:
-            with_pdfrw = not args["without_pdfrw"].get()
         convert(
             *infiles,
+            engine=enginearg,
             title=args["title"].get() if args["title"].get() else None,
             author=args["author"].get() if args["author"].get() else None,
             creator=args["creator"].get() if args["creator"].get() else None,
@@ -2584,17 +2612,14 @@ def gui():
     OptionMenu(output_options, args["colorspace"], "auto", state=tkinter.DISABLED).grid(
         row=0, column=1, sticky=tkinter.W
     )
+    tkinter.Label(output_options, text="engine").grid(row=1, column=0, sticky=tkinter.W)
+    OptionMenu(output_options, args["engine"], "auto", state=tkinter.DISABLED).grid(
+        row=1, column=1, sticky=tkinter.W
+    )
     tkinter.Checkbutton(
         output_options,
         text="Suppress timestamp",
         variable=args["nodate"],
-        state=tkinter.DISABLED,
-    ).grid(row=1, column=0, columnspan=2, sticky=tkinter.W)
-    # TODO: only have this checkbox enabled if pdfrw is installed
-    tkinter.Checkbutton(
-        output_options,
-        text="without pdfrw",
-        variable=args["without_pdfrw"],
         state=tkinter.DISABLED,
     ).grid(row=2, column=0, columnspan=2, sticky=tkinter.W)
     tkinter.Checkbutton(
@@ -3091,15 +3116,15 @@ RGB.""",
     )
 
     outargs.add_argument(
-        "--without-pdfrw",
-        action="store_true",
-        help="By default, img2pdf uses the pdfrw library to create the output "
-        "PDF if pdfrw is available. If you want to use the internal PDF "
-        "generator of img2pdf even if pdfrw is present, then pass this "
-        "option. This can be useful if you want to have unicode metadata "
-        "values which pdfrw does not yet support (See "
-        "https://github.com/pmaupin/pdfrw/issues/39) or if you want the "
-        "PDF code to be more human readable.",
+        "--engine",
+        metavar="engine",
+        type=parse_enginearg,
+        help="Choose PDF engine. Can be either internal or pdfrw. The "
+        "internal engine does not have additional requirements and writes out "
+        "a human readable PDF. The pdfrw engine requires the pdfrw Python "
+        "module but does not support unicode metadata (See "
+        "https://github.com/pmaupin/pdfrw/issues/39) or palette data (See "
+        "https://github.com/pmaupin/pdfrw/issues/128).",
     )
 
     outargs.add_argument(
@@ -3433,12 +3458,10 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
             )
             exit(2)
 
-    global with_pdfrw
-    if with_pdfrw:
-        with_pdfrw = not args.without_pdfrw
     try:
         convert(
             *args.images,
+            engine=args.engine,
             title=args.title,
             author=args.author,
             creator=args.creator,
