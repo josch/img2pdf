@@ -79,6 +79,11 @@ compare_pdfimages()
 	rm "$tempdir/images-000.png"
 }
 
+checkpdf()
+{
+	python3 -c 'import pikepdf,sys; p=pikepdf.open(sys.argv[1]);exit(sum([not eval("p.pages[0]."+l) for l in sys.stdin]))' "$1"
+}
+
 error()
 {
 	echo test $j failed
@@ -160,12 +165,14 @@ pdfimages -j "$tempdir/out.pdf" "$tempdir/images"
 cmp "$tempdir/normal.jpg" "$tempdir/images-000.jpg"
 rm "$tempdir/images-000.jpg"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceRGB$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /DCTDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+Resources.XObject.Im0.Filter == "/DCTDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/normal.jpg" "$tempdir/normal.pnm" "$tempdir/out.pdf"
 j=$((j+1))
@@ -210,13 +217,15 @@ pdfimages -j "$tempdir/out.pdf" "$tempdir/images"
 cmp "$tempdir/normal.jpg" "$tempdir/images-000.jpg"
 rm "$tempdir/images-000.jpg"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceRGB$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /DCTDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Rotate 90$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+Resources.XObject.Im0.Filter == "/DCTDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+Rotate == 90
+END
 
 rm "$tempdir/normal.jpg" "$tempdir/normal.pnm" "$tempdir/out.pdf" "$tempdir/normal_rotated.png"
 j=$((j+1))
@@ -251,13 +260,15 @@ pdfimages -j "$tempdir/out.pdf" "$tempdir/images"
 cmp "$tempdir/normal.jpg" "$tempdir/images-000.jpg"
 rm "$tempdir/images-000.jpg"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceCMYK$' "$tempdir/out.pdf"
-grep --quiet '^    /Decode \[ 1 0 1 0 1 0 1 0 \]$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /DCTDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceCMYK"
+Resources.XObject.Im0.Decode == pikepdf.Array([ 1, 0, 1, 0, 1, 0, 1, 0 ])
+Resources.XObject.Im0.Filter == "/DCTDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/normal.jpg" "$tempdir/out.pdf"
 j=$((j+1))
@@ -284,12 +295,14 @@ pdfimages -jp2 "$tempdir/out.pdf" "$tempdir/images"
 cmp "$tempdir/normal.jp2" "$tempdir/images-000.jp2"
 rm "$tempdir/images-000.jp2"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceRGB$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /JPXDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+Resources.XObject.Im0.Filter == "/JPXDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/normal.jp2" "$tempdir/out.pdf"
 j=$((j+1))
@@ -322,15 +335,17 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/normal.png"
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/normal.png"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceRGB$' "$tempdir/out.pdf"
-grep --quiet '^        /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^        /Colors 3$' "$tempdir/out.pdf"
-grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+Resources.XObject.Im0.DecodeParms.Colors == 3
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/out.pdf"
 j=$((j+1))
@@ -363,15 +378,17 @@ rm "$tempdir/poppler-1.png"
 
 # pdfimages is unable to write 16 bit output
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 16$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceRGB$' "$tempdir/out.pdf"
-grep --quiet '^        /BitsPerComponent 16$' "$tempdir/out.pdf"
-grep --quiet '^        /Colors 3$' "$tempdir/out.pdf"
-grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 16
+Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == 16
+Resources.XObject.Im0.DecodeParms.Colors == 3
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/out.pdf"
 j=$((j+1))
@@ -510,15 +527,17 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/normal.png"
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/normal.png"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceRGB$' "$tempdir/out.pdf"
-grep --quiet '^        /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^        /Colors 3$' "$tempdir/out.pdf"
-grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+Resources.XObject.Im0.DecodeParms.Colors == 3
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/interlace.png" "$tempdir/out.pdf"
 j=$((j+1))
@@ -556,14 +575,17 @@ for i in 1 2 4 8; do
 	compare_pdfimages "$tempdir/out.pdf" "$tempdir/gray$i.png"
 
 	grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-	grep --quiet '^    /BitsPerComponent '"$i"'$' "$tempdir/out.pdf"
-	grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-	grep --quiet '^        /BitsPerComponent '"$i"'$' "$tempdir/out.pdf"
-	grep --quiet '^        /Colors 1$' "$tempdir/out.pdf"
-	grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-	grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-	grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-	grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+	cat << END | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == $i
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == $i
+Resources.XObject.Im0.DecodeParms.Colors == 1
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 	rm "$tempdir/out.pdf"
 	j=$((j+1))
@@ -603,15 +625,17 @@ pdfimages -png "$tempdir/out.pdf" "$tempdir/images"
 similar "$tempdir/gray16.png" "$tempdir/images-000.png"
 rm "$tempdir/images-000.png"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 16$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-grep --quiet '^        /BitsPerComponent 16$' "$tempdir/out.pdf"
-grep --quiet '^        /Colors 1$' "$tempdir/out.pdf"
-grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 16
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == 16
+Resources.XObject.Im0.DecodeParms.Colors == 1
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/out.pdf"
 j=$((j+1))
@@ -640,15 +664,18 @@ for i in 1 2 4 8; do
 
 	# pdfimages cannot export palette based images
 
-	grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-	grep --quiet '^    /BitsPerComponent '"$i"'$' "$tempdir/out.pdf"
-	grep --quiet '^    /ColorSpace \[ /Indexed /DeviceRGB ' "$tempdir/out.pdf"
-	grep --quiet '^        /BitsPerComponent '"$i"'$' "$tempdir/out.pdf"
-	grep --quiet '^        /Colors 1$' "$tempdir/out.pdf"
-	grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-	grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-	grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-	grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+	cat << END | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == $i
+Resources.XObject.Im0.ColorSpace[0] == "/Indexed"
+Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == $i
+Resources.XObject.Im0.DecodeParms.Colors == 1
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 	rm "$tempdir/out.pdf"
 	j=$((j+1))
@@ -705,15 +732,18 @@ for i in 1 2 4 8; do
 
 	# pdfimages cannot export palette based images
 
-	grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-	grep --quiet '^    /BitsPerComponent '"$i"'$' "$tempdir/out.pdf"
-	grep --quiet '^    /ColorSpace \[ /Indexed /DeviceRGB ' "$tempdir/out.pdf"
-	grep --quiet '^        /BitsPerComponent '"$i"'$' "$tempdir/out.pdf"
-	grep --quiet '^        /Colors 1$' "$tempdir/out.pdf"
-	grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-	grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-	grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-	grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+	cat << END | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == $i
+Resources.XObject.Im0.ColorSpace[0] == "/Indexed"
+Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == $i
+Resources.XObject.Im0.DecodeParms.Colors == 1
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 	rm "$tempdir/out.pdf" "$tempdir/palette$i.gif"
 	j=$((j+1))
@@ -760,10 +790,18 @@ for page in 1 2; do
 
 	# pdfimages cannot export palette based images
 
-	# We cannot grep the PDF metadata here, because the page was
-	# rewritten into a non-greppable format by pdfseparate. but that's
-	# okay, because we already grepped single pages before and multipage
-	# PDF should not be different.
+	cat << END | checkpdf "$tempdir/page-$page.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace[0] == "/Indexed"
+Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+Resources.XObject.Im0.DecodeParms.Colors == 1
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 	rm "$tempdir/page-$page.pdf"
 done
@@ -831,12 +869,14 @@ pdfimages -tiff "$tempdir/out.pdf" "$tempdir/images"
 compare -metric AE "$tempdir/cmyk8.tiff" "$tempdir/images-000.tif" null: 2>/dev/null
 rm "$tempdir/images-000.tif"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceCMYK$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceCMYK"
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/cmyk8.tiff" "$tempdir/out.pdf"
 j=$((j+1))
@@ -893,15 +933,17 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/normal.tiff" tiff24nc
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/normal.tiff"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceRGB$' "$tempdir/out.pdf"
-grep --quiet '^        /BitsPerComponent 8$' "$tempdir/out.pdf"
-grep --quiet '^        /Colors 3$' "$tempdir/out.pdf"
-grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+Resources.XObject.Im0.DecodeParms.Colors == 3
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/normal.tiff" "$tempdir/out.pdf"
 j=$((j+1))
@@ -984,16 +1026,18 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/gray1.png" pnggray
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/gray1.png"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 1$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-grep --quiet '^        /BlackIs1 true$' "$tempdir/out.pdf"
-grep --quiet '^        /Columns 60$' "$tempdir/out.pdf"
-grep --quiet '^        /K -1$' "$tempdir/out.pdf"
-grep --quiet '^        /Rows 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter \[ /CCITTFaxDecode \]$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 1
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms[0].BlackIs1 == True
+Resources.XObject.Im0.DecodeParms[0].Columns == 60
+Resources.XObject.Im0.DecodeParms[0].K == -1
+Resources.XObject.Im0.DecodeParms[0].Rows == 60
+Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/gray1.tiff" "$tempdir/out.pdf"
 j=$((j+1))
@@ -1024,15 +1068,17 @@ for i in 2 4 8; do
 	compare_pdfimages "$tempdir/out.pdf" "$tempdir/gray$i.png"
 
 	# When saving a PNG, PIL will store it as 8-bit data
-	grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-	grep --quiet '^    /BitsPerComponent 8$' "$tempdir/out.pdf"
-	grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-	grep --quiet '^        /BitsPerComponent 8$' "$tempdir/out.pdf"
-	grep --quiet '^        /Colors 1$' "$tempdir/out.pdf"
-	grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-	grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-	grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-	grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+	cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+Resources.XObject.Im0.DecodeParms.Colors == 1
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 	rm "$tempdir/gray$i.tiff" "$tempdir/out.pdf"
 	j=$((j+1))
@@ -1112,10 +1158,17 @@ for page in 1 2; do
 
 	compare_pdfimages "$tempdir/page-$page.pdf" "$tempdir/multipage.tiff[$((page-1))]"
 
-	# We cannot grep the PDF metadata here, because the page was
-	# rewritten into a non-greppable format by pdfseparate. but that's
-	# okay, because we already grepped single pages before and multipage
-	# PDF should not be different.
+	cat << 'END' | checkpdf "$tempdir/page-$page.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 8
+Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+Resources.XObject.Im0.DecodeParms.Colors == 3
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 	rm "$tempdir/page-$page.pdf"
 done
@@ -1158,15 +1211,18 @@ for i in 1 2 4 8; do
 
 	# pdfimages cannot export palette based images
 
-	grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-	grep --quiet '^    /BitsPerComponent '"$i"'$' "$tempdir/out.pdf"
-	grep --quiet '^    /ColorSpace \[ /Indexed /DeviceRGB ' "$tempdir/out.pdf"
-	grep --quiet '^        /BitsPerComponent '"$i"'$' "$tempdir/out.pdf"
-	grep --quiet '^        /Colors 1$' "$tempdir/out.pdf"
-	grep --quiet '^        /Predictor 15$' "$tempdir/out.pdf"
-	grep --quiet '^    /Filter /FlateDecode$' "$tempdir/out.pdf"
-	grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-	grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+	cat << END | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == $i
+Resources.XObject.Im0.ColorSpace[0] == "/Indexed"
+Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
+Resources.XObject.Im0.DecodeParms.BitsPerComponent == $i
+Resources.XObject.Im0.DecodeParms.Colors == 1
+Resources.XObject.Im0.DecodeParms.Predictor == 15
+Resources.XObject.Im0.Filter == "/FlateDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 	rm "$tempdir/out.pdf"
 
@@ -1230,16 +1286,18 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 1$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-grep --quiet '^        /BlackIs1 false$' "$tempdir/out.pdf"
-grep --quiet '^        /Columns 60$' "$tempdir/out.pdf"
-grep --quiet '^        /K -1$' "$tempdir/out.pdf"
-grep --quiet '^        /Rows 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter \[ /CCITTFaxDecode \]$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 1
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
+Resources.XObject.Im0.DecodeParms[0].Columns == 60
+Resources.XObject.Im0.DecodeParms[0].K == -1
+Resources.XObject.Im0.DecodeParms[0].Rows == 60
+Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
 j=$((j+1))
@@ -1267,16 +1325,18 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 1$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-grep --quiet '^        /BlackIs1 false$' "$tempdir/out.pdf"
-grep --quiet '^        /Columns 60$' "$tempdir/out.pdf"
-grep --quiet '^        /K -1$' "$tempdir/out.pdf"
-grep --quiet '^        /Rows 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter \[ /CCITTFaxDecode \]$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 1
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
+Resources.XObject.Im0.DecodeParms[0].Columns == 60
+Resources.XObject.Im0.DecodeParms[0].K == -1
+Resources.XObject.Im0.DecodeParms[0].Rows == 60
+Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
 j=$((j+1))
@@ -1304,16 +1364,18 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 1$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-grep --quiet '^        /BlackIs1 false$' "$tempdir/out.pdf"
-grep --quiet '^        /Columns 60$' "$tempdir/out.pdf"
-grep --quiet '^        /K -1$' "$tempdir/out.pdf"
-grep --quiet '^        /Rows 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter \[ /CCITTFaxDecode \]$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 1
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
+Resources.XObject.Im0.DecodeParms[0].Columns == 60
+Resources.XObject.Im0.DecodeParms[0].K == -1
+Resources.XObject.Im0.DecodeParms[0].Rows == 60
+Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
 j=$((j+1))
@@ -1346,16 +1408,18 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 1$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-grep --quiet '^        /BlackIs1 true$' "$tempdir/out.pdf"
-grep --quiet '^        /Columns 60$' "$tempdir/out.pdf"
-grep --quiet '^        /K -1$' "$tempdir/out.pdf"
-grep --quiet '^        /Rows 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter \[ /CCITTFaxDecode \]$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 1
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms[0].BlackIs1 == True
+Resources.XObject.Im0.DecodeParms[0].Columns == 60
+Resources.XObject.Im0.DecodeParms[0].K == -1
+Resources.XObject.Im0.DecodeParms[0].Rows == 60
+Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
 j=$((j+1))
@@ -1389,16 +1453,18 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 1$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-grep --quiet '^        /BlackIs1 false$' "$tempdir/out.pdf"
-grep --quiet '^        /Columns 60$' "$tempdir/out.pdf"
-grep --quiet '^        /K -1$' "$tempdir/out.pdf"
-grep --quiet '^        /Rows 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter \[ /CCITTFaxDecode \]$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 1
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
+Resources.XObject.Im0.DecodeParms[0].Columns == 60
+Resources.XObject.Im0.DecodeParms[0].K == -1
+Resources.XObject.Im0.DecodeParms[0].Rows == 60
+Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
 j=$((j+1))
@@ -1429,16 +1495,18 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
-grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
-grep --quiet '^    /BitsPerComponent 1$' "$tempdir/out.pdf"
-grep --quiet '^    /ColorSpace /DeviceGray$' "$tempdir/out.pdf"
-grep --quiet '^        /BlackIs1 false$' "$tempdir/out.pdf"
-grep --quiet '^        /Columns 60$' "$tempdir/out.pdf"
-grep --quiet '^        /K -1$' "$tempdir/out.pdf"
-grep --quiet '^        /Rows 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Filter \[ /CCITTFaxDecode \]$' "$tempdir/out.pdf"
-grep --quiet '^    /Height 60$' "$tempdir/out.pdf"
-grep --quiet '^    /Width 60$' "$tempdir/out.pdf"
+cat << 'END' | checkpdf "$tempdir/out.pdf"
+Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Resources.XObject.Im0.BitsPerComponent == 1
+Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
+Resources.XObject.Im0.DecodeParms[0].Columns == 60
+Resources.XObject.Im0.DecodeParms[0].K == -1
+Resources.XObject.Im0.DecodeParms[0].Rows == 60
+Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
+Resources.XObject.Im0.Height == 60
+Resources.XObject.Im0.Width == 60
+END
 
 rm "$tempdir/group4.tiff" "$tempdir/out.pdf"
 j=$((j+1))
