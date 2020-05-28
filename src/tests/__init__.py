@@ -476,23 +476,25 @@ def test_suite():
         setattr(TestImg2Pdf, "test_layout_%03d_im2" % i, layout_handler_im2)
 
     files = os.listdir(os.path.join(HERE, "input"))
-    for with_pdfrw, test_name in [(a, b) for a in [True, False]
+    for engine, test_name in [(a, b) for a in [img2pdf.Engine.internal, img2pdf.Engine.pdfrw]
                                   for b in files]:
-        # we do not test animation.gif with pdfrw because it doesn't support
-        # saving hexadecimal palette data
-        if test_name == 'animation.gif' and with_pdfrw:
-            continue
         inputf = os.path.join(HERE, "input", test_name)
         if not os.path.isfile(inputf):
             continue
         outputf = os.path.join(HERE, "output", test_name+".pdf")
         assert os.path.isfile(outputf)
 
-        def handle(self, f=inputf, out=outputf, with_pdfrw=with_pdfrw):
+        def handle(self, f=inputf, out=outputf, engine=engine):
+            if not img2pdf.have_pdfrw and engine == img2pdf.Engine.pdfrw:
+                self.skipTest("pdfrw not available")
+            # we do not test animation.gif with pdfrw because it doesn't support
+            # saving hexadecimal palette data
+            if f.endswith("/animation.gif") and engine == img2pdf.Engine.pdfrw:
+                self.skipTest("pdfrw does not support palletes")
             with open(f, "rb") as inf:
                 orig_imgdata = inf.read()
             output = img2pdf.convert(orig_imgdata, nodate=True,
-                                     with_pdfrw=with_pdfrw)
+                                     engine=engine)
             x = pikepdf.open(BytesIO(output))
             self.assertIn(x.Root.Pages.Count, (1, 2))
             if len(x.Root.Pages.Kids) == '1':
@@ -646,10 +648,12 @@ def test_suite():
                 orig_img.close()
             except AttributeError:
                 pass
-        if with_pdfrw:
-            setattr(TestImg2Pdf, "test_%s_with_pdfrw" % test_name, handle)
+        if engine == img2pdf.Engine.internal:
+            setattr(TestImg2Pdf, "test_%s_internal" % test_name, handle)
+        elif engine == img2pdf.Engine.pdfrw:
+            setattr(TestImg2Pdf, "test_%s_pdfrw" % test_name, handle)
         else:
-            setattr(TestImg2Pdf, "test_%s_without_pdfrw" % test_name, handle)
+            raise Exception("no such engine: %s"%engine)
 
     return unittest.TestSuite((
             unittest.makeSuite(TestImg2Pdf),
