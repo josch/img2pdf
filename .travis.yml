@@ -24,7 +24,7 @@ matrix:
         - python3 -m pip install --upgrade virtualenv
         - virtualenv -p python3 --system-site-packages "$HOME/venv"
         - source "$HOME/venv/bin/activate"
-install: pip install wheel pillow pytest pdfrw
+install: pip install wheel pillow pytest pdfrw pikepdf
 script:
   - python --version
   - python setup.py test

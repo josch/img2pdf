@@ -9,6 +9,7 @@ INSTALL_REQUIRES = (
 
 TESTS_REQUIRE = (
     'pdfrw',
+    'pikepdf',
 )
 
 
