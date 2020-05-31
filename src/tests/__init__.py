@@ -634,14 +634,30 @@ def test_suite():
                 else:
                     raise Exception("unknown filter")
 
-            # now use pdfrw to parse and then write out both pdfs and check the
-            # result for equality
+            def rec(obj):
+                if isinstance(obj, pikepdf.Dictionary):
+                    return {k:rec(v) for k,v in obj.items() if k != "/Parent"}
+                elif isinstance(obj, pikepdf.Array):
+                    return [rec(v) for v in obj]
+                elif isinstance(obj, pikepdf.Stream):
+                    ret = rec(obj.stream_dict)
+                    stream = obj.read_raw_bytes()
+                    assert len(stream) == ret["/Length"]
+                    del ret["/Length"]
+                    if ret.get("/Filter") == '/FlateDecode':
+                        stream = obj.read_bytes()
+                        del ret["/Filter"]
+                    ret["stream"] = stream
+                    return ret
+                elif isinstance(obj, pikepdf.Name) or isinstance(obj, pikepdf.String):
+                    return str(obj)
+                elif isinstance(obj, decimal.Decimal) or isinstance(obj, str):
+                    return obj
+                elif isinstance(obj, int):
+                    return decimal.Decimal(obj)
+                raise Exception("unhandled: %s"%(type(obj)))
             y = pikepdf.open(out)
-            outx = BytesIO()
-            outy = BytesIO()
-            x.save(outx, compress_streams = False, static_id=True)
-            y.save(outy, compress_streams = False, static_id=True)
-            self.assertEqual(outx.getvalue(), outy.getvalue())
+            self.assertEqual(rec(x.Root), rec(y.Root))
             # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
             # close() method
             try:
