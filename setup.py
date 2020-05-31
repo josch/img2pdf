@@ -5,6 +5,7 @@ VERSION = "0.3.6"
 
 INSTALL_REQUIRES = (
     'Pillow',
+    'pikepdf',
 )
 
 TESTS_REQUIRE = (

@@ -476,7 +476,7 @@ def test_suite():
         setattr(TestImg2Pdf, "test_layout_%03d_im2" % i, layout_handler_im2)
 
     files = os.listdir(os.path.join(HERE, "input"))
-    for engine, test_name in [(a, b) for a in [img2pdf.Engine.internal, img2pdf.Engine.pdfrw]
+    for engine, test_name in [(a, b) for a in [img2pdf.Engine.internal, img2pdf.Engine.pdfrw, img2pdf.Engine.pikepdf]
                                   for b in files]:
         inputf = os.path.join(HERE, "input", test_name)
         if not os.path.isfile(inputf):
@@ -546,8 +546,9 @@ def test_suite():
                         {"/XObject"})
                 self.assertEqual(cur_page.Resources.XObject.keys(),
                         {"/Im0"})
-                self.assertEqual(cur_page.Contents.Length,
-                                 len(cur_page.Contents.read_bytes()))
+                if engine != img2pdf.Engine.pikepdf:
+                    self.assertEqual(cur_page.Contents.Length,
+                                     len(cur_page.Contents.read_bytes()))
                 self.assertEqual(cur_page.Contents.read_bytes(),
                                  b"q\n%.4f 0 0 %.4f 0.0000 0.0000 cm\n"
                                  b"/Im0 Do\nQ" % (pagewidth, pageheight))
@@ -666,6 +667,8 @@ def test_suite():
                 pass
         if engine == img2pdf.Engine.internal:
             setattr(TestImg2Pdf, "test_%s_internal" % test_name, handle)
+        elif engine == img2pdf.Engine.pikepdf:
+            setattr(TestImg2Pdf, "test_%s_pikepdf" % test_name, handle)
         elif engine == img2pdf.Engine.pdfrw:
             setattr(TestImg2Pdf, "test_%s_pdfrw" % test_name, handle)
         else:

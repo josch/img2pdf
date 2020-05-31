@@ -137,6 +137,9 @@ available_engines="internal"
 if python3 -c "import pdfrw" 2>/dev/null; then
 	available_engines="$available_engines pdfrw"
 fi
+if python3 -c "import pikepdf" 2>/dev/null; then
+	available_engines="$available_engines pikepdf"
+fi
 
 img2pdf()
 {

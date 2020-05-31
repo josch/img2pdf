@@ -40,6 +40,12 @@ try:
 except ImportError:
     have_pdfrw = False
 
+have_pikepdf = True
+try:
+    import pikepdf
+except ImportError:
+    have_pikepdf = False
+
 __version__ = "0.3.6"
 default_dpi = 96.0
 papersizes = {
@@ -483,13 +489,12 @@ class MyPdfArray(list):
 
 
 class MyPdfWriter:
-    def __init__(self, version="1.3"):
+    def __init__(self):
         self.objects = []
         # create an incomplete pages object so that a /Parent entry can be
         # added to each page
         self.pages = MyPdfDict(Type=MyPdfName.Pages, Kids=[], Count=0)
         self.catalog = MyPdfDict(Pages=self.pages, Type=MyPdfName.Catalog)
-        self.version = version  # default pdf version 1.3
         self.pagearray = []
 
     def addobj(self, obj):
@@ -497,7 +502,7 @@ class MyPdfWriter:
         obj.identifier = newid
         self.objects.append(obj)
 
-    def tostream(self, info, stream):
+    def tostream(self, info, stream, version="1.3"):
         xreftable = list()
 
         # justification of the random binary garbage in the header from
@@ -514,7 +519,7 @@ class MyPdfWriter:
         #
         # the choice of binary characters is arbitrary but those four seem to
         # be used elsewhere.
-        pdfheader = ("%%PDF-%s\n" % self.version).encode("ascii")
+        pdfheader = ("%%PDF-%s\n" % version).encode("ascii")
         pdfheader += b"%\xe2\xe3\xcf\xd3\n"
         stream.write(pdfheader)
 
@@ -616,12 +621,18 @@ class pdfdoc(object):
         fullscreen=False,
     ):
         if engine is None:
-            if have_pdfrw:
+            if have_pikepdf:
+                engine = Engine.pdfrw
+            elif have_pdfrw:
                 engine = Engine.pdfrw
             else:
                 engine = Engine.internal
 
-        if engine == Engine.pdfrw:
+        if engine == Engine.pikepdf:
+            PdfWriter = pikepdf.new
+            PdfDict = pikepdf.Dictionary
+            PdfName = pikepdf.Name
+        elif engine == Engine.pdfrw:
             from pdfrw import PdfWriter, PdfDict, PdfName, PdfString
         elif engine == Engine.internal:
             PdfWriter = MyPdfWriter
@@ -631,49 +642,45 @@ class pdfdoc(object):
         else:
             raise ValueError("unknown engine: %s" % engine)
 
-        now = datetime.now()
-        self.info = PdfDict(indirect=True)
+        self.writer = PdfWriter()
+        if engine != Engine.pikepdf:
+            self.writer.docinfo = PdfDict(indirect=True)
 
         def datetime_to_pdfdate(dt):
             return dt.strftime("%Y%m%d%H%M%SZ")
 
-        if title is not None:
-            self.info[PdfName.Title] = PdfString.encode(title)
-        if author is not None:
-            self.info[PdfName.Author] = PdfString.encode(author)
-        if creator is not None:
-            self.info[PdfName.Creator] = PdfString.encode(creator)
-        if producer is not None and producer != "":
-            self.info[PdfName.Producer] = PdfString.encode(producer)
-        if creationdate is not None:
-            self.info[PdfName.CreationDate] = PdfString.encode(
-                "D:" + datetime_to_pdfdate(creationdate)
-            )
-        elif not nodate:
-            self.info[PdfName.CreationDate] = PdfString.encode(
-                "D:" + datetime_to_pdfdate(now)
-            )
-        if moddate is not None:
-            self.info[PdfName.ModDate] = PdfString.encode(
-                "D:" + datetime_to_pdfdate(moddate)
-            )
-        elif not nodate:
-            self.info[PdfName.ModDate] = PdfString.encode(
-                "D:" + datetime_to_pdfdate(now)
-            )
-        if subject is not None:
-            self.info[PdfName.Subject] = PdfString.encode(subject)
-        if keywords is not None:
-            self.info[PdfName.Keywords] = PdfString.encode(",".join(keywords))
+        for k in ["Title", "Author", "Creator", "Producer", "Subject"]:
+            v = locals()[k.lower()]
+            if v is None or v == "":
+                continue
+            if engine != Engine.pikepdf:
+                v = PdfString.encode(v)
+            self.writer.docinfo[getattr(PdfName,k)] = v
 
-        self.writer = PdfWriter()
-        self.writer.version = version
-        # this is done because pdfrw adds info, catalog and pages as the first
-        # three objects in this order
-        if engine == Engine.internal:
-            self.writer.addobj(self.info)
-            self.writer.addobj(self.writer.catalog)
-            self.writer.addobj(self.writer.pages)
+        now = datetime.now()
+        for k in ["CreationDate", "ModDate"]:
+            v = locals()[k.lower()]
+            if v is None and nodate:
+                continue
+            if v is None:
+                v = now
+            v = ("D:" + datetime_to_pdfdate(v)).encode("ascii")
+            self.writer.docinfo[getattr(PdfName, k)] = v
+        if keywords is not None:
+            if engine == Engine.pikepdf:
+                self.writer.docinfo[PdfName.Keywords] = ",".join(keywords)
+            else:
+                self.writer.docinfo[PdfName.Keywords] = PdfString.encode(
+                    ",".join(keywords)
+                )
+
+        if engine != Engine.pikepdf:
+            # this is done because pdfrw adds info, catalog and pages as the first
+            # three objects in this order
+            if engine == Engine.internal:
+                self.writer.addobj(self.writer.docinfo)
+                self.writer.addobj(self.writer.catalog)
+                self.writer.addobj(self.writer.pages)
 
         self.panes = panes
         self.initial_page = initial_page
@@ -683,6 +690,7 @@ class pdfdoc(object):
         self.center_window = center_window
         self.fullscreen = fullscreen
         self.engine = engine
+        self.output_version = version
 
     def add_imagepage(
         self,
@@ -707,9 +715,14 @@ class pdfdoc(object):
         trimborder=None,
         artborder=None,
     ):
-        if self.engine == Engine.pdfrw:
+        if self.engine == Engine.pikepdf:
+            PdfArray = pikepdf.Array
+            PdfDict = pikepdf.Dictionary
+            PdfName = pikepdf.Name
+        elif self.engine == Engine.pdfrw:
             from pdfrw import PdfDict, PdfName, PdfObject, PdfString
             from pdfrw.py23_diffs import convert_load
+
         elif self.engine == Engine.internal:
             PdfDict = MyPdfDict
             PdfName = MyPdfName
@@ -718,6 +731,8 @@ class pdfdoc(object):
             convert_load = my_convert_load
         else:
             raise ValueError("unknown engine: %s" % self.engine)
+        TrueObject = True if self.engine == Engine.pikepdf else PdfObject("true")
+        FalseObject = False if self.engine == Engine.pikepdf else PdfObject("false")
 
         if color == Colorspace["1"] or color == Colorspace.L:
             colorspace = PdfName.DeviceGray
@@ -727,16 +742,27 @@ class pdfdoc(object):
             colorspace = PdfName.DeviceCMYK
         elif color == Colorspace.P:
             if self.engine == Engine.pdfrw:
+                # https://github.com/pmaupin/pdfrw/issues/128
+                # https://github.com/pmaupin/pdfrw/issues/147
                 raise Exception(
                     "pdfrw does not support hex strings for "
                     "palette image input, re-run with "
-                    "--engine=internal"
+                    "--engine=internal or --engine=pikepdf"
                 )
+            assert len(palette) % 3 == 0
             colorspace = [
                 PdfName.Indexed,
                 PdfName.DeviceRGB,
-                len(palette) - 1,
-                PdfString.encode(palette, hextype=True),
+                (len(palette) // 3) - 1,
+                bytes(palette)
+                if self.engine == Engine.pikepdf
+                else PdfString.encode(
+                    [
+                        int.from_bytes(palette[i : i + 3], "big")
+                        for i in range(0, len(palette), 3)
+                    ],
+                    hextype=True,
+                ),
             ]
         else:
             raise UnsupportedColorspaceError("unsupported color space: %s" % color.name)
@@ -746,13 +772,16 @@ class pdfdoc(object):
             ofilter = PdfName.DCTDecode
         elif imgformat is ImageFormat.JPEG2000:
             ofilter = PdfName.JPXDecode
-            self.writer.version = "1.5"  # jpeg2000 needs pdf 1.5
+            self.output_version = "1.5"  # jpeg2000 needs pdf 1.5
         elif imgformat is ImageFormat.CCITTGroup4:
             ofilter = [PdfName.CCITTFaxDecode]
         else:
             ofilter = PdfName.FlateDecode
 
-        image = PdfDict(stream=convert_load(imgdata))
+        if self.engine == Engine.pikepdf:
+            image = self.writer.make_stream(imgdata)
+        else:
+            image = PdfDict(stream=convert_load(imgdata))
 
         image[PdfName.Type] = PdfName.XObject
         image[PdfName.Subtype] = PdfName.Image
@@ -764,7 +793,7 @@ class pdfdoc(object):
 
         if color == Colorspace["CMYK;I"]:
             # Inverts all four channels
-            image[PdfName.Decode] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+            image[PdfName.Decode] = [1, 0, 1, 0, 1, 0, 1, 0]
 
         if imgformat is ImageFormat.CCITTGroup4:
             decodeparms = PdfDict()
@@ -772,9 +801,9 @@ class pdfdoc(object):
             # encoding. We set it to -1 because we want Group 4 encoding.
             decodeparms[PdfName.K] = -1
             if inverted:
-                decodeparms[PdfName.BlackIs1] = PdfObject("false")
+                decodeparms[PdfName.BlackIs1] = FalseObject
             else:
-                decodeparms[PdfName.BlackIs1] = PdfObject("true")
+                decodeparms[PdfName.BlackIs1] = TrueObject
             decodeparms[PdfName.Columns] = imgwidthpx
             decodeparms[PdfName.Rows] = imgheightpx
             image[PdfName.DecodeParms] = [decodeparms]
@@ -794,12 +823,18 @@ class pdfdoc(object):
             % (imgwidthpdf, imgheightpdf, imgxpdf, imgypdf)
         ).encode("ascii")
 
-        content = PdfDict(stream=convert_load(text))
+        if self.engine == Engine.pikepdf:
+            content = self.writer.make_stream(text)
+        else:
+            content = PdfDict(stream=convert_load(text))
         resources = PdfDict(XObject=PdfDict(Im0=image))
 
-        page = PdfDict(indirect=True)
-        page[PdfName.Type] = PdfName.Page
-        page[PdfName.MediaBox] = [0, 0, pagewidth, pageheight]
+        if self.engine == Engine.pikepdf:
+            page = self.writer.add_blank_page(page_size=(pagewidth, pageheight))
+        else:
+            page = PdfDict(indirect=True)
+            page[PdfName.Type] = PdfName.Page
+            page[PdfName.MediaBox] = [0, 0, pagewidth, pageheight]
         # 14.11.2 Page Boundaries
         # ...
         # The crop, bleed, trim, and art boxes shall not ordinarily extend
@@ -848,15 +883,16 @@ class pdfdoc(object):
             page[PdfName.Rotate] = rotate
         if userunit is not None:
             # /UserUnit requires PDF 1.6
-            if self.writer.version < "1.6":
-                self.writer.version = "1.6"
+            if self.output_version < "1.6":
+                self.output_version = "1.6"
             page[PdfName.UserUnit] = userunit
 
-        self.writer.addpage(page)
+        if self.engine != Engine.pikepdf:
+            self.writer.addpage(page)
 
-        if self.engine == Engine.internal:
-            self.writer.addobj(content)
-            self.writer.addobj(image)
+            if self.engine == Engine.internal:
+                self.writer.addobj(content)
+                self.writer.addobj(image)
 
     def tostring(self):
         stream = BytesIO()
@@ -864,8 +900,13 @@ class pdfdoc(object):
         return stream.getvalue()
 
     def tostream(self, outputstream):
-        if self.engine == Engine.pdfrw:
+        if self.engine == Engine.pikepdf:
+            PdfArray = pikepdf.Array
+            PdfDict = pikepdf.Dictionary
+            PdfName = pikepdf.Name
+        elif self.engine == Engine.pdfrw:
             from pdfrw import PdfDict, PdfName, PdfArray, PdfObject
+
         elif self.engine == Engine.internal:
             PdfDict = MyPdfDict
             PdfName = MyPdfName
@@ -873,8 +914,8 @@ class pdfdoc(object):
             PdfArray = MyPdfArray
         else:
             raise ValueError("unknown engine: %s" % self.engine)
-        NullObject = PdfObject("null")
-        TrueObject = PdfObject("true")
+        NullObject = None if self.engine == Engine.pikepdf else PdfObject("null")
+        TrueObject = True if self.engine == Engine.pikepdf else PdfObject("true")
 
         # We fill the catalog with more information like /ViewerPreferences,
         # /PageMode, /PageLayout or /OpenAction because the latter refers to a
@@ -884,7 +925,9 @@ class pdfdoc(object):
         # is added, so we can only start using it after all pages have been
         # written.
 
-        if self.engine == Engine.pdfrw:
+        if self.engine == Engine.pikepdf:
+            catalog = self.writer.Root
+        elif self.engine == Engine.pdfrw:
             catalog = self.writer.trailer.Root
         elif self.engine == Engine.internal:
             catalog = self.writer.catalog
@@ -945,13 +988,19 @@ class pdfdoc(object):
         # FitBV - Fits the height of the page bounding box to the window.
 
         # by default the initial page is the first one
-        initial_page = self.writer.pagearray[0]
+        if self.engine == Engine.pikepdf:
+            initial_page = self.writer.pages[0]
+        else:
+            initial_page = self.writer.pagearray[0]
         # we set the open action here to make sure we open on the requested
         # initial page but this value might be overwritten by a custom open
         # action later while still taking the requested initial page into
         # account
         if self.initial_page is not None:
-            initial_page = self.writer.pagearray[self.initial_page - 1]
+            if self.engine == Engine.pikepdf:
+                initial_page = self.writer.pages[self.initial_page - 1]
+            else:
+                initial_page = self.writer.pagearray[self.initial_page - 1]
             catalog[PdfName.OpenAction] = PdfArray(
                 [initial_page, PdfName.XYZ, NullObject, NullObject, 0]
             )
@@ -992,11 +1041,16 @@ class pdfdoc(object):
             raise ValueError("unknown page layout: %s" % self.page_layout)
 
         # now write out the PDF
-        if self.engine == Engine.pdfrw:
-            self.writer.trailer.Info = self.info
+        if self.engine == Engine.pikepdf:
+            self.writer.save(outputstream, min_version=self.output_version, linearize=True)
+        elif self.engine == Engine.pdfrw:
+            self.writer.trailer.Info = self.writer.docinfo
+            # setting the version attribute of the pdfrw PdfWriter object will
+            # influence the behaviour of the write() function
+            self.writer.version = self.output_version
             self.writer.write(outputstream)
         elif self.engine == Engine.internal:
-            self.writer.tostream(self.info, outputstream)
+            self.writer.tostream(self.writer.docinfo, outputstream, self.output_version)
         else:
             raise ValueError("unknown engine: %s" % self.engine)
 
@@ -1170,7 +1224,7 @@ def transcode_monochrome(imgdata):
 
 def parse_png(rawdata):
     pngidat = b""
-    palette = []
+    palette = b""
     i = 16
     while i < len(rawdata):
         # once we can require Python >= 3.2 we can use int.from_bytes() instead
@@ -1180,20 +1234,7 @@ def parse_png(rawdata):
         if rawdata[i - 4 : i] == b"IDAT":
             pngidat += rawdata[i : i + n]
         elif rawdata[i - 4 : i] == b"PLTE":
-            # This could be as simple as saying "palette = rawdata[i:i+n]" but
-            # pdfrw does only escape parenthesis and backslashes in the raw
-            # byte stream. But raw carriage return bytes are interpreted as
-            # line feed bytes by ghostscript. So instead we use the hex string
-            # format. pdfrw cannot write it but at least ghostscript is happy
-            # with it. We would also write out the palette in binary format
-            # (and escape more bytes) but since we cannot use pdfrw anyways,
-            # we choose the more human readable variant.
-            # See https://github.com/pmaupin/pdfrw/issues/147
-            for j in range(i, i + n, 3):
-                # with int.from_bytes() we would not have to prepend extra
-                # zeroes
-                color, = struct.unpack(">I", b"\x00" + rawdata[j : j + 3])
-                palette.append(color)
+            palette += rawdata[i : i + n]
         i += n
         i += 12
     return pngidat, palette
@@ -3119,9 +3160,12 @@ RGB.""",
         "--engine",
         metavar="engine",
         type=parse_enginearg,
-        help="Choose PDF engine. Can be either internal or pdfrw. The "
-        "internal engine does not have additional requirements and writes out "
-        "a human readable PDF. The pdfrw engine requires the pdfrw Python "
+        help="Choose PDF engine. Can be either internal, pikepdf or pdfrw. "
+        "The internal engine does not have additional requirements and writes "
+        "out a human readable PDF. The pikepdf engine requires the pikepdf "
+        "Python module and qpdf library, is most featureful, can "
+        "linearize PDFs (\"fast web view\") and can compress more parts of it."
+        "The pdfrw engine requires the pdfrw Python "
         "module but does not support unicode metadata (See "
         "https://github.com/pmaupin/pdfrw/issues/39) or palette data (See "
         "https://github.com/pmaupin/pdfrw/issues/128).",
