@@ -616,7 +616,6 @@ for i in 1 2 4 8; do
 
 	compare_pdfimages "$tempdir/out.pdf" "$tempdir/gray$i.png"
 
-	grep --quiet '^45.0000 0 0 45.0000 0.0000 0.0000 cm$' "$tempdir/out.pdf"
 	cat << END | checkpdf "$tempdir/out.pdf"
 Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == $i
