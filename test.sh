@@ -181,7 +181,7 @@ cmp "$tempdir/normal.jpg" "$tempdir/images-000.jpg"
 rm "$tempdir/images-000.jpg"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
 Resources.XObject.Im0.Filter == "/DCTDecode"
@@ -236,7 +236,7 @@ cmp "$tempdir/normal.jpg" "$tempdir/images-000.jpg"
 rm "$tempdir/images-000.jpg"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
 Resources.XObject.Im0.Filter == "/DCTDecode"
@@ -282,7 +282,7 @@ cmp "$tempdir/normal.jpg" "$tempdir/images-000.jpg"
 rm "$tempdir/images-000.jpg"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceCMYK"
 Resources.XObject.Im0.Decode == pikepdf.Array([ 1, 0, 1, 0, 1, 0, 1, 0 ])
@@ -320,7 +320,7 @@ cmp "$tempdir/normal.jp2" "$tempdir/images-000.jp2"
 rm "$tempdir/images-000.jp2"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
 Resources.XObject.Im0.Filter == "/JPXDecode"
@@ -363,7 +363,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/normal.png"
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/normal.png"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
 Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
@@ -408,7 +408,7 @@ rm "$tempdir/poppler-1.png"
 # pdfimages is unable to write 16 bit output
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 16
 Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
 Resources.XObject.Im0.DecodeParms.BitsPerComponent == 16
@@ -567,7 +567,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/normal.png"
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/normal.png"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
 Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
@@ -617,7 +617,7 @@ for i in 1 2 4 8; do
 	compare_pdfimages "$tempdir/out.pdf" "$tempdir/gray$i.png"
 
 	cat << END | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == $i
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms.BitsPerComponent == $i
@@ -669,7 +669,7 @@ similar "$tempdir/gray16.png" "$tempdir/images-000.png"
 rm "$tempdir/images-000.png"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 16
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms.BitsPerComponent == 16
@@ -713,7 +713,7 @@ for i in 1 2 4 8; do
 	# pdfimages cannot export palette based images
 
 	cat << END | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == $i
 Resources.XObject.Im0.ColorSpace[0] == "/Indexed"
 Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
@@ -788,7 +788,7 @@ for i in 1 2 4 8; do
 	# pdfimages cannot export palette based images
 
 	cat << END | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == $i
 Resources.XObject.Im0.ColorSpace[0] == "/Indexed"
 Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
@@ -852,7 +852,7 @@ for page in 1 2; do
 	# pdfimages cannot export palette based images
 
 	cat << END | checkpdf "$tempdir/page-$page.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace[0] == "/Indexed"
 Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
@@ -935,7 +935,7 @@ compare -metric AE "$tempdir/cmyk8.tiff" "$tempdir/images-000.tif" null: 2>/dev/
 rm "$tempdir/images-000.tif"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceCMYK"
 Resources.XObject.Im0.Filter == "/FlateDecode"
@@ -1004,7 +1004,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/normal.tiff" tiff24nc
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/normal.tiff"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
 Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
@@ -1104,7 +1104,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/gray1.png" pnggray
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/gray1.png"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 1
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms[0].BlackIs1 == True
@@ -1149,7 +1149,7 @@ for i in 2 4 8; do
 
 	# When saving a PNG, PIL will store it as 8-bit data
 	cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
@@ -1244,7 +1244,7 @@ for page in 1 2; do
 	compare_pdfimages "$tempdir/page-$page.pdf" "$tempdir/multipage.tiff[$((page-1))]"
 
 	cat << 'END' | checkpdf "$tempdir/page-$page.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 8
 Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
 Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
@@ -1302,7 +1302,7 @@ for i in 1 2 4 8; do
 	# pdfimages cannot export palette based images
 
 	cat << END | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == $i
 Resources.XObject.Im0.ColorSpace[0] == "/Indexed"
 Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
@@ -1381,7 +1381,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 1
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
@@ -1423,7 +1423,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 1
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
@@ -1465,7 +1465,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 1
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
@@ -1512,7 +1512,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 1
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms[0].BlackIs1 == True
@@ -1560,7 +1560,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 1
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
@@ -1605,7 +1605,7 @@ compare_rendered "$tempdir/out.pdf" "$tempdir/group4.tiff" pnggray
 compare_pdfimages "$tempdir/out.pdf" "$tempdir/group4.tiff"
 
 cat << 'END' | checkpdf "$tempdir/out.pdf"
-Contents.read_raw_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
+Contents.read_bytes() == b'q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ'
 Resources.XObject.Im0.BitsPerComponent == 1
 Resources.XObject.Im0.ColorSpace == "/DeviceGray"
 Resources.XObject.Im0.DecodeParms[0].BlackIs1 == False
