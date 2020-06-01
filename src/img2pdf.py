@@ -33,6 +33,7 @@ from io import BytesIO
 import logging
 import struct
 import platform
+import hashlib
 
 have_pdfrw = True
 try:
@@ -502,7 +503,7 @@ class MyPdfWriter:
         obj.identifier = newid
         self.objects.append(obj)
 
-    def tostream(self, info, stream, version="1.3"):
+    def tostream(self, info, stream, version="1.3", ident=None):
         xreftable = list()
 
         # justification of the random binary garbage in the header from
@@ -559,10 +560,11 @@ class MyPdfWriter:
         for x in xreftable:
             stream.write(x)
         stream.write(b"trailer\n")
-        stream.write(
-            parse({b"/Size": len(xreftable), b"/Info": info, b"/Root": self.catalog})
-            + b"\n"
-        )
+        trailer = {b"/Size": len(xreftable), b"/Info": info, b"/Root": self.catalog}
+        if ident is not None:
+            md5 = hashlib.md5(ident).hexdigest().encode("ascii")
+            trailer[b"/ID"] = b"[<%s><%s>]" % (md5, md5)
+        stream.write(parse(trailer) + b"\n")
         stream.write(b"startxref\n")
         stream.write(("%d\n" % xrefoffset).encode())
         stream.write(b"%%EOF\n")
@@ -619,6 +621,7 @@ class pdfdoc(object):
         fit_window=False,
         center_window=False,
         fullscreen=False,
+        pdfa=None,
     ):
         if engine is None:
             if have_pikepdf:
@@ -655,7 +658,7 @@ class pdfdoc(object):
                 continue
             if engine != Engine.pikepdf:
                 v = PdfString.encode(v)
-            self.writer.docinfo[getattr(PdfName,k)] = v
+            self.writer.docinfo[getattr(PdfName, k)] = v
 
         now = datetime.now()
         for k in ["CreationDate", "ModDate"]:
@@ -665,6 +668,8 @@ class pdfdoc(object):
             if v is None:
                 v = now
             v = ("D:" + datetime_to_pdfdate(v)).encode("ascii")
+            if engine == Engine.internal:
+                v = b"(" + v + b")"
             self.writer.docinfo[getattr(PdfName, k)] = v
         if keywords is not None:
             if engine == Engine.pikepdf:
@@ -673,6 +678,38 @@ class pdfdoc(object):
                 self.writer.docinfo[PdfName.Keywords] = PdfString.encode(
                     ",".join(keywords)
                 )
+
+        def datetime_to_xmpdate(dt):
+            return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        self.xmp = b"""<?xpacket begin='\xef\xbb\xbf' id='W5M0MpCehiHzreSzNTczkc9d'?>
+<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='XMP toolkit 2.9.1-13, framework 1.6'>
+<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#' xmlns:iX='http://ns.adobe.com/iX/1.0/'>
+  <rdf:Description rdf:about='' xmlns:pdf='http://ns.adobe.com/pdf/1.3/'%s/>
+  <rdf:Description rdf:about='' xmlns:xmp='http://ns.adobe.com/xap/1.0/'>
+    %s
+    %s
+  </rdf:Description>
+  <rdf:Description rdf:about='' xmlns:pdfaid='http://www.aiim.org/pdfa/ns/id/' pdfaid:part='1' pdfaid:conformance='B'/>
+</rdf:RDF>
+</x:xmpmeta>
+
+<?xpacket end='w'?>
+""" % (
+            b" pdf:Producer='%s'" % producer.encode("ascii")
+            if producer is not None
+            else b"",
+            b""
+            if creationdate is None and nodate
+            else b"<xmp:ModifyDate>%s</xmp:ModifyDate>"
+            % datetime_to_xmpdate(now if creationdate is None else creationdate).encode(
+                "ascii"
+            ),
+            b""
+            if moddate is None and nodate
+            else b"<xmp:CreateDate>%s</xmp:CreateDate>"
+            % datetime_to_xmpdate(now if moddate is None else moddate).encode("ascii"),
+        )
 
         if engine != Engine.pikepdf:
             # this is done because pdfrw adds info, catalog and pages as the first
@@ -691,6 +728,7 @@ class pdfdoc(object):
         self.fullscreen = fullscreen
         self.engine = engine
         self.output_version = version
+        self.pdfa = pdfa
 
     def add_imagepage(
         self,
@@ -722,7 +760,6 @@ class pdfdoc(object):
         elif self.engine == Engine.pdfrw:
             from pdfrw import PdfDict, PdfName, PdfObject, PdfString
             from pdfrw.py23_diffs import convert_load
-
         elif self.engine == Engine.internal:
             PdfDict = MyPdfDict
             PdfName = MyPdfName
@@ -906,12 +943,13 @@ class pdfdoc(object):
             PdfName = pikepdf.Name
         elif self.engine == Engine.pdfrw:
             from pdfrw import PdfDict, PdfName, PdfArray, PdfObject
-
+            from pdfrw.py23_diffs import convert_load
         elif self.engine == Engine.internal:
             PdfDict = MyPdfDict
             PdfName = MyPdfName
             PdfObject = MyPdfObject
             PdfArray = MyPdfArray
+            convert_load = my_convert_load
         else:
             raise ValueError("unknown engine: %s" % self.engine)
         NullObject = None if self.engine == Engine.pikepdf else PdfObject("null")
@@ -1040,17 +1078,57 @@ class pdfdoc(object):
         else:
             raise ValueError("unknown page layout: %s" % self.page_layout)
 
+        if self.pdfa is not None:
+            if self.engine == Engine.pikepdf:
+                metadata = self.writer.make_stream(self.xmp)
+            else:
+                metadata = PdfDict(stream=convert_load(self.xmp))
+                metadata[PdfName.Subtype] = PdfName.XML
+                metadata[PdfName.Type] = PdfName.Metadata
+            with open(self.pdfa, "rb") as f:
+                icc = f.read()
+            intents = PdfDict()
+            if self.engine == Engine.pikepdf:
+                iccstream = self.writer.make_stream(icc)
+                iccstream.stream_dict.N = 3
+            else:
+                iccstream = PdfDict(stream=convert_load(zlib.compress(icc)))
+                iccstream[PdfName.N] = 3
+                iccstream[PdfName.Filter] = PdfName.FlateDecode
+            intents[PdfName.S] = PdfName.GTS_PDFA1
+            intents[PdfName.Type] = PdfName.OutputIntent
+            intents[PdfName.OutputConditionIdentifier] = (
+                b"sRGB" if self.engine == Engine.pikepdf else b"(sRGB)"
+            )
+            intents[PdfName.DestOutputProfile] = iccstream
+            catalog[PdfName.OutputIntents] = PdfArray([intents])
+            catalog[PdfName.Metadata] = metadata
+
+            if self.engine == Engine.internal:
+                self.writer.addobj(metadata)
+                self.writer.addobj(iccstream)
+
         # now write out the PDF
         if self.engine == Engine.pikepdf:
-            self.writer.save(outputstream, min_version=self.output_version, linearize=True)
+            self.writer.save(
+                outputstream, min_version=self.output_version, linearize=True
+            )
         elif self.engine == Engine.pdfrw:
             self.writer.trailer.Info = self.writer.docinfo
             # setting the version attribute of the pdfrw PdfWriter object will
             # influence the behaviour of the write() function
             self.writer.version = self.output_version
+            if self.pdfa:
+                md5 = hashlib.md5(b"").hexdigest().encode("ascii")
+                self.writer.trailer[PdfName.ID] = PdfArray([md5, md5])
             self.writer.write(outputstream)
         elif self.engine == Engine.internal:
-            self.writer.tostream(self.writer.docinfo, outputstream, self.output_version)
+            self.writer.tostream(
+                self.writer.docinfo,
+                outputstream,
+                self.output_version,
+                None if self.pdfa is None else b"",
+            )
         else:
             raise ValueError("unknown engine: %s" % self.engine)
 
@@ -1847,6 +1925,7 @@ def convert(*images, **kwargs):
         bleedborder=None,
         trimborder=None,
         artborder=None,
+        pdfa=None,
     )
     for kwname, default in _default_kwargs.items():
         if kwname not in kwargs:
@@ -1871,6 +1950,7 @@ def convert(*images, **kwargs):
         kwargs["viewer_fit_window"],
         kwargs["viewer_center_window"],
         kwargs["viewer_fullscreen"],
+        kwargs["pdfa"],
     )
 
     # backwards compatibility with older img2pdf versions where the first
@@ -3164,7 +3244,7 @@ RGB.""",
         "The internal engine does not have additional requirements and writes "
         "out a human readable PDF. The pikepdf engine requires the pikepdf "
         "Python module and qpdf library, is most featureful, can "
-        "linearize PDFs (\"fast web view\") and can compress more parts of it."
+        'linearize PDFs ("fast web view") and can compress more parts of it.'
         "The pdfrw engine requires the pdfrw Python "
         "module but does not support unicode metadata (See "
         "https://github.com/pmaupin/pdfrw/issues/39) or palette data (See "
@@ -3189,6 +3269,15 @@ RGB.""",
         "your input image contains more pixels than that, use this "
         "option to disable this safety measure during this run of img2pdf"
         % Image.MAX_IMAGE_PIXELS,
+    )
+
+    outargs.add_argument(
+        "--pdfa",
+        nargs="?",
+        const="/usr/share/color/icc/ghostscript/srgb.icc",
+        default=None,
+        help="Output a PDF/A-1b complient document. By default, this will "
+        "embed /usr/share/color/icc/ghostscript/srgb.icc as the color profile.",
     )
 
     sizeargs = parser.add_argument_group(
@@ -3530,6 +3619,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
             bleedborder=args.bleed_border,
             trimborder=args.trim_border,
             artborder=args.art_border,
+            pdfa=args.pdfa,
         )
     except Exception as e:
         logging.error("error: " + str(e))
