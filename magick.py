@@ -17,20 +17,21 @@ def find_closest_palette_color(color, palette):
 
 
 def floyd_steinberg(img, palette):
-    for y in range(img.shape[0]):
-        for x in range(img.shape[1]):
-            oldpixel = img[y, x]
+    result = numpy.array(img, copy=True)
+    for y in range(result.shape[0]):
+        for x in range(result.shape[1]):
+            oldpixel = result[y, x]
             newpixel = find_closest_palette_color(oldpixel, palette)
             quant_error = oldpixel - newpixel
-            img[y, x] = newpixel
-            if x + 1 < img.shape[1]:
-                img[y, x + 1] += quant_error * 7 / 16
-            if y + 1 < img.shape[0]:
-                img[y + 1, x - 1] += quant_error * 3 / 16
-                img[y + 1, x] += quant_error * 5 / 16
-            if x + 1 < img.shape[1] and y + 1 < img.shape[0]:
-                img[y + 1, x + 1] += quant_error * 1 / 16
-    return img
+            result[y, x] = newpixel
+            if x + 1 < result.shape[1]:
+                result[y, x + 1] += quant_error * 7 / 16
+            if y + 1 < result.shape[0]:
+                result[y + 1, x - 1] += quant_error * 3 / 16
+                result[y + 1, x] += quant_error * 5 / 16
+            if x + 1 < result.shape[1] and y + 1 < result.shape[0]:
+                result[y + 1, x + 1] += quant_error * 1 / 16
+    return result
 
 
 def convolve_rgba(img, kernel):

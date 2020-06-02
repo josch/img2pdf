@@ -114,16 +114,16 @@ fi
 cat << END | ( cd "$tempdir"; md5sum --check $status_arg - )
 cc611e80cde3b9b7adb7723801a4e5d4  alpha.png
 706175887af8ca1a33cfd93449f970df  gray16.png
-198e3333d7dc6158f94d1007e75c5bd3  gray1.png
-795ff9c5c59cdc95f5a0b9191a7247d9  gray2.png
+ff4d9f18de39be879926be2e65990167  gray1.png
+d51900476658a1c9dd26a7b27db8a21f  gray2.png
 722223ba74be9cba1af4a549076b70d3  gray4.png
 2320216faa5a10bf0f5f04ebce07f8e1  gray8.png
 35a47d6ae6de8c9d0b31aa0cda8648f3  inverse.png
 6ad810399058a87d8145d8d9a7734da5  normal16.png
 c8d2e1f116f31ecdeae050524efca7b6  normal.png
-c69edd665ee3546d9eb57fe10cd8095a  palette1.png
-504ecab83662aa2394042a62b1d2eafb  palette2.png
-90d1bbe7b26e210d8846cf8692a98b72  palette4.png
+18a3dfca369f976996ef93389ddfad61  palette1.png
+d38646afa6fa0714be9badef25ff9392  palette2.png
+e1c59e68a68fca3273b6dc164d526ed7  palette4.png
 50bf09eb3571901f0bf642b9a733038c  palette8.png
 END
 
