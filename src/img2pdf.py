@@ -625,7 +625,7 @@ class pdfdoc(object):
     ):
         if engine is None:
             if have_pikepdf:
-                engine = Engine.pdfrw
+                engine = Engine.pikepdf
             elif have_pdfrw:
                 engine = Engine.pdfrw
             else:
