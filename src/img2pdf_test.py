@@ -15,7 +15,23 @@ import os
 from io import BytesIO
 from PIL import Image
 import decimal
+from packaging.version import parse as parse_version
+import warnings
 
+HAVE_MUTOOL = True
+try:
+    ver = subprocess.check_output(["mutool", "-v"], stderr=subprocess.STDOUT)
+    m = re.fullmatch(r"mutool version ([0-9.]+)\n", ver.decode("utf8"))
+    if m is None:
+        HAVE_MUTOOL = False
+    else:
+        if parse_version(m.group(1)) < parse_version("1.10.0"):
+            HAVE_MUTOOL = False
+except FileNotFoundError:
+    HAVE_MUTOOL = False
+
+if not HAVE_MUTOOL:
+    warnings.warn("mutool >= 1.10.0 not available, skipping checks...")
 
 ###############################################################################
 #                               HELPER FUNCTIONS                              #
@@ -137,7 +153,7 @@ def compress(data):
 
 
 def write_png(data, path, bitdepth, colortype, palette=None):
-    with open(path, "wb") as f:
+    with open(str(path), "wb") as f:
         f.write(b"\x89PNG\r\n\x1A\n")
         # PNG image type        Colour type Allowed bit depths
         # Greyscale             0           1, 2, 4, 8, 16
@@ -277,6 +293,8 @@ def compare_poppler(tmpdir, img, pdf, exact=True):
 
 
 def compare_mupdf(tmpdir, img, pdf, exact=True, cmyk=False):
+    if not HAVE_MUTOOL:
+        return
     if cmyk:
         out = tmpdir / "mupdf.pam"
         subprocess.check_call(
@@ -1324,7 +1342,7 @@ def gif_palette8_img(tmp_path_factory, tmp_palette8_png):
 def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     in_img = tmp_path_factory.mktemp("gif_animation_img") / "in.gif"
     subprocess.check_call(
-        ["convert", tmp_normal_png, tmp_inverse_png, "-strip", str(in_img)]
+        ["convert", str(tmp_normal_png), str(tmp_inverse_png), "-strip", str(in_img)]
     )
     identify = subprocess.check_output(["identify", "-verbose", str(in_img) + "[0]"])
     expected = [
