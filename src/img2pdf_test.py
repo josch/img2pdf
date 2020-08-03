@@ -33,6 +33,38 @@ except FileNotFoundError:
 if not HAVE_MUTOOL:
     warnings.warn("mutool >= 1.10.0 not available, skipping checks...")
 
+HAVE_PDFIMAGES_CMYK = True
+try:
+    ver = subprocess.check_output(["pdfimages", "-v"], stderr=subprocess.STDOUT)
+    m = re.fullmatch(r"pdfimages version ([0-9.]+)", ver.split(b"\n")[0].decode("utf8"))
+    if m is None:
+        HAVE_PDFIMAGES_CMYK = False
+    else:
+        if parse_version(m.group(1)) < parse_version("0.42.0"):
+            HAVE_PDFIMAGES_CMYK = False
+except FileNotFoundError:
+    HAVE_PDFIMAGES_CMYK = False
+
+if not HAVE_PDFIMAGES_CMYK:
+    warnings.warn("pdfimages >= 0.42.0 not available, skipping CMYK checks...")
+
+HAVE_IMAGEMAGICK_MODERN = True
+try:
+    ver = subprocess.check_output(["convert", "-version"], stderr=subprocess.STDOUT)
+    m = re.fullmatch(
+        r"Version: ImageMagick ([0-9.]+)-.*", ver.split(b"\n")[0].decode("utf8")
+    )
+    if m is None:
+        HAVE_IMAGEMAGICK_MODERN = False
+    else:
+        if parse_version(m.group(1)) < parse_version("6.9.10"):
+            HAVE_IMAGEMAGICK_MODERN = False
+except FileNotFoundError:
+    HAVE_IMAGEMAGICK_MODERN = False
+
+if not HAVE_IMAGEMAGICK_MODERN:
+    warnings.warn("imagemagick >= 6.9.10 not available, skipping certain checks...")
+
 ###############################################################################
 #                               HELPER FUNCTIONS                              #
 ###############################################################################
@@ -322,6 +354,14 @@ def compare_mupdf(tmpdir, img, pdf, exact=True, cmyk=False):
 
 
 def compare_pdfimages_jpg(tmpdir, img, pdf):
+    subprocess.check_call(["pdfimages", "-j", str(pdf), str(tmpdir / "images")])
+    assert img.read_bytes() == (tmpdir / "images-000.jpg").read_bytes()
+    (tmpdir / "images-000.jpg").unlink()
+
+
+def compare_pdfimages_cmyk(tmpdir, img, pdf):
+    if not HAVE_PDFIMAGES_CMYK:
+        return
     subprocess.check_call(["pdfimages", "-j", str(pdf), str(tmpdir / "images")])
     assert img.read_bytes() == (tmpdir / "images-000.jpg").read_bytes()
     (tmpdir / "images-000.jpg").unlink()
@@ -728,7 +768,9 @@ def jpg_img(tmp_path_factory, tmp_normal_png):
         r"^  Compression: JPEG$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -766,7 +808,9 @@ def jpg_rot_img(tmp_path_factory, tmp_normal_png):
         r"^  Orientation: RightTop$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -789,7 +833,9 @@ def jpg_cmyk_img(tmp_path_factory, tmp_normal_png):
         r"^  Compression: JPEG$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -810,7 +856,9 @@ def jpg_2000_img(tmp_path_factory, tmp_normal_png):
         r"^  Compression: JPEG2000$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -835,7 +883,9 @@ def png_rgb8_img(tmp_normal_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return in_img
 
 
@@ -859,7 +909,9 @@ def png_rgb16_img(tmp_normal16_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return in_img
 
 
@@ -886,7 +938,9 @@ def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -911,7 +965,9 @@ def png_rgba16_img(tmp_alpha_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return in_img
 
 
@@ -951,7 +1007,9 @@ def png_gray8a_img(tmp_path_factory, tmp_alpha_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -988,7 +1046,9 @@ def png_gray16a_img(tmp_path_factory, tmp_alpha_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1016,7 +1076,9 @@ def png_interlaced_img(tmp_path_factory, tmp_normal_png):
         r"^    png:IHDR.interlace_method: 1 \(Adam7 method\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1040,7 +1102,9 @@ def png_gray1_img(tmp_path_factory, tmp_gray1_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return tmp_gray1_png
 
 
@@ -1063,7 +1127,9 @@ def png_gray2_img(tmp_path_factory, tmp_gray2_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return tmp_gray2_png
 
 
@@ -1086,7 +1152,9 @@ def png_gray4_img(tmp_path_factory, tmp_gray4_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return tmp_gray4_png
 
 
@@ -1109,7 +1177,9 @@ def png_gray8_img(tmp_path_factory, tmp_gray8_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return tmp_gray8_png
 
 
@@ -1132,7 +1202,9 @@ def png_gray16_img(tmp_path_factory, tmp_gray16_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return tmp_gray16_png
 
 
@@ -1155,7 +1227,9 @@ def png_palette1_img(tmp_path_factory, tmp_palette1_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return tmp_palette1_png
 
 
@@ -1178,7 +1252,9 @@ def png_palette2_img(tmp_path_factory, tmp_palette2_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return tmp_palette2_png
 
 
@@ -1201,7 +1277,9 @@ def png_palette4_img(tmp_path_factory, tmp_palette4_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return tmp_palette4_png
 
 
@@ -1224,7 +1302,9 @@ def png_palette8_img(tmp_path_factory, tmp_palette8_png):
         r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     return tmp_palette8_png
 
 
@@ -1245,7 +1325,9 @@ def gif_transparent_img(tmp_path_factory, tmp_alpha_png):
         r"^  Compression: LZW$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1267,7 +1349,9 @@ def gif_palette1_img(tmp_path_factory, tmp_palette1_png):
         r"^  Compression: LZW$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1289,7 +1373,9 @@ def gif_palette2_img(tmp_path_factory, tmp_palette2_png):
         r"^  Compression: LZW$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1311,7 +1397,9 @@ def gif_palette4_img(tmp_path_factory, tmp_palette4_png):
         r"^  Compression: LZW$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1333,7 +1421,9 @@ def gif_palette8_img(tmp_path_factory, tmp_palette8_png):
         r"^  Compression: LZW$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1357,7 +1447,9 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         r"^  Compression: LZW$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     identify = subprocess.check_output(["identify", "-verbose", str(in_img) + "[1]"])
     expected = [
         r"^  Format: GIF \(CompuServe graphics interchange format\)$",
@@ -1372,7 +1464,9 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         r"^  Scene: 1$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1408,7 +1502,9 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
         r"^    tiff:photometric: RGB$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1435,7 +1531,9 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
         r"^    tiff:photometric: separated$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1470,7 +1568,9 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
         r"^    tiff:photometric: separated$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1495,7 +1595,9 @@ def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
         r"^    tiff:photometric: RGB$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1522,7 +1624,9 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
         r"^    tiff:photometric: RGB$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1549,7 +1653,9 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
         r"^    tiff:photometric: RGB$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1576,7 +1682,9 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
         r"^    tiff:photometric: RGB$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1603,7 +1711,9 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
         r"^    tiff:photometric: RGB$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1630,7 +1740,9 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
         r"^    tiff:photometric: RGB$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1655,7 +1767,9 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
         r"^    tiff:photometric: min-is-black$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1680,7 +1794,9 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
         r"^    tiff:photometric: min-is-black$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1705,7 +1821,9 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
         r"^    tiff:photometric: min-is-black$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1730,7 +1848,9 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
         r"^    tiff:photometric: min-is-black$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1755,7 +1875,9 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
         r"^    tiff:photometric: min-is-black$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1764,7 +1886,7 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
 def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     in_img = tmp_path_factory.mktemp("tiff_multipage_img") / "in.tiff"
     subprocess.check_call(
-        ["convert", tmp_normal_png, tmp_inverse_png, "-strip", str(in_img)]
+        ["convert", str(tmp_normal_png), str(tmp_inverse_png), "-strip", str(in_img)]
     )
     identify = subprocess.check_output(["identify", "-verbose", str(in_img) + "[0]"])
     expected = [
@@ -1782,7 +1904,9 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         r"^    tiff:photometric: RGB$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     identify = subprocess.check_output(["identify", "-verbose", str(in_img) + "[1]"])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
@@ -1800,7 +1924,9 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         r"^  Scene: 1$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1826,7 +1952,9 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
         r"^    tiff:photometric: palette$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1852,7 +1980,9 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
         r"^    tiff:photometric: palette$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1878,7 +2008,9 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
         r"^    tiff:photometric: palette$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1904,7 +2036,9 @@ def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
         r"^    tiff:photometric: palette$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1944,7 +2078,9 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         r"^    tiff:rows-per-strip: 60$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -1956,7 +2092,9 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         r"^  Rows/Strip: 60",
     ]
     for e in expected:
-        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE)
+        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -1996,7 +2134,9 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         r"^    tiff:rows-per-strip: 60$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -2008,7 +2148,9 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         r"^  Rows/Strip: 60",
     ]
     for e in expected:
-        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE)
+        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -2048,7 +2190,9 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
         r"^    tiff:rows-per-strip: 60$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -2060,7 +2204,9 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
         r"^  Rows/Strip: 60",
     ]
     for e in expected:
-        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE)
+        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -2104,7 +2250,9 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
         r"^    tiff:rows-per-strip: 60$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -2116,7 +2264,9 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
         r"^  Rows/Strip: 60",
     ]
     for e in expected:
-        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE)
+        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     yield in_img
     in_img.unlink()
 
@@ -2165,7 +2315,9 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
         r"^    tiff:rows-per-strip: 60$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -2174,7 +2326,9 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
         r"^  Rows/Strip: 60",
     ]
     for e in expected:
-        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE)
+        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     unexpected = [" Bits/Sample: ", " FillOrder: ", " Samples/Pixel: "]
     for e in unexpected:
         assert e not in tiffinfo.decode("utf8")
@@ -2219,7 +2373,9 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
         r"^    tiff:photometric: min-is-white$",
     ]
     for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE)
+        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     unexpected = [" tiff:rows-per-strip: "]
     for e in unexpected:
         assert e not in identify.decode("utf8")
@@ -2233,7 +2389,9 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
         r"^  Samples/Pixel: 1",
     ]
     for e in expected:
-        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE)
+        assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
+            "utf8"
+        )
     unexpected = [" Rows/Strip: "]
     for e in unexpected:
         assert e not in tiffinfo.decode("utf8")
@@ -2861,8 +3019,10 @@ def gif_animation_pdf(tmp_path_factory, gif_animation_img, request):
         ]
     )
     pdfinfo = subprocess.check_output(["pdfinfo", str(out_pdf)])
-    assert re.search("^Pages: +2$", pdfinfo.decode("utf8"), re.MULTILINE)
-    subprocess.check_call(["pdfseparate", out_pdf, str(tmpdir / "page-%d.pdf")])
+    assert re.search(
+        "^Pages: +2$", pdfinfo.decode("utf8"), re.MULTILINE
+    ), identify.decode("utf8")
+    subprocess.check_call(["pdfseparate", str(out_pdf), str(tmpdir / "page-%d.pdf")])
     for page in [1, 2]:
         gif_animation_pdf_nr = tmpdir / ("page-%d.pdf" % page)
         with pikepdf.open(gif_animation_pdf_nr) as p:
@@ -3077,8 +3237,10 @@ def tiff_multipage_pdf(tmp_path_factory, tiff_multipage_img, request):
         ]
     )
     pdfinfo = subprocess.check_output(["pdfinfo", str(out_pdf)])
-    assert re.search("^Pages: +2$", pdfinfo.decode("utf8"), re.MULTILINE)
-    subprocess.check_call(["pdfseparate", out_pdf, str(tmpdir / "page-%d.pdf")])
+    assert re.search(
+        "^Pages: +2$", pdfinfo.decode("utf8"), re.MULTILINE
+    ), identify.decode("utf8")
+    subprocess.check_call(["pdfseparate", str(out_pdf), str(tmpdir / "page-%d.pdf")])
     for page in [1, 2]:
         tiff_multipage_pdf_nr = tmpdir / ("page-%d.pdf" % page)
         with pikepdf.open(tiff_multipage_pdf_nr) as p:
@@ -3476,9 +3638,12 @@ def test_jpg_cmyk(tmp_path_factory, jpg_cmyk_img, jpg_cmyk_pdf):
     )
     # not testing with poppler as it cannot write CMYK images
     compare_mupdf(tmpdir, jpg_cmyk_img, jpg_cmyk_pdf, exact=False, cmyk=True)
-    compare_pdfimages_jpg(tmpdir, jpg_cmyk_img, jpg_cmyk_pdf)
+    compare_pdfimages_cmyk(tmpdir, jpg_cmyk_img, jpg_cmyk_pdf)
 
 
+@pytest.mark.skipif(
+    not HAVE_IMAGEMAGICK_MODERN, reason="requires imagemagick with support for jpeg2000"
+)
 def test_jpg_2000(tmp_path_factory, jpg_2000_img, jpg_2000_pdf):
     tmpdir = tmp_path_factory.mktemp("jpg_2000")
     compare_ghostscript(tmpdir, jpg_2000_img, jpg_2000_pdf)
@@ -3515,7 +3680,7 @@ def test_png_rgba8(tmp_path_factory, png_rgba8_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                png_rgba8_img,
+                str(png_rgba8_img),
             ]
         ).returncode
     )
@@ -3534,7 +3699,7 @@ def test_png_rgba16(tmp_path_factory, png_rgba16_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                png_rgba16_img,
+                str(png_rgba16_img),
             ]
         ).returncode
     )
@@ -3553,7 +3718,7 @@ def test_png_gray8a(tmp_path_factory, png_gray8a_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                png_gray8a_img,
+                str(png_gray8a_img),
             ]
         ).returncode
     )
@@ -3572,7 +3737,7 @@ def test_png_gray16a(tmp_path_factory, png_gray16a_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                png_gray16a_img,
+                str(png_gray16a_img),
             ]
         ).returncode
     )
@@ -3675,7 +3840,7 @@ def test_gif_transparent(tmp_path_factory, gif_transparent_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                gif_transparent_img,
+                str(gif_transparent_img),
             ]
         ).returncode
     )
@@ -3717,7 +3882,7 @@ def test_gif_palette8(tmp_path_factory, gif_palette8_img, gif_palette8_pdf):
 def test_gif_animation(tmp_path_factory, gif_animation_img, gif_animation_pdf):
     tmpdir = tmp_path_factory.mktemp("gif_animation")
     subprocess.check_call(
-        ["pdfseparate", gif_animation_pdf, str(tmpdir / "page-%d.pdf")]
+        ["pdfseparate", str(gif_animation_pdf), str(tmpdir / "page-%d.pdf")]
     )
     for page in [1, 2]:
         gif_animation_pdf_nr = tmpdir / ("page-%d.pdf" % page)
@@ -3746,7 +3911,7 @@ def test_tiff_float(tmp_path_factory, tiff_float_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                tiff_float_img,
+                str(tiff_float_img),
             ]
         ).returncode
     )
@@ -3776,7 +3941,7 @@ def test_tiff_cmyk16(tmp_path_factory, tiff_cmyk16_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                tiff_cmyk16_img,
+                str(tiff_cmyk16_img),
             ]
         ).returncode
     )
@@ -3804,7 +3969,7 @@ def test_tiff_rgb12(tmp_path_factory, tiff_rgb12_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                tiff_rgb12_img,
+                str(tiff_rgb12_img),
             ]
         ).returncode
     )
@@ -3824,7 +3989,7 @@ def test_tiff_rgb14(tmp_path_factory, tiff_rgb14_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                tiff_rgb14_img,
+                str(tiff_rgb14_img),
             ]
         ).returncode
     )
@@ -3844,7 +4009,7 @@ def test_tiff_rgb16(tmp_path_factory, tiff_rgb16_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                tiff_rgb16_img,
+                str(tiff_rgb16_img),
             ]
         ).returncode
     )
@@ -3863,7 +4028,7 @@ def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                tiff_rgba8_img,
+                str(tiff_rgba8_img),
             ]
         ).returncode
     )
@@ -3882,7 +4047,7 @@ def test_tiff_rgba16(tmp_path_factory, tiff_rgba16_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                tiff_rgba16_img,
+                str(tiff_rgba16_img),
             ]
         ).returncode
     )
@@ -3933,7 +4098,7 @@ def test_tiff_gray16(tmp_path_factory, tiff_gray16_img, engine):
                 "--nodate",
                 "--engine=" + engine,
                 "--output=" + str(out_pdf),
-                tiff_gray16_img,
+                str(tiff_gray16_img),
             ]
         ).returncode
     )
@@ -3943,7 +4108,7 @@ def test_tiff_gray16(tmp_path_factory, tiff_gray16_img, engine):
 def test_tiff_multipage(tmp_path_factory, tiff_multipage_img, tiff_multipage_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_multipage")
     subprocess.check_call(
-        ["pdfseparate", tiff_multipage_pdf, str(tmpdir / "page-%d.pdf")]
+        ["pdfseparate", str(tiff_multipage_pdf), str(tmpdir / "page-%d.pdf")]
     )
     for page in [1, 2]:
         tiff_multipage_pdf_nr = tmpdir / ("page-%d.pdf" % page)
@@ -3962,6 +4127,10 @@ def test_tiff_multipage(tmp_path_factory, tiff_multipage_img, tiff_multipage_pdf
         tiff_multipage_pdf_nr.unlink()
 
 
+@pytest.mark.skipif(
+    not HAVE_IMAGEMAGICK_MODERN,
+    reason="requires imagemagick with support for keeping the palette depth",
+)
 def test_tiff_palette1(tmp_path_factory, tiff_palette1_img, tiff_palette1_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_palette1")
     compare_ghostscript(tmpdir, tiff_palette1_img, tiff_palette1_pdf)
@@ -3970,6 +4139,10 @@ def test_tiff_palette1(tmp_path_factory, tiff_palette1_img, tiff_palette1_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    not HAVE_IMAGEMAGICK_MODERN,
+    reason="requires imagemagick with support for keeping the palette depth",
+)
 def test_tiff_palette2(tmp_path_factory, tiff_palette2_img, tiff_palette2_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_palette2")
     compare_ghostscript(tmpdir, tiff_palette2_img, tiff_palette2_pdf)
@@ -3978,6 +4151,10 @@ def test_tiff_palette2(tmp_path_factory, tiff_palette2_img, tiff_palette2_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    not HAVE_IMAGEMAGICK_MODERN,
+    reason="requires imagemagick with support for keeping the palette depth",
+)
 def test_tiff_palette4(tmp_path_factory, tiff_palette4_img, tiff_palette4_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_palette4")
     compare_ghostscript(tmpdir, tiff_palette4_img, tiff_palette4_pdf)
@@ -4045,6 +4222,10 @@ def test_tiff_ccitt_msb_l2m_white(
     )
 
 
+@pytest.mark.skipif(
+    not HAVE_IMAGEMAGICK_MODERN,
+    reason="requires imagemagick with support for min-is-black",
+)
 def test_tiff_ccitt_lsb_m2l_black(
     tmp_path_factory, tiff_ccitt_lsb_m2l_black_img, tiff_ccitt_lsb_m2l_black_pdf
 ):
