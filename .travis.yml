@@ -4,10 +4,14 @@ matrix:
     - name: "python 3.7 Xenial"
       dist: xenial
       python: 3.7
+      addons:
+        apt:
+          packages:
+            - imagemagick
     - name: "python 3.8 Windows"
       os: windows
       language: shell       # 'language: python' is an error on Travis CI Windows
-      before_install: choco install python
+      before_install: choco install python imagemagick
       env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
     - name: "python 3.7 MacOs"
       os: osx
@@ -19,7 +23,9 @@ matrix:
       addons:
         homebrew:
           #update: true
-          packages: python3
+          packages:
+            - python3
+            - imagemagick
       before_install:
         - python3 -m pip install --upgrade virtualenv
         - virtualenv -p python3 --system-site-packages "$HOME/venv"
@@ -27,4 +33,4 @@ matrix:
 install: pip install tox
 script:
   - python --version
-  - tox
+  - python -m tox
