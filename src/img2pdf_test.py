@@ -698,7 +698,7 @@ def tmp_palette8_png(tmp_path_factory, alpha):
 def jpg_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("jpg") / "in.jpg"
     subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: JPEG \(Joint Photographic Experts Group JFIF format\)$",
         r"^  Mime type: image/jpeg$",
@@ -733,7 +733,7 @@ def jpg_rot_img(tmp_path_factory, tmp_normal_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: JPEG \(Joint Photographic Experts Group JFIF format\)$",
         r"^  Mime type: image/jpeg$",
@@ -759,7 +759,7 @@ def jpg_cmyk_img(tmp_path_factory, tmp_normal_png):
     subprocess.check_call(
         ["convert", str(tmp_normal_png), "-colorspace", "cmyk", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: JPEG \(Joint Photographic Experts Group JFIF format\)$",
         r"^  Mime type: image/jpeg$",
@@ -780,7 +780,7 @@ def jpg_cmyk_img(tmp_path_factory, tmp_normal_png):
 def jpg_2000_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("jpg_2000") / "in.jp2"
     subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: JP2 \(JPEG-2000 File Format Syntax\)$",
         r"^  Mime type: image/jp2$",
@@ -800,7 +800,7 @@ def jpg_2000_img(tmp_path_factory, tmp_normal_png):
 @pytest.fixture(scope="session")
 def png_rgb8_img(tmp_normal_png):
     in_img = tmp_normal_png
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -824,7 +824,7 @@ def png_rgb8_img(tmp_normal_png):
 @pytest.fixture(scope="session")
 def png_rgb16_img(tmp_normal16_png):
     in_img = tmp_normal16_png
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -851,7 +851,7 @@ def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
     subprocess.check_call(
         ["convert", str(tmp_alpha_png), "-depth", "8", "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -876,7 +876,7 @@ def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
 @pytest.fixture(scope="session")
 def png_rgba16_img(tmp_alpha_png):
     in_img = tmp_alpha_png
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -916,7 +916,7 @@ def png_gray8a_img(tmp_path_factory, tmp_alpha_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -953,7 +953,7 @@ def png_gray16a_img(tmp_path_factory, tmp_alpha_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -981,7 +981,7 @@ def png_interlaced_img(tmp_path_factory, tmp_normal_png):
     subprocess.check_call(
         ["convert", str(tmp_normal_png), "-interlace", "PNG", "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1005,7 +1005,7 @@ def png_interlaced_img(tmp_path_factory, tmp_normal_png):
 
 @pytest.fixture(scope="session")
 def png_gray1_img(tmp_path_factory, tmp_gray1_png):
-    identify = subprocess.check_output(["identify", "-verbose", tmp_gray1_png])
+    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray1_png)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1028,7 +1028,7 @@ def png_gray1_img(tmp_path_factory, tmp_gray1_png):
 
 @pytest.fixture(scope="session")
 def png_gray2_img(tmp_path_factory, tmp_gray2_png):
-    identify = subprocess.check_output(["identify", "-verbose", tmp_gray2_png])
+    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray2_png)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1051,7 +1051,7 @@ def png_gray2_img(tmp_path_factory, tmp_gray2_png):
 
 @pytest.fixture(scope="session")
 def png_gray4_img(tmp_path_factory, tmp_gray4_png):
-    identify = subprocess.check_output(["identify", "-verbose", tmp_gray4_png])
+    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray4_png)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1074,7 +1074,7 @@ def png_gray4_img(tmp_path_factory, tmp_gray4_png):
 
 @pytest.fixture(scope="session")
 def png_gray8_img(tmp_path_factory, tmp_gray8_png):
-    identify = subprocess.check_output(["identify", "-verbose", tmp_gray8_png])
+    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray8_png)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1097,7 +1097,7 @@ def png_gray8_img(tmp_path_factory, tmp_gray8_png):
 
 @pytest.fixture(scope="session")
 def png_gray16_img(tmp_path_factory, tmp_gray16_png):
-    identify = subprocess.check_output(["identify", "-verbose", tmp_gray16_png])
+    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray16_png)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1120,7 +1120,7 @@ def png_gray16_img(tmp_path_factory, tmp_gray16_png):
 
 @pytest.fixture(scope="session")
 def png_palette1_img(tmp_path_factory, tmp_palette1_png):
-    identify = subprocess.check_output(["identify", "-verbose", tmp_palette1_png])
+    identify = subprocess.check_output(["identify", "-verbose", str(tmp_palette1_png)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1143,7 +1143,7 @@ def png_palette1_img(tmp_path_factory, tmp_palette1_png):
 
 @pytest.fixture(scope="session")
 def png_palette2_img(tmp_path_factory, tmp_palette2_png):
-    identify = subprocess.check_output(["identify", "-verbose", tmp_palette2_png])
+    identify = subprocess.check_output(["identify", "-verbose", str(tmp_palette2_png)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1166,7 +1166,7 @@ def png_palette2_img(tmp_path_factory, tmp_palette2_png):
 
 @pytest.fixture(scope="session")
 def png_palette4_img(tmp_path_factory, tmp_palette4_png):
-    identify = subprocess.check_output(["identify", "-verbose", tmp_palette4_png])
+    identify = subprocess.check_output(["identify", "-verbose", str(tmp_palette4_png)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1189,7 +1189,7 @@ def png_palette4_img(tmp_path_factory, tmp_palette4_png):
 
 @pytest.fixture(scope="session")
 def png_palette8_img(tmp_path_factory, tmp_palette8_png):
-    identify = subprocess.check_output(["identify", "-verbose", tmp_palette8_png])
+    identify = subprocess.check_output(["identify", "-verbose", str(tmp_palette8_png)])
     expected = [
         r"^  Format: PNG \(Portable Network Graphics\)$",
         r"^  Mime type: image/png$",
@@ -1214,7 +1214,7 @@ def png_palette8_img(tmp_path_factory, tmp_palette8_png):
 def gif_transparent_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("gif_transparent_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_alpha_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: GIF \(CompuServe graphics interchange format\)$",
         r"^  Mime type: image/gif$",
@@ -1236,7 +1236,7 @@ def gif_transparent_img(tmp_path_factory, tmp_alpha_png):
 def gif_palette1_img(tmp_path_factory, tmp_palette1_png):
     in_img = tmp_path_factory.mktemp("gif_palette1_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_palette1_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: GIF \(CompuServe graphics interchange format\)$",
         r"^  Mime type: image/gif$",
@@ -1258,7 +1258,7 @@ def gif_palette1_img(tmp_path_factory, tmp_palette1_png):
 def gif_palette2_img(tmp_path_factory, tmp_palette2_png):
     in_img = tmp_path_factory.mktemp("gif_palette2_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_palette2_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: GIF \(CompuServe graphics interchange format\)$",
         r"^  Mime type: image/gif$",
@@ -1280,7 +1280,7 @@ def gif_palette2_img(tmp_path_factory, tmp_palette2_png):
 def gif_palette4_img(tmp_path_factory, tmp_palette4_png):
     in_img = tmp_path_factory.mktemp("gif_palette4_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_palette4_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: GIF \(CompuServe graphics interchange format\)$",
         r"^  Mime type: image/gif$",
@@ -1302,7 +1302,7 @@ def gif_palette4_img(tmp_path_factory, tmp_palette4_png):
 def gif_palette8_img(tmp_path_factory, tmp_palette8_png):
     in_img = tmp_path_factory.mktemp("gif_palette8_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_palette8_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: GIF \(CompuServe graphics interchange format\)$",
         r"^  Mime type: image/gif$",
@@ -1373,7 +1373,7 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1401,7 +1401,7 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
     subprocess.check_call(
         ["convert", str(tmp_normal_png), "-colorspace", "cmyk", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1436,7 +1436,7 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1461,7 +1461,7 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
 def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1488,7 +1488,7 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
     subprocess.check_call(
         ["convert", str(tmp_normal16_png), "-depth", "12", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1515,7 +1515,7 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
     subprocess.check_call(
         ["convert", str(tmp_normal16_png), "-depth", "14", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1542,7 +1542,7 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
     subprocess.check_call(
         ["convert", str(tmp_normal16_png), "-depth", "16", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1569,7 +1569,7 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
     subprocess.check_call(
         ["convert", str(tmp_alpha_png), "-depth", "8", "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1596,7 +1596,7 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
     subprocess.check_call(
         ["convert", str(tmp_alpha_png), "-depth", "16", "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1621,7 +1621,7 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
 def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
     in_img = tmp_path_factory.mktemp("tiff_gray1") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray1_png), "-depth", "1", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1646,7 +1646,7 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
 def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
     in_img = tmp_path_factory.mktemp("tiff_gray2") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray2_png), "-depth", "2", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1671,7 +1671,7 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
 def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
     in_img = tmp_path_factory.mktemp("tiff_gray4") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray4_png), "-depth", "4", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1696,7 +1696,7 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
 def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
     in_img = tmp_path_factory.mktemp("tiff_gray8") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray8_png), "-depth", "8", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1721,7 +1721,7 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
 def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
     in_img = tmp_path_factory.mktemp("tiff_gray16") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray16_png), "-depth", "16", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1791,7 +1791,7 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
 def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
     in_img = tmp_path_factory.mktemp("tiff_palette1_img") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_palette1_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1817,7 +1817,7 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
 def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
     in_img = tmp_path_factory.mktemp("tiff_palette2_img") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_palette2_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1843,7 +1843,7 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
 def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
     in_img = tmp_path_factory.mktemp("tiff_palette4_img") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_palette4_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1869,7 +1869,7 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
 def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
     in_img = tmp_path_factory.mktemp("tiff_palette8_img") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_palette8_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1909,7 +1909,7 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1927,7 +1927,7 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
     ]
     for e in expected:
         assert re.search(e, identify.decode("utf8"), re.MULTILINE)
-    tiffinfo = subprocess.check_output(["tiffinfo", in_img])
+    tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
         r"^  Bits/Sample: 1",
@@ -1961,7 +1961,7 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -1979,7 +1979,7 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
     ]
     for e in expected:
         assert re.search(e, identify.decode("utf8"), re.MULTILINE)
-    tiffinfo = subprocess.check_output(["tiffinfo", in_img])
+    tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
         r"^  Bits/Sample: 1",
@@ -2013,7 +2013,7 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -2031,7 +2031,7 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
     ]
     for e in expected:
         assert re.search(e, identify.decode("utf8"), re.MULTILINE)
-    tiffinfo = subprocess.check_output(["tiffinfo", in_img])
+    tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
         r"^  Bits/Sample: 1",
@@ -2069,7 +2069,7 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -2087,7 +2087,7 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
     ]
     for e in expected:
         assert re.search(e, identify.decode("utf8"), re.MULTILINE)
-    tiffinfo = subprocess.check_output(["tiffinfo", in_img])
+    tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
         r"^  Bits/Sample: 1",
@@ -2130,7 +2130,7 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
     subprocess.check_call(
         ["tiffset", "-u", "277", str(in_img)]
     )  # remove SamplesPerPixel (277)
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -2148,7 +2148,7 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
     ]
     for e in expected:
         assert re.search(e, identify.decode("utf8"), re.MULTILINE)
-    tiffinfo = subprocess.check_output(["tiffinfo", in_img])
+    tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
         r"^  Compression Scheme: CCITT Group 4",
@@ -2185,7 +2185,7 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     subprocess.check_call(
         ["tiffset", "-u", "278", str(in_img)]
     )  # remove RowsPerStrip (278)
-    identify = subprocess.check_output(["identify", "-verbose", in_img])
+    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
     expected = [
         r"^  Format: TIFF \(Tagged Image File Format\)$",
         r"^  Mime type: image/tiff$",
@@ -2205,7 +2205,7 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     unexpected = [" tiff:rows-per-strip: "]
     for e in unexpected:
         assert e not in identify.decode("utf8")
-    tiffinfo = subprocess.check_output(["tiffinfo", in_img])
+    tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
         r"^  Bits/Sample: 1",
@@ -4501,9 +4501,7 @@ def general_input(request):
 
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_general(general_input, engine):
-    inputf = os.path.join(
-        os.path.dirname(__file__), "tests", "input", general_input
-    )
+    inputf = os.path.join(os.path.dirname(__file__), "tests", "input", general_input)
     outputf = os.path.join(
         os.path.dirname(__file__), "tests", "output", general_input + ".pdf"
     )
