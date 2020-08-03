@@ -8,6 +8,11 @@ matrix:
         apt:
           packages:
             - imagemagick
+            - libtiff-tools
+            - libimage-exiftool-perl
+            - poppler-utils
+            - netpbm
+            - ghostscript
     - name: "python 3.8 Windows"
       os: windows
       language: shell       # 'language: python' is an error on Travis CI Windows
