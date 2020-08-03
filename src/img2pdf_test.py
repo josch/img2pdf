@@ -61,6 +61,8 @@ try:
             HAVE_IMAGEMAGICK_MODERN = False
 except FileNotFoundError:
     HAVE_IMAGEMAGICK_MODERN = False
+except subprocess.CalledProcessError:
+    HAVE_IMAGEMAGICK_MODERN = False
 
 if not HAVE_IMAGEMAGICK_MODERN:
     warnings.warn("imagemagick >= 6.9.10 not available, skipping certain checks...")
