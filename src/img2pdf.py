@@ -2083,6 +2083,9 @@ def parse_num(num, name):
         except ValueError:
             msg = "%s is not a floating point number: %s" % (name, num)
             raise argparse.ArgumentTypeError(msg)
+    if num < 0:
+        msg = "%s must not be negative: %s" % (name, num)
+        raise argparse.ArgumentTypeError(msg)
     if unit == Unit.cm:
         num = cm_to_pt(num)
     elif unit == Unit.mm:
