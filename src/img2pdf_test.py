@@ -4490,11 +4490,11 @@ def test_layout(layout_test_cases):
 
 @pytest.fixture(
     scope="session",
-    params=os.listdir(os.path.join(os.path.dirname(__file__), "src", "tests", "input")),
+    params=os.listdir(os.path.join(os.path.dirname(__file__), "tests", "input")),
 )
 def general_input(request):
     assert os.path.isfile(
-        os.path.join(os.path.dirname(__file__), "src", "tests", "input", request.param)
+        os.path.join(os.path.dirname(__file__), "tests", "input", request.param)
     )
     return request.param
 
@@ -4502,10 +4502,10 @@ def general_input(request):
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_general(general_input, engine):
     inputf = os.path.join(
-        os.path.dirname(__file__), "src", "tests", "input", general_input
+        os.path.dirname(__file__), "tests", "input", general_input
     )
     outputf = os.path.join(
-        os.path.dirname(__file__), "src", "tests", "output", general_input + ".pdf"
+        os.path.dirname(__file__), "tests", "output", general_input + ".pdf"
     )
     assert os.path.isfile(outputf)
     f = inputf
