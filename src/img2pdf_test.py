@@ -2238,7 +2238,7 @@ def jpg_pdf(tmp_path_factory, jpg_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            jpg_img,
+            str(jpg_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2265,7 +2265,7 @@ def jpg_rot_pdf(tmp_path_factory, jpg_rot_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            jpg_rot_img,
+            str(jpg_rot_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2293,7 +2293,7 @@ def jpg_cmyk_pdf(tmp_path_factory, jpg_cmyk_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            jpg_cmyk_img,
+            str(jpg_cmyk_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2350,7 +2350,7 @@ def png_rgb8_pdf(tmp_path_factory, png_rgb8_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            png_rgb8_img,
+            str(png_rgb8_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2380,7 +2380,7 @@ def png_rgb16_pdf(tmp_path_factory, png_rgb16_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            png_rgb16_img,
+            str(png_rgb16_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2410,7 +2410,7 @@ def png_interlaced_pdf(tmp_path_factory, png_interlaced_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            png_interlaced_img,
+            str(png_interlaced_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2440,7 +2440,7 @@ def png_gray1_pdf(tmp_path_factory, tmp_gray1_png, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tmp_gray1_png,
+            str(tmp_gray1_png),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2470,7 +2470,7 @@ def png_gray2_pdf(tmp_path_factory, tmp_gray2_png, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tmp_gray2_png,
+            str(tmp_gray2_png),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2500,7 +2500,7 @@ def png_gray4_pdf(tmp_path_factory, tmp_gray4_png, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tmp_gray4_png,
+            str(tmp_gray4_png),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2530,7 +2530,7 @@ def png_gray8_pdf(tmp_path_factory, tmp_gray8_png, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tmp_gray8_png,
+            str(tmp_gray8_png),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2560,7 +2560,7 @@ def png_gray16_pdf(tmp_path_factory, tmp_gray16_png, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tmp_gray16_png,
+            str(tmp_gray16_png),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2590,7 +2590,7 @@ def png_palette1_pdf(tmp_path_factory, tmp_palette1_png, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tmp_palette1_png,
+            str(tmp_palette1_png),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2621,7 +2621,7 @@ def png_palette2_pdf(tmp_path_factory, tmp_palette2_png, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tmp_palette2_png,
+            str(tmp_palette2_png),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2652,7 +2652,7 @@ def png_palette4_pdf(tmp_path_factory, tmp_palette4_png, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tmp_palette4_png,
+            str(tmp_palette4_png),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2683,7 +2683,7 @@ def png_palette8_pdf(tmp_path_factory, tmp_palette8_png, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tmp_palette8_png,
+            str(tmp_palette8_png),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2714,7 +2714,7 @@ def gif_palette1_pdf(tmp_path_factory, gif_palette1_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            gif_palette1_img,
+            str(gif_palette1_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2745,7 +2745,7 @@ def gif_palette2_pdf(tmp_path_factory, gif_palette2_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            gif_palette2_img,
+            str(gif_palette2_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2776,7 +2776,7 @@ def gif_palette4_pdf(tmp_path_factory, gif_palette4_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            gif_palette4_img,
+            str(gif_palette4_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2807,7 +2807,7 @@ def gif_palette8_pdf(tmp_path_factory, gif_palette8_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            gif_palette8_img,
+            str(gif_palette8_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2839,7 +2839,7 @@ def gif_animation_pdf(tmp_path_factory, gif_animation_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            gif_animation_img,
+            str(gif_animation_img),
         ]
     )
     pdfinfo = subprocess.check_output(["pdfinfo", str(out_pdf)])
@@ -2876,7 +2876,7 @@ def tiff_cmyk8_pdf(tmp_path_factory, tiff_cmyk8_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_cmyk8_img,
+            str(tiff_cmyk8_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2903,7 +2903,7 @@ def tiff_rgb8_pdf(tmp_path_factory, tiff_rgb8_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_rgb8_img,
+            str(tiff_rgb8_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2933,7 +2933,7 @@ def tiff_gray1_pdf(tmp_path_factory, tiff_gray1_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_gray1_img,
+            str(tiff_gray1_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2964,7 +2964,7 @@ def tiff_gray2_pdf(tmp_path_factory, tiff_gray2_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_gray2_img,
+            str(tiff_gray2_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -2994,7 +2994,7 @@ def tiff_gray4_pdf(tmp_path_factory, tiff_gray4_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_gray4_img,
+            str(tiff_gray4_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3024,7 +3024,7 @@ def tiff_gray8_pdf(tmp_path_factory, tiff_gray8_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_gray8_img,
+            str(tiff_gray8_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3055,7 +3055,7 @@ def tiff_multipage_pdf(tmp_path_factory, tiff_multipage_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_multipage_img,
+            str(tiff_multipage_img),
         ]
     )
     pdfinfo = subprocess.check_output(["pdfinfo", str(out_pdf)])
@@ -3091,7 +3091,7 @@ def tiff_palette1_pdf(tmp_path_factory, tiff_palette1_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_palette1_img,
+            str(tiff_palette1_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3122,7 +3122,7 @@ def tiff_palette2_pdf(tmp_path_factory, tiff_palette2_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_palette2_img,
+            str(tiff_palette2_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3153,7 +3153,7 @@ def tiff_palette4_pdf(tmp_path_factory, tiff_palette4_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_palette4_img,
+            str(tiff_palette4_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3184,7 +3184,7 @@ def tiff_palette8_pdf(tmp_path_factory, tiff_palette8_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_palette8_img,
+            str(tiff_palette8_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3217,7 +3217,7 @@ def tiff_ccitt_lsb_m2l_white_pdf(
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_ccitt_lsb_m2l_white_img,
+            str(tiff_ccitt_lsb_m2l_white_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3250,7 +3250,7 @@ def tiff_ccitt_msb_m2l_white_pdf(
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_ccitt_msb_m2l_white_img,
+            str(tiff_ccitt_msb_m2l_white_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3283,7 +3283,7 @@ def tiff_ccitt_msb_l2m_white_pdf(
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_ccitt_msb_l2m_white_img,
+            str(tiff_ccitt_msb_l2m_white_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3316,7 +3316,7 @@ def tiff_ccitt_lsb_m2l_black_pdf(
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_ccitt_lsb_m2l_black_img,
+            str(tiff_ccitt_lsb_m2l_black_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3347,7 +3347,7 @@ def tiff_ccitt_nometa1_pdf(tmp_path_factory, tiff_ccitt_nometa1_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_ccitt_nometa1_img,
+            str(tiff_ccitt_nometa1_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
@@ -3378,7 +3378,7 @@ def tiff_ccitt_nometa2_pdf(tmp_path_factory, tiff_ccitt_nometa2_img, request):
             "--nodate",
             "--engine=" + request.param,
             "--output=" + str(out_pdf),
-            tiff_ccitt_nometa2_img,
+            str(tiff_ccitt_nometa2_img),
         ]
     )
     with pikepdf.open(str(out_pdf)) as p:
