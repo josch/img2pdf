@@ -3584,6 +3584,10 @@ def tiff_ccitt_nometa2_pdf(tmp_path_factory, tiff_ccitt_nometa2_img, request):
 ###############################################################################
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_jpg(tmp_path_factory, jpg_img, jpg_pdf):
     tmpdir = tmp_path_factory.mktemp("jpg")
     pnm = tmpdir / "jpg.pnm"
@@ -3604,6 +3608,10 @@ def test_jpg(tmp_path_factory, jpg_img, jpg_pdf):
     compare_pdfimages_jpg(tmpdir, jpg_img, jpg_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_jpg_rot(tmp_path_factory, jpg_rot_img, jpg_rot_pdf):
     tmpdir = tmp_path_factory.mktemp("jpg_rot")
     # We have to use jpegtopnm with the original JPG before being able to compare
@@ -3631,6 +3639,10 @@ def test_jpg_rot(tmp_path_factory, jpg_rot_img, jpg_rot_pdf):
     compare_pdfimages_jpg(tmpdir, jpg_rot_img, jpg_rot_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_jpg_cmyk(tmp_path_factory, jpg_cmyk_img, jpg_cmyk_pdf):
     tmpdir = tmp_path_factory.mktemp("jpg_cmyk")
     compare_ghostscript(
@@ -3644,6 +3656,10 @@ def test_jpg_cmyk(tmp_path_factory, jpg_cmyk_img, jpg_cmyk_pdf):
 @pytest.mark.skipif(
     not HAVE_IMAGEMAGICK_MODERN, reason="requires imagemagick with support for jpeg2000"
 )
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_jpg_2000(tmp_path_factory, jpg_2000_img, jpg_2000_pdf):
     tmpdir = tmp_path_factory.mktemp("jpg_2000")
     compare_ghostscript(tmpdir, jpg_2000_img, jpg_2000_pdf)
@@ -3652,6 +3668,10 @@ def test_jpg_2000(tmp_path_factory, jpg_2000_img, jpg_2000_pdf):
     compare_pdfimages_jp2(tmpdir, jpg_2000_img, jpg_2000_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_rgb8(tmp_path_factory, png_rgb8_img, png_rgb8_pdf):
     tmpdir = tmp_path_factory.mktemp("png_rgb8")
     compare_ghostscript(tmpdir, png_rgb8_img, png_rgb8_pdf)
@@ -3660,6 +3680,10 @@ def test_png_rgb8(tmp_path_factory, png_rgb8_img, png_rgb8_pdf):
     compare_pdfimages_png(tmpdir, png_rgb8_img, png_rgb8_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_rgb16(tmp_path_factory, png_rgb16_img, png_rgb16_pdf):
     tmpdir = tmp_path_factory.mktemp("png_rgb16")
     compare_ghostscript(tmpdir, png_rgb16_img, png_rgb16_pdf, gsdevice="tiff48nc")
@@ -3668,6 +3692,10 @@ def test_png_rgb16(tmp_path_factory, png_rgb16_img, png_rgb16_pdf):
     # pdfimages is unable to write 16 bit output
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_png_rgba8(tmp_path_factory, png_rgba8_img, engine):
     out_pdf = tmp_path_factory.mktemp("png_rgba8") / "out.pdf"
@@ -3687,6 +3715,10 @@ def test_png_rgba8(tmp_path_factory, png_rgba8_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_png_rgba16(tmp_path_factory, png_rgba16_img, engine):
     out_pdf = tmp_path_factory.mktemp("png_rgba16") / "out.pdf"
@@ -3706,6 +3738,10 @@ def test_png_rgba16(tmp_path_factory, png_rgba16_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_png_gray8a(tmp_path_factory, png_gray8a_img, engine):
     out_pdf = tmp_path_factory.mktemp("png_gray8a") / "out.pdf"
@@ -3725,6 +3761,10 @@ def test_png_gray8a(tmp_path_factory, png_gray8a_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_png_gray16a(tmp_path_factory, png_gray16a_img, engine):
     out_pdf = tmp_path_factory.mktemp("png_gray16a") / "out.pdf"
@@ -3744,6 +3784,10 @@ def test_png_gray16a(tmp_path_factory, png_gray16a_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_interlaced(tmp_path_factory, png_interlaced_img, png_interlaced_pdf):
     tmpdir = tmp_path_factory.mktemp("png_interlaced")
     compare_ghostscript(tmpdir, png_interlaced_img, png_interlaced_pdf)
@@ -3752,6 +3796,10 @@ def test_png_interlaced(tmp_path_factory, png_interlaced_img, png_interlaced_pdf
     compare_pdfimages_png(tmpdir, png_interlaced_img, png_interlaced_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_gray1(tmp_path_factory, png_gray1_img, png_gray1_pdf):
     tmpdir = tmp_path_factory.mktemp("png_gray1")
     compare_ghostscript(tmpdir, png_gray1_img, png_gray1_pdf, gsdevice="pnggray")
@@ -3760,6 +3808,10 @@ def test_png_gray1(tmp_path_factory, png_gray1_img, png_gray1_pdf):
     compare_pdfimages_png(tmpdir, png_gray1_img, png_gray1_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_gray2(tmp_path_factory, png_gray2_img, png_gray2_pdf):
     tmpdir = tmp_path_factory.mktemp("png_gray2")
     compare_ghostscript(tmpdir, png_gray2_img, png_gray2_pdf, gsdevice="pnggray")
@@ -3768,6 +3820,10 @@ def test_png_gray2(tmp_path_factory, png_gray2_img, png_gray2_pdf):
     compare_pdfimages_png(tmpdir, png_gray2_img, png_gray2_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_gray4(tmp_path_factory, png_gray4_img, png_gray4_pdf):
     tmpdir = tmp_path_factory.mktemp("png_gray4")
     compare_ghostscript(tmpdir, png_gray4_img, png_gray4_pdf, gsdevice="pnggray")
@@ -3776,6 +3832,10 @@ def test_png_gray4(tmp_path_factory, png_gray4_img, png_gray4_pdf):
     compare_pdfimages_png(tmpdir, png_gray4_img, png_gray4_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_gray8(tmp_path_factory, png_gray8_img, png_gray8_pdf):
     tmpdir = tmp_path_factory.mktemp("png_gray8")
     compare_ghostscript(tmpdir, png_gray8_img, png_gray8_pdf, gsdevice="pnggray")
@@ -3784,6 +3844,10 @@ def test_png_gray8(tmp_path_factory, png_gray8_img, png_gray8_pdf):
     compare_pdfimages_png(tmpdir, png_gray8_img, png_gray8_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_gray16(tmp_path_factory, png_gray16_img, png_gray16_pdf):
     tmpdir = tmp_path_factory.mktemp("png_gray16")
     # ghostscript outputs 8-bit grayscale, so the comparison will not be exact
@@ -3796,6 +3860,10 @@ def test_png_gray16(tmp_path_factory, png_gray16_img, png_gray16_pdf):
     compare_pdfimages_png(tmpdir, png_gray16_img, png_gray16_pdf, exact=False)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_palette1(tmp_path_factory, png_palette1_img, png_palette1_pdf):
     tmpdir = tmp_path_factory.mktemp("png_palette1")
     compare_ghostscript(tmpdir, png_palette1_img, png_palette1_pdf)
@@ -3804,6 +3872,10 @@ def test_png_palette1(tmp_path_factory, png_palette1_img, png_palette1_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_palette2(tmp_path_factory, png_palette2_img, png_palette2_pdf):
     tmpdir = tmp_path_factory.mktemp("png_palette2")
     compare_ghostscript(tmpdir, png_palette2_img, png_palette2_pdf)
@@ -3812,6 +3884,10 @@ def test_png_palette2(tmp_path_factory, png_palette2_img, png_palette2_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_palette4(tmp_path_factory, png_palette4_img, png_palette4_pdf):
     tmpdir = tmp_path_factory.mktemp("png_palette4")
     compare_ghostscript(tmpdir, png_palette4_img, png_palette4_pdf)
@@ -3820,6 +3896,10 @@ def test_png_palette4(tmp_path_factory, png_palette4_img, png_palette4_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_png_palette8(tmp_path_factory, png_palette8_img, png_palette8_pdf):
     tmpdir = tmp_path_factory.mktemp("png_palette8")
     compare_ghostscript(tmpdir, png_palette8_img, png_palette8_pdf)
@@ -3828,6 +3908,10 @@ def test_png_palette8(tmp_path_factory, png_palette8_img, png_palette8_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_gif_transparent(tmp_path_factory, gif_transparent_img, engine):
     out_pdf = tmp_path_factory.mktemp("gif_transparent") / "out.pdf"
@@ -3847,6 +3931,10 @@ def test_gif_transparent(tmp_path_factory, gif_transparent_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_gif_palette1(tmp_path_factory, gif_palette1_img, gif_palette1_pdf):
     tmpdir = tmp_path_factory.mktemp("gif_palette1")
     compare_ghostscript(tmpdir, gif_palette1_img, gif_palette1_pdf)
@@ -3855,6 +3943,10 @@ def test_gif_palette1(tmp_path_factory, gif_palette1_img, gif_palette1_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_gif_palette2(tmp_path_factory, gif_palette2_img, gif_palette2_pdf):
     tmpdir = tmp_path_factory.mktemp("gif_palette2")
     compare_ghostscript(tmpdir, gif_palette2_img, gif_palette2_pdf)
@@ -3863,6 +3955,10 @@ def test_gif_palette2(tmp_path_factory, gif_palette2_img, gif_palette2_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_gif_palette4(tmp_path_factory, gif_palette4_img, gif_palette4_pdf):
     tmpdir = tmp_path_factory.mktemp("gif_palette4")
     compare_ghostscript(tmpdir, gif_palette4_img, gif_palette4_pdf)
@@ -3871,6 +3967,10 @@ def test_gif_palette4(tmp_path_factory, gif_palette4_img, gif_palette4_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_gif_palette8(tmp_path_factory, gif_palette8_img, gif_palette8_pdf):
     tmpdir = tmp_path_factory.mktemp("gif_palette8")
     compare_ghostscript(tmpdir, gif_palette8_img, gif_palette8_pdf)
@@ -3879,6 +3979,10 @@ def test_gif_palette8(tmp_path_factory, gif_palette8_img, gif_palette8_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_gif_animation(tmp_path_factory, gif_animation_img, gif_animation_pdf):
     tmpdir = tmp_path_factory.mktemp("gif_animation")
     subprocess.check_call(
@@ -3899,6 +4003,10 @@ def test_gif_animation(tmp_path_factory, gif_animation_img, gif_animation_pdf):
         gif_animation_pdf_nr.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_tiff_float(tmp_path_factory, tiff_float_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_float") / "out.pdf"
@@ -3918,6 +4026,10 @@ def test_tiff_float(tmp_path_factory, tiff_float_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_cmyk8(tmp_path_factory, tiff_cmyk8_img, tiff_cmyk8_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_cmyk8")
     compare_ghostscript(
@@ -3928,6 +4040,10 @@ def test_tiff_cmyk8(tmp_path_factory, tiff_cmyk8_img, tiff_cmyk8_pdf):
     compare_pdfimages_tiff(tmpdir, tiff_cmyk8_img, tiff_cmyk8_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_tiff_cmyk16(tmp_path_factory, tiff_cmyk16_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_cmyk16") / "out.pdf"
@@ -3948,6 +4064,10 @@ def test_tiff_cmyk16(tmp_path_factory, tiff_cmyk16_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_rgb8(tmp_path_factory, tiff_rgb8_img, tiff_rgb8_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_rgb8")
     compare_ghostscript(tmpdir, tiff_rgb8_img, tiff_rgb8_pdf, gsdevice="tiff24nc")
@@ -3956,6 +4076,10 @@ def test_tiff_rgb8(tmp_path_factory, tiff_rgb8_img, tiff_rgb8_pdf):
     compare_pdfimages_tiff(tmpdir, tiff_rgb8_img, tiff_rgb8_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_tiff_rgb12(tmp_path_factory, tiff_rgb12_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgb12") / "out.pdf"
@@ -3976,6 +4100,10 @@ def test_tiff_rgb12(tmp_path_factory, tiff_rgb12_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_tiff_rgb14(tmp_path_factory, tiff_rgb14_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgb14") / "out.pdf"
@@ -3996,6 +4124,10 @@ def test_tiff_rgb14(tmp_path_factory, tiff_rgb14_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_tiff_rgb16(tmp_path_factory, tiff_rgb16_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgb16") / "out.pdf"
@@ -4016,6 +4148,10 @@ def test_tiff_rgb16(tmp_path_factory, tiff_rgb16_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgba8") / "out.pdf"
@@ -4035,6 +4171,10 @@ def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_tiff_rgba16(tmp_path_factory, tiff_rgba16_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgba16") / "out.pdf"
@@ -4054,6 +4194,10 @@ def test_tiff_rgba16(tmp_path_factory, tiff_rgba16_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_gray1(tmp_path_factory, tiff_gray1_img, tiff_gray1_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_gray1")
     compare_ghostscript(tmpdir, tiff_gray1_img, tiff_gray1_pdf, gsdevice="pnggray")
@@ -4062,6 +4206,10 @@ def test_tiff_gray1(tmp_path_factory, tiff_gray1_img, tiff_gray1_pdf):
     compare_pdfimages_tiff(tmpdir, tiff_gray1_img, tiff_gray1_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_gray2(tmp_path_factory, tiff_gray2_img, tiff_gray2_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_gray2")
     compare_ghostscript(tmpdir, tiff_gray2_img, tiff_gray2_pdf, gsdevice="pnggray")
@@ -4070,6 +4218,10 @@ def test_tiff_gray2(tmp_path_factory, tiff_gray2_img, tiff_gray2_pdf):
     compare_pdfimages_tiff(tmpdir, tiff_gray2_img, tiff_gray2_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_gray4(tmp_path_factory, tiff_gray4_img, tiff_gray4_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_gray4")
     compare_ghostscript(tmpdir, tiff_gray4_img, tiff_gray4_pdf, gsdevice="pnggray")
@@ -4078,6 +4230,10 @@ def test_tiff_gray4(tmp_path_factory, tiff_gray4_img, tiff_gray4_pdf):
     compare_pdfimages_tiff(tmpdir, tiff_gray4_img, tiff_gray4_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_gray8(tmp_path_factory, tiff_gray8_img, tiff_gray8_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_gray8")
     compare_ghostscript(tmpdir, tiff_gray8_img, tiff_gray8_pdf, gsdevice="pnggray")
@@ -4086,6 +4242,10 @@ def test_tiff_gray8(tmp_path_factory, tiff_gray8_img, tiff_gray8_pdf):
     compare_pdfimages_tiff(tmpdir, tiff_gray8_img, tiff_gray8_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
 def test_tiff_gray16(tmp_path_factory, tiff_gray16_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_gray16") / "out.pdf"
@@ -4105,6 +4265,10 @@ def test_tiff_gray16(tmp_path_factory, tiff_gray16_img, engine):
     out_pdf.unlink()
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_multipage(tmp_path_factory, tiff_multipage_img, tiff_multipage_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_multipage")
     subprocess.check_call(
@@ -4131,6 +4295,10 @@ def test_tiff_multipage(tmp_path_factory, tiff_multipage_img, tiff_multipage_pdf
     not HAVE_IMAGEMAGICK_MODERN,
     reason="requires imagemagick with support for keeping the palette depth",
 )
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_palette1(tmp_path_factory, tiff_palette1_img, tiff_palette1_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_palette1")
     compare_ghostscript(tmpdir, tiff_palette1_img, tiff_palette1_pdf)
@@ -4142,6 +4310,10 @@ def test_tiff_palette1(tmp_path_factory, tiff_palette1_img, tiff_palette1_pdf):
 @pytest.mark.skipif(
     not HAVE_IMAGEMAGICK_MODERN,
     reason="requires imagemagick with support for keeping the palette depth",
+)
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_palette2(tmp_path_factory, tiff_palette2_img, tiff_palette2_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_palette2")
@@ -4155,6 +4327,10 @@ def test_tiff_palette2(tmp_path_factory, tiff_palette2_img, tiff_palette2_pdf):
     not HAVE_IMAGEMAGICK_MODERN,
     reason="requires imagemagick with support for keeping the palette depth",
 )
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_palette4(tmp_path_factory, tiff_palette4_img, tiff_palette4_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_palette4")
     compare_ghostscript(tmpdir, tiff_palette4_img, tiff_palette4_pdf)
@@ -4163,6 +4339,10 @@ def test_tiff_palette4(tmp_path_factory, tiff_palette4_img, tiff_palette4_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_palette8(tmp_path_factory, tiff_palette8_img, tiff_palette8_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_palette8")
     compare_ghostscript(tmpdir, tiff_palette8_img, tiff_palette8_pdf)
@@ -4171,6 +4351,10 @@ def test_tiff_palette8(tmp_path_factory, tiff_palette8_img, tiff_palette8_pdf):
     # pdfimages cannot export palette based images
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_ccitt_lsb_m2l_white(
     tmp_path_factory, tiff_ccitt_lsb_m2l_white_img, tiff_ccitt_lsb_m2l_white_pdf
 ):
@@ -4188,6 +4372,10 @@ def test_tiff_ccitt_lsb_m2l_white(
     )
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_ccitt_msb_m2l_white(
     tmp_path_factory, tiff_ccitt_msb_m2l_white_img, tiff_ccitt_msb_m2l_white_pdf
 ):
@@ -4205,6 +4393,10 @@ def test_tiff_ccitt_msb_m2l_white(
     )
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_ccitt_msb_l2m_white(
     tmp_path_factory, tiff_ccitt_msb_l2m_white_img, tiff_ccitt_msb_l2m_white_pdf
 ):
@@ -4226,6 +4418,10 @@ def test_tiff_ccitt_msb_l2m_white(
     not HAVE_IMAGEMAGICK_MODERN,
     reason="requires imagemagick with support for min-is-black",
 )
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_ccitt_lsb_m2l_black(
     tmp_path_factory, tiff_ccitt_lsb_m2l_black_img, tiff_ccitt_lsb_m2l_black_pdf
 ):
@@ -4243,6 +4439,10 @@ def test_tiff_ccitt_lsb_m2l_black(
     )
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_ccitt_nometa1(
     tmp_path_factory, tiff_ccitt_nometa1_img, tiff_ccitt_nometa1_pdf
 ):
@@ -4255,6 +4455,10 @@ def test_tiff_ccitt_nometa1(
     compare_pdfimages_tiff(tmpdir, tiff_ccitt_nometa1_img, tiff_ccitt_nometa1_pdf)
 
 
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
 def test_tiff_ccitt_nometa2(
     tmp_path_factory, tiff_ccitt_nometa2_img, tiff_ccitt_nometa2_pdf
 ):
