@@ -17,6 +17,7 @@ from PIL import Image
 import decimal
 from packaging.version import parse as parse_version
 import warnings
+import json
 
 HAVE_MUTOOL = True
 try:
@@ -2360,28 +2361,23 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     subprocess.check_call(
         ["tiffset", "-u", "278", str(in_img)]
     )  # remove RowsPerStrip (278)
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Bilevel$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 1-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Group4$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: min-is-white$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
-    unexpected = [" tiff:rows-per-strip: "]
-    for e in unexpected:
-        assert e not in identify.decode("utf8")
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    assert "image" in identify[0]
+    assert identify[0]["image"]["format"] == "TIFF"
+    assert identify[0]["image"]["formatDescription"] == "Tagged Image File Format"
+    assert identify[0]["image"]["mimeType"] == "image/tiff"
+    assert identify[0]["image"]["geometry"] == {'width': 60, 'height': 60, 'x': 0, 'y': 0}
+    assert identify[0]["image"]["units"] == "PixelsPerInch"
+    assert identify[0]["image"]["type"] == "Bilevel"
+    assert identify[0]["image"]["endianess"] == "Undefined" # FIXME: should be LSB
+    assert identify[0]["image"]["colorspace"] == "Gray"
+    assert identify[0]["image"]["depth"] == 1
+    assert identify[0]["image"]["compression"] == "Group4"
+    assert identify[0]["image"]["properties"]["tiff:alpha"] == "unspecified"
+    assert identify[0]["image"]["properties"]["tiff:endian"] == "lsb"
+    assert identify[0]["image"]["properties"]["tiff:photometric"] == "min-is-white"
+    assert "tiff:rows-per-strip" not in identify[0]["image"]["properties"]
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
