@@ -1,8 +1,8 @@
 language: python
 matrix:
   include:
-    - name: "Ubuntu Xenial"
-      dist: xenial
+    - name: "Ubuntu Focal"
+      dist: focal
       addons:
         apt:
           packages:
