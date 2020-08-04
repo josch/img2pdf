@@ -1,9 +1,8 @@
 language: python
 matrix:
   include:
-    - name: "python 3.7 Xenial"
-      dist: xenial
-      python: 3.7
+    - name: "Ubuntu Bionic"
+      dist: bionic
       addons:
         apt:
           packages:
