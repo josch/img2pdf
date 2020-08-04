@@ -4046,7 +4046,7 @@ def test_tiff_float(tmp_path_factory, tiff_float_img, engine):
 def test_tiff_cmyk8(tmp_path_factory, tiff_cmyk8_img, tiff_cmyk8_pdf):
     tmpdir = tmp_path_factory.mktemp("tiff_cmyk8")
     compare_ghostscript(
-        tmpdir, tiff_cmyk8_img, tiff_cmyk8_pdf, gsdevice="tiff32nc", exact=True
+        tmpdir, tiff_cmyk8_img, tiff_cmyk8_pdf, gsdevice="tiff32nc", exact=False
     )
     # not testing with poppler as it cannot write CMYK images
     compare_mupdf(tmpdir, tiff_cmyk8_img, tiff_cmyk8_pdf, exact=False, cmyk=True)
@@ -4477,7 +4477,7 @@ def test_tiff_ccitt_nometa2(
 ):
     tmpdir = tmp_path_factory.mktemp("tiff_ccitt_nometa2")
     compare_ghostscript(
-        tmpdir, tiff_ccitt_nometa2_img, tiff_ccitt_nometa2_pdf, gsdevice="pnggray", exact=False
+        tmpdir, tiff_ccitt_nometa2_img, tiff_ccitt_nometa2_pdf, gsdevice="pnggray"
     )
     compare_poppler(tmpdir, tiff_ccitt_nometa2_img, tiff_ccitt_nometa2_pdf)
     compare_mupdf(tmpdir, tiff_ccitt_nometa2_img, tiff_ccitt_nometa2_pdf)
