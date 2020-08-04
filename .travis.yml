@@ -37,5 +37,6 @@ matrix:
         - source "$HOME/venv/bin/activate"
 install: pip install tox
 script:
+  - identify -list format | grep JPEG-2000
   - python --version
   - python -m tox
