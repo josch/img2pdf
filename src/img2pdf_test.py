@@ -2363,14 +2363,24 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     )  # remove RowsPerStrip (278)
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"]["format"] == "TIFF"
     assert identify[0]["image"]["formatDescription"] == "Tagged Image File Format"
     assert identify[0]["image"]["mimeType"] == "image/tiff"
-    assert identify[0]["image"]["geometry"] == {'width': 60, 'height': 60, 'x': 0, 'y': 0}
+    assert identify[0]["image"]["geometry"] == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }
     assert identify[0]["image"]["units"] == "PixelsPerInch"
     assert identify[0]["image"]["type"] == "Bilevel"
-    assert identify[0]["image"]["endianess"] == "Undefined" # FIXME: should be LSB
+    assert identify[0]["image"]["endianess"] == "Undefined"  # FIXME: should be LSB
     assert identify[0]["image"]["colorspace"] == "Gray"
     assert identify[0]["image"]["depth"] == 1
     assert identify[0]["image"]["compression"] == "Group4"
