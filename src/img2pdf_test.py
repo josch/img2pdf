@@ -287,6 +287,7 @@ def compare_ghostscript(tmpdir, img, pdf, gsdevice="png16m", exact=True):
             check=False,
             stderr=subprocess.PIPE,
         ).stderr
+        assert psnr != b"0"
         psnr = float(psnr.strip(b"0"))
         assert psnr != 0  # or otherwise we would use the exact variant
         assert psnr > 50
@@ -321,6 +322,7 @@ def compare_poppler(tmpdir, img, pdf, exact=True):
             check=False,
             stderr=subprocess.PIPE,
         ).stderr
+        assert psnr != b"0"
         psnr = float(psnr.strip(b"0"))
         assert psnr != 0  # or otherwise we would use the exact variant
         assert psnr > 50
@@ -350,6 +352,7 @@ def compare_mupdf(tmpdir, img, pdf, exact=True, cmyk=False):
             check=False,
             stderr=subprocess.PIPE,
         ).stderr
+        assert psnr != b"0"
         psnr = float(psnr.strip(b"0"))
         assert psnr != 0  # or otherwise we would use the exact variant
         assert psnr > 50
@@ -410,6 +413,7 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True):
             check=False,
             stderr=subprocess.PIPE,
         ).stderr
+        assert psnr != b"0"
         psnr = float(psnr.strip(b"0"))
         assert psnr != 0  # or otherwise we would use the exact variant
         assert psnr > 50
