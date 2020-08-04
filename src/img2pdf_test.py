@@ -68,6 +68,26 @@ except subprocess.CalledProcessError:
 if not HAVE_IMAGEMAGICK_MODERN:
     warnings.warn("imagemagick >= 6.9.10-12 not available, skipping certain checks...")
 
+HAVE_JP2 = True
+try:
+    ver = subprocess.check_output(
+        ["identify", "-list", "format"], stderr=subprocess.STDOUT
+    )
+    found = False
+    for line in ver.split(b"\n"):
+        if re.match(rb"\s+JP2\* JP2\s+rw-\s+JPEG-2000 File Format Syntax", line):
+            found = True
+            break
+    if not found:
+        HAVE_JP2 = False
+except FileNotFoundError:
+    HAVE_JP2 = False
+except subprocess.CalledProcessError:
+    HAVE_JP2 = False
+
+if not HAVE_JP2:
+    warnings.warn("imagemagick has no jpeg 2000 support, skipping certain checks...")
+
 ###############################################################################
 #                               HELPER FUNCTIONS                              #
 ###############################################################################
@@ -3667,11 +3687,11 @@ def test_jpg_cmyk(tmp_path_factory, jpg_cmyk_img, jpg_cmyk_pdf):
 
 
 @pytest.mark.skipif(
-    not HAVE_IMAGEMAGICK_MODERN, reason="requires imagemagick with support for jpeg2000"
-)
-@pytest.mark.skipif(
     sys.platform in ["darwin", "win32"],
     reason="test utilities not available on Windows and MacOS",
+)
+@pytest.mark.skipif(
+    not HAVE_JP2, reason="requires imagemagick with support for jpeg2000"
 )
 def test_jpg_2000(tmp_path_factory, jpg_2000_img, jpg_2000_pdf):
     tmpdir = tmp_path_factory.mktemp("jpg_2000")
