@@ -52,12 +52,12 @@ HAVE_IMAGEMAGICK_MODERN = True
 try:
     ver = subprocess.check_output(["convert", "-version"], stderr=subprocess.STDOUT)
     m = re.fullmatch(
-        r"Version: ImageMagick ([0-9.]+)-.*", ver.split(b"\n")[0].decode("utf8")
+        r"Version: ImageMagick ([0-9.]+-[0-9]+) .*", ver.split(b"\n")[0].decode("utf8")
     )
     if m is None:
         HAVE_IMAGEMAGICK_MODERN = False
     else:
-        if parse_version(m.group(1)) < parse_version("6.9.10"):
+        if parse_version(m.group(1)) < parse_version("6.9.10-12"):
             HAVE_IMAGEMAGICK_MODERN = False
 except FileNotFoundError:
     HAVE_IMAGEMAGICK_MODERN = False
@@ -65,7 +65,7 @@ except subprocess.CalledProcessError:
     HAVE_IMAGEMAGICK_MODERN = False
 
 if not HAVE_IMAGEMAGICK_MODERN:
-    warnings.warn("imagemagick >= 6.9.10 not available, skipping certain checks...")
+    warnings.warn("imagemagick >= 6.9.10-12 not available, skipping certain checks...")
 
 ###############################################################################
 #                               HELPER FUNCTIONS                              #
@@ -2219,6 +2219,7 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
     # "-define quantum:polarity=min-is-black" requires ImageMagick with:
     # https://github.com/ImageMagick/ImageMagick/commit/00730551f0a34328685c59d0dde87dd9e366103a
     # or at least 7.0.8-11 from Aug 29, 2018
+    # or at least 6.9.10-12 from Sep 7, 2018 (for the ImageMagick6 branch)
     # also see: https://www.imagemagick.org/discourse-server/viewtopic.php?f=1&t=34605
     subprocess.check_call(
         [
