@@ -1306,7 +1306,7 @@ def parse_png(rawdata):
     i = 16
     while i < len(rawdata):
         # once we can require Python >= 3.2 we can use int.from_bytes() instead
-        n, = struct.unpack(">I", rawdata[i - 8 : i - 4])
+        (n,) = struct.unpack(">I", rawdata[i - 8 : i - 4])
         if i + n > len(rawdata):
             raise Exception("invalid png: %d %d %d" % (i, n, len(rawdata)))
         if rawdata[i - 4 : i] == b"IDAT":

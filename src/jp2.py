@@ -23,16 +23,16 @@ import struct
 
 
 def getBox(data, byteStart, noBytes):
-    boxLengthValue = struct.unpack(">I", data[byteStart:byteStart+4])[0]
-    boxType = data[byteStart+4:byteStart+8]
+    boxLengthValue = struct.unpack(">I", data[byteStart : byteStart + 4])[0]
+    boxType = data[byteStart + 4 : byteStart + 8]
     contentsStartOffset = 8
     if boxLengthValue == 1:
-        boxLengthValue = struct.unpack(">Q", data[byteStart+8:byteStart+16])[0]
+        boxLengthValue = struct.unpack(">Q", data[byteStart + 8 : byteStart + 16])[0]
         contentsStartOffset = 16
     if boxLengthValue == 0:
-        boxLengthValue = noBytes-byteStart
+        boxLengthValue = noBytes - byteStart
     byteEnd = byteStart + boxLengthValue
-    boxContents = data[byteStart+contentsStartOffset:byteEnd]
+    boxContents = data[byteStart + contentsStartOffset : byteEnd]
     return (boxLengthValue, boxType, byteEnd, boxContents)
 
 
@@ -52,14 +52,15 @@ def parse_colr(data):
     elif enumCS == 17:
         return "L"
     else:
-        raise Exception("only sRGB and greyscale color space is supported, "
-                        "got %d" % enumCS)
+        raise Exception(
+            "only sRGB and greyscale color space is supported, " "got %d" % enumCS
+        )
 
 
 def parse_resc(data):
     hnum, hden, vnum, vden, hexp, vexp = struct.unpack(">HHHHBB", data)
-    hdpi = ((hnum/hden) * (10**hexp) * 100)/2.54
-    vdpi = ((vnum/vden) * (10**vexp) * 100)/2.54
+    hdpi = ((hnum / hden) * (10 ** hexp) * 100) / 2.54
+    vdpi = ((vnum / vden) * (10 ** vexp) * 100) / 2.54
     return hdpi, vdpi
 
 
@@ -69,9 +70,8 @@ def parse_res(data):
     byteStart = 0
     boxLengthValue = 1  # dummy value for while loop condition
     while byteStart < noBytes and boxLengthValue != 0:
-        boxLengthValue, boxType, byteEnd, boxContents = \
-            getBox(data, byteStart, noBytes)
-        if boxType == b'resc':
+        boxLengthValue, boxType, byteEnd, boxContents = getBox(data, byteStart, noBytes)
+        if boxType == b"resc":
             hdpi, vdpi = parse_resc(boxContents)
             break
     return hdpi, vdpi
@@ -83,13 +83,12 @@ def parse_jp2h(data):
     byteStart = 0
     boxLengthValue = 1  # dummy value for while loop condition
     while byteStart < noBytes and boxLengthValue != 0:
-        boxLengthValue, boxType, byteEnd, boxContents = \
-            getBox(data, byteStart, noBytes)
-        if boxType == b'ihdr':
+        boxLengthValue, boxType, byteEnd, boxContents = getBox(data, byteStart, noBytes)
+        if boxType == b"ihdr":
             width, height = parse_ihdr(boxContents)
-        elif boxType == b'colr':
+        elif boxType == b"colr":
             colorspace = parse_colr(boxContents)
-        elif boxType == b'res ':
+        elif boxType == b"res ":
             hdpi, vdpi = parse_res(boxContents)
         byteStart = byteEnd
     return (width, height, colorspace, hdpi, vdpi)
@@ -101,9 +100,8 @@ def parsejp2(data):
     boxLengthValue = 1  # dummy value for while loop condition
     width, height, colorspace, hdpi, vdpi = None, None, None, None, None
     while byteStart < noBytes and boxLengthValue != 0:
-        boxLengthValue, boxType, byteEnd, boxContents = \
-            getBox(data, byteStart, noBytes)
-        if boxType == b'jp2h':
+        boxLengthValue, boxType, byteEnd, boxContents = getBox(data, byteStart, noBytes)
+        if boxType == b"jp2h":
             width, height, colorspace, hdpi, vdpi = parse_jp2h(boxContents)
             break
         byteStart = byteEnd
@@ -119,6 +117,7 @@ def parsejp2(data):
 
 if __name__ == "__main__":
     import sys
+
     width, height, colorspace = parsejp2(open(sys.argv[1]).read())
     sys.stdout.write("width = %d" % width)
     sys.stdout.write("height = %d" % height)
