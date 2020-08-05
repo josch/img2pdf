@@ -783,21 +783,33 @@ def tmp_palette8_png(tmp_path_factory, alpha):
 def jpg_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("jpg") / "in.jpg"
     subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: JPEG \(Joint Photographic Experts Group JFIF format\)$",
-        r"^  Mime type: image/jpeg$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: JPEG$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"]["format"] == "JPEG"
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "Joint Photographic Experts Group JFIF format"
+    )
+    assert identify[0]["image"]["mimeType"] == "image/jpeg"
+    assert identify[0]["image"]["geometry"] == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }
+    assert identify[0]["image"]["units"] == "Undefined"
+    assert identify[0]["image"]["type"] == "TrueColor"
+    assert identify[0]["image"]["endianess"] == "Undefined"
+    assert identify[0]["image"]["colorspace"] == "sRGB"
+    assert identify[0]["image"]["depth"] == 8
+    assert identify[0]["image"]["compression"] == "JPEG"
+    assert identify[0]["image"]["properties"]["jpeg:colorspace"] == "2"
     yield in_img
     in_img.unlink()
 
