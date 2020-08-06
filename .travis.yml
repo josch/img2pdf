@@ -13,6 +13,7 @@ matrix:
             - netpbm
             - ghostscript
             - mupdf-tools
+            - icc-profiles-free
     - name: "python 3.8 Windows"
       os: windows
       language: shell       # 'language: python' is an error on Travis CI Windows
