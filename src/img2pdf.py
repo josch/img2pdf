@@ -752,6 +752,7 @@ class pdfdoc(object):
         bleedborder=None,
         trimborder=None,
         artborder=None,
+        iccp=None,
     ):
         if self.engine == Engine.pikepdf:
             PdfArray = pikepdf.Array
@@ -803,6 +804,22 @@ class pdfdoc(object):
             ]
         else:
             raise UnsupportedColorspaceError("unsupported color space: %s" % color.name)
+
+        if iccp is not None:
+            if self.engine == Engine.pikepdf:
+                iccpdict = self.writer.make_stream(iccp)
+            else:
+                iccpdict = PdfDict(stream=convert_load(iccp))
+            iccpdict[PdfName.Alternate] = colorspace
+            if color == Colorspace["1"] or color == Colorspace.L:
+                iccpdict[PdfName.N] = 1
+            elif color == Colorspace.RGB:
+                iccpdict[PdfName.N] = 3
+            elif color == Colorspace.CMYK or color == Colorspace["CMYK;I"]:
+                iccpdict[PdfName.N] = 4
+            elif color == Colorspace.P:
+                raise Exception("Cannot have Palette images with ICC profile")
+            colorspace = [PdfName.ICCBased, iccpdict]
 
         # either embed the whole jpeg or deflate the bitmap representation
         if imgformat is ImageFormat.JPEG:
@@ -930,6 +947,8 @@ class pdfdoc(object):
             if self.engine == Engine.internal:
                 self.writer.addobj(content)
                 self.writer.addobj(image)
+                if iccp is not None:
+                    self.writer.addobj(iccpdict)
 
     def tostring(self):
         stream = BytesIO()
@@ -1240,9 +1259,13 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
                 color = Colorspace["CMYK;I"]
         logging.debug("input colorspace = %s", color.name)
 
+    iccp = None
+    if "icc_profile" in imgdata.info:
+        iccp = imgdata.info.get("icc_profile")
+
     logging.debug("width x height = %dpx x %dpx", imgwidthpx, imgheightpx)
 
-    return (color, ndpi, imgwidthpx, imgheightpx, rotation)
+    return (color, ndpi, imgwidthpx, imgheightpx, rotation, iccp)
 
 
 def ccitt_payload_location_from_pil(img):
@@ -1348,7 +1371,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
 
     # JPEG and JPEG2000 can be embedded into the PDF as-is
     if imgformat == ImageFormat.JPEG or imgformat == ImageFormat.JPEG2000:
-        color, ndpi, imgwidthpx, imgheightpx, rotation = get_imgmetadata(
+        color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
             imgdata, imgformat, default_dpi, colorspace, rawdata
         )
         if color == Colorspace["1"]:
@@ -1371,6 +1394,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 False,
                 8,
                 rotation,
+                iccp,
             )
         ]
 
@@ -1382,7 +1406,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
     # IHDR chunk. We know where to find that in the file because the IHDR chunk
     # must be the first chunk.
     if imgformat == ImageFormat.PNG and rawdata[28] == 0:
-        color, ndpi, imgwidthpx, imgheightpx, rotation = get_imgmetadata(
+        color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
             imgdata, imgformat, default_dpi, colorspace, rawdata
         )
         pngidat, palette = parse_png(rawdata)
@@ -1407,6 +1431,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 False,
                 depth,
                 rotation,
+                iccp,
             )
         ]
 
@@ -1463,7 +1488,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                     "unsupported photometric interpretation for "
                     "group4 tiff: %d" % photo
                 )
-            color, ndpi, imgwidthpx, imgheightpx, rotation = get_imgmetadata(
+            color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
                 imgdata, imgformat, default_dpi, colorspace, rawdata
             )
             offset, length = ccitt_payload_location_from_pil(imgdata)
@@ -1498,6 +1523,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                     inverted,
                     1,
                     rotation,
+                    iccp,
                 )
             )
             img_page_count += 1
@@ -1505,7 +1531,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
 
         logging.debug("Converting frame: %d" % img_page_count)
 
-        color, ndpi, imgwidthpx, imgheightpx, rotation = get_imgmetadata(
+        color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
             imgdata, imgformat, default_dpi, colorspace
         )
 
@@ -1526,6 +1552,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                         False,
                         1,
                         rotation,
+                        iccp,
                     )
                 )
                 img_page_count += 1
@@ -1563,6 +1590,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                     False,
                     8,
                     rotation,
+                    iccp,
                 )
             )
         else:
@@ -1593,6 +1621,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                     False,
                     depth,
                     rotation,
+                    iccp,
                 )
             )
         img_page_count += 1
@@ -1999,6 +2028,7 @@ def convert(*images, **kwargs):
             inverted,
             depth,
             rotation,
+            iccp,
         ) in read_images(rawdata, kwargs["colorspace"], kwargs["first_frame_only"]):
             pagewidth, pageheight, imgwidthpdf, imgheightpdf = kwargs["layout_fun"](
                 imgwidthpx, imgheightpx, ndpi
@@ -2044,6 +2074,7 @@ def convert(*images, **kwargs):
                 kwargs["bleedborder"],
                 kwargs["trimborder"],
                 kwargs["artborder"],
+                iccp,
             )
 
     if kwargs["outputstream"]:

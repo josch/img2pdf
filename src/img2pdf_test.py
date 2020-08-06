@@ -18,6 +18,7 @@ import decimal
 from packaging.version import parse as parse_version
 import warnings
 import json
+import pathlib
 
 HAVE_MUTOOL = True
 try:
@@ -207,7 +208,7 @@ def compress(data):
     return result
 
 
-def write_png(data, path, bitdepth, colortype, palette=None):
+def write_png(data, path, bitdepth, colortype, palette=None, iccp=None):
     with open(str(path), "wb") as f:
         f.write(b"\x89PNG\r\n\x1A\n")
         # PNG image type        Colour type Allowed bit depths
@@ -231,6 +232,18 @@ def write_png(data, path, bitdepth, colortype, palette=None):
             + block
             + struct.pack(">I", zlib.crc32(block))
         )
+        if iccp is not None:
+            with open(iccp, "rb") as infh:
+                iccdata = infh.read()
+            block = b"iCCP"
+            block += b"icc\0"  # arbitrary profile name
+            block += b"\0"  # compression method (deflate)
+            block += zlib.compress(iccdata)
+            f.write(
+                struct.pack(">I", len(block) - 4)
+                + block
+                + struct.pack(">I", zlib.crc32(block))
+            )
         if palette is not None:
             block = b"PLTE"
             for col in palette:
@@ -271,7 +284,7 @@ def write_png(data, path, bitdepth, colortype, palette=None):
         f.write(struct.pack(">I", 0) + block + struct.pack(">I", zlib.crc32(block)))
 
 
-def compare_ghostscript(tmpdir, img, pdf, gsdevice="png16m", exact=True):
+def compare_ghostscript(tmpdir, img, pdf, gsdevice="png16m", exact=True, icc=False):
     if gsdevice in ["png16m", "pnggray"]:
         ext = "png"
     elif gsdevice in ["tiff24nc", "tiff32nc", "tiff48nc"]:
@@ -291,9 +304,34 @@ def compare_ghostscript(tmpdir, img, pdf, gsdevice="png16m", exact=True):
         ]
     )
     if exact:
-        subprocess.check_call(
-            ["compare", "-metric", "AE", str(img), str(tmpdir / "gs-1.") + ext, "null:"]
-        )
+        if icc:
+            subprocess.check_call(
+                [
+                    "compare",
+                    "-metric",
+                    "AE",
+                    "(",
+                    "-profile",
+                    "/usr/share/color/icc/ghostscript/srgb.icc",
+                    "-depth",
+                    "8",
+                    str(img),
+                    ")",
+                    str(tmpdir / "gs-1.") + ext,
+                    "null:",
+                ]
+            )
+        else:
+            subprocess.check_call(
+                [
+                    "compare",
+                    "-metric",
+                    "AE",
+                    str(img),
+                    str(tmpdir / "gs-1.") + ext,
+                    "null:",
+                ]
+            )
     else:
         psnr = subprocess.run(
             [
@@ -618,6 +656,25 @@ def tmp_inverse_png(tmp_path_factory, alpha):
     )
     yield tmp_inverse_png
     tmp_inverse_png.unlink()
+
+
+@pytest.fixture(scope="session")
+def tmp_icc_png(tmp_path_factory, alpha):
+    normal16 = alpha[:, :, 0:3]
+    tmp_icc_png = tmp_path_factory.mktemp("icc_png") / "icc.png"
+    write_png(
+        0xFF - normal16 / 0xFFFF * 0xFF,
+        str(tmp_icc_png),
+        8,
+        2,
+        iccp="/usr/share/color/icc/sRGB.icc",
+    )
+    assert (
+        hashlib.md5(tmp_icc_png.read_bytes()).hexdigest()
+        == "d09865464626a87b4e7f398e1f914cca"
+    )
+    yield tmp_icc_png
+    tmp_icc_png.unlink()
 
 
 @pytest.fixture(scope="session")
@@ -3657,6 +3714,59 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     in_img.unlink()
 
 
+@pytest.fixture(scope="session")
+def png_icc_img(tmp_icc_png):
+    in_img = tmp_icc_png
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "2"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "2 (Truecolor)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
+    return in_img
+
+
 ###############################################################################
 #                                OUTPUT FIXTURES                              #
 ###############################################################################
@@ -4130,6 +4240,42 @@ def png_palette8_pdf(tmp_path_factory, tmp_palette8_png, request):
         assert p.pages[0].Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
         assert p.pages[0].Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
         assert p.pages[0].Resources.XObject.Im0.DecodeParms.Colors == 1
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Predictor == 15
+        assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.Width == 60
+    yield out_pdf
+    out_pdf.unlink()
+
+
+@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+def png_icc_pdf(tmp_path_factory, tmp_icc_png, request):
+    out_pdf = tmp_path_factory.mktemp("png_icc_pdf") / "out.pdf"
+    subprocess.check_call(
+        [
+            "src/img2pdf.py",
+            "--producer=",
+            "--nodate",
+            "--engine=" + request.param,
+            "--output=" + str(out_pdf),
+            str(tmp_icc_png),
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert (
+            p.pages[0].Contents.read_bytes()
+            == b"q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ"
+        )
+        assert p.pages[0].Resources.XObject.Im0.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace[0] == "/ICCBased"
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace[1].N == 3
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace[1].Alternate == "/DeviceRGB"
+        assert (
+            p.pages[0].Resources.XObject.Im0.ColorSpace[1].read_bytes()
+            == pathlib.Path("/usr/share/color/icc/sRGB.icc").read_bytes()
+        )
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Colors == 3
         assert p.pages[0].Resources.XObject.Im0.DecodeParms.Predictor == 15
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
@@ -5164,6 +5310,18 @@ def test_png_palette8(tmp_path_factory, png_palette8_img, png_palette8_pdf):
     compare_poppler(tmpdir, png_palette8_img, png_palette8_pdf)
     compare_mupdf(tmpdir, png_palette8_img, png_palette8_pdf)
     # pdfimages cannot export palette based images
+
+
+@pytest.mark.skipif(
+    sys.platform in ["darwin", "win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
+def test_png_icc(tmp_path_factory, png_icc_img, png_icc_pdf):
+    tmpdir = tmp_path_factory.mktemp("png_icc")
+    compare_ghostscript(tmpdir, png_icc_img, png_icc_pdf, icc=True)
+    # compare_poppler(tmpdir, png_icc_img, png_icc_pdf)
+    # compare_mupdf(tmpdir, png_icc_img, png_icc_pdf)
+    # compare_pdfimages_png(tmpdir, png_icc_img, png_icc_pdf)
 
 
 @pytest.mark.skipif(
