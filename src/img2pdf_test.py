@@ -791,25 +791,35 @@ def jpg_img(tmp_path_factory, tmp_normal_png):
     if "image" in identify:
         identify = [identify]
     assert "image" in identify[0]
-    assert identify[0]["image"]["format"] == "JPEG"
+    assert identify[0]["image"].get("format") == "JPEG", str(identify)
     assert (
         identify[0]["image"]["formatDescription"]
         == "Joint Photographic Experts Group JFIF format"
-    )
-    assert identify[0]["image"]["mimeType"] == "image/jpeg"
-    assert identify[0]["image"]["geometry"] == {
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/jpeg", str(identify)
+    assert identify[0]["image"].get("geometry") == {
         "width": 60,
         "height": 60,
         "x": 0,
         "y": 0,
-    }
-    assert identify[0]["image"]["units"] == "Undefined"
-    assert identify[0]["image"]["type"] == "TrueColor"
-    assert identify[0]["image"]["endianess"] == "Undefined"
-    assert identify[0]["image"]["colorspace"] == "sRGB"
-    assert identify[0]["image"]["depth"] == 8
-    assert identify[0]["image"]["compression"] == "JPEG"
-    assert identify[0]["image"]["properties"]["jpeg:colorspace"] == "2"
+    }, str(identify)
+    assert "resolution" not in identify[0]["image"]
+    assert identify[0]["image"].get("units") == "Undefined", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("endianess") == "Undefined", str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "JPEG", str(identify)
+    assert identify[0]["image"].get("orientation") == "Undefined", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("jpeg:colorspace") == "2"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -832,24 +842,39 @@ def jpg_rot_img(tmp_path_factory, tmp_normal_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: JPEG \(Joint Photographic Experts Group JFIF format\)$",
-        r"^  Mime type: image/jpeg$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Resolution: 96x96$",
-        r"^  Units: PixelsPerInch$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: JPEG$",
-        r"^  Orientation: RightTop$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "JPEG", str(identify)
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "Joint Photographic Experts Group JFIF format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/jpeg", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("resolution") == {"x": 96, "y": 96}
+    assert identify[0]["image"].get("units") == "PixelsPerInch", str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "JPEG", str(identify)
+    assert identify[0]["image"].get("orientation") == "RightTop", str(identify)
     yield in_img
     in_img.unlink()
 
@@ -860,21 +885,36 @@ def jpg_cmyk_img(tmp_path_factory, tmp_normal_png):
     subprocess.check_call(
         ["convert", str(tmp_normal_png), "-colorspace", "cmyk", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: JPEG \(Joint Photographic Experts Group JFIF format\)$",
-        r"^  Mime type: image/jpeg$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: CMYK$",
-        r"^  Type: ColorSeparation$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: JPEG$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "JPEG", str(identify)
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "Joint Photographic Experts Group JFIF format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/jpeg", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "CMYK", str(identify)
+    assert identify[0]["image"].get("type") == "ColorSeparation", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "JPEG", str(identify)
     yield in_img
     in_img.unlink()
 
@@ -883,21 +923,35 @@ def jpg_cmyk_img(tmp_path_factory, tmp_normal_png):
 def jpg_2000_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("jpg_2000") / "in.jp2"
     subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: JP2 \(JPEG-2000 File Format Syntax\)$",
-        r"^  Mime type: image/jp2$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: JPEG2000$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "JP2", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "JPEG-2000 File Format Syntax"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/jp2", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "JPEG2000", str(identify)
     yield in_img
     in_img.unlink()
 
@@ -905,52 +959,107 @@ def jpg_2000_img(tmp_path_factory, tmp_normal_png):
 @pytest.fixture(scope="session")
 def png_rgb8_img(tmp_normal_png):
     in_img = tmp_normal_png
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 8$",
-        r"^    png:IHDR.bit_depth: 8$",
-        r"^    png:IHDR.color-type-orig: 2$",
-        r"^    png:IHDR.color_type: 2 \(Truecolor\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "2"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "2 (Truecolor)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return in_img
 
 
 @pytest.fixture(scope="session")
 def png_rgb16_img(tmp_normal16_png):
     in_img = tmp_normal16_png
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Depth: 16-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 16$",
-        r"^    png:IHDR.bit_depth: 16$",
-        r"^    png:IHDR.color-type-orig: 2$",
-        r"^    png:IHDR.color_type: 2 \(Truecolor\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig")
+        == "16"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "16"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "2"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "2 (Truecolor)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return in_img
 
 
@@ -960,26 +1069,53 @@ def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
     subprocess.check_call(
         ["convert", str(tmp_alpha_png), "-depth", "8", "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColorAlpha$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 8$",
-        r"^    png:IHDR.bit_depth: 8$",
-        r"^    png:IHDR.color-type-orig: 6$",
-        r"^    png:IHDR.color_type: 6 \(RGBA\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColorAlpha", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "6"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "6 (RGBA)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -987,26 +1123,54 @@ def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
 @pytest.fixture(scope="session")
 def png_rgba16_img(tmp_alpha_png):
     in_img = tmp_alpha_png
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColorAlpha$",
-        r"^  Depth: 16-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 16$",
-        r"^    png:IHDR.bit_depth: 16$",
-        r"^    png:IHDR.color-type-orig: 6$",
-        r"^    png:IHDR.color_type: 6 \(RGBA\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColorAlpha", str(identify)
+    assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig")
+        == "16"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "16"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "6"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "6 (RGBA)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return in_img
 
 
@@ -1029,26 +1193,53 @@ def png_gray8a_img(tmp_path_factory, tmp_alpha_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: GrayscaleAlpha$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 8$",
-        r"^    png:IHDR.bit_depth: 8$",
-        r"^    png:IHDR.color-type-orig: 4$",
-        r"^    png:IHDR.color_type: 4 \(GrayAlpha\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "GrayscaleAlpha", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "4"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "4 (GrayAlpha)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1068,26 +1259,54 @@ def png_gray16a_img(tmp_path_factory, tmp_alpha_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: GrayscaleAlpha$",
-        r"^  Depth: 16-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 16$",
-        r"^    png:IHDR.bit_depth: 16$",
-        r"^    png:IHDR.color-type-orig: 4$",
-        r"^    png:IHDR.color_type: 4 \(GrayAlpha\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "GrayscaleAlpha", str(identify)
+    assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig")
+        == "16"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "16"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "4"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "4 (GrayAlpha)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1098,252 +1317,541 @@ def png_interlaced_img(tmp_path_factory, tmp_normal_png):
     subprocess.check_call(
         ["convert", str(tmp_normal_png), "-interlace", "PNG", "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 8$",
-        r"^    png:IHDR.bit_depth: 8$",
-        r"^    png:IHDR.color-type-orig: 2$",
-        r"^    png:IHDR.color_type: 2 \(Truecolor\)$",
-        r"^    png:IHDR.interlace_method: 1 \(Adam7 method\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "2"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "2 (Truecolor)"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.interlace_method")
+        == "1 (Adam7 method)"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
 
 @pytest.fixture(scope="session")
 def png_gray1_img(tmp_path_factory, tmp_gray1_png):
-    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray1_png)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Bilevel$",
-        r"^  Depth: 8/1-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 1$",
-        r"^    png:IHDR.bit_depth: 1$",
-        r"^    png:IHDR.color-type-orig: 0$",
-        r"^    png:IHDR.color_type: 0 \(Grayscale\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(tmp_gray1_png), "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Bilevel", str(identify)
+    assert identify[0]["image"].get("depth") == 1, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "1"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "1"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "0"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "0 (Grayscale)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return tmp_gray1_png
 
 
 @pytest.fixture(scope="session")
 def png_gray2_img(tmp_path_factory, tmp_gray2_png):
-    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray2_png)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Grayscale$",
-        r"^  Depth: 8/2-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 2$",
-        r"^    png:IHDR.bit_depth: 2$",
-        r"^    png:IHDR.color-type-orig: 0$",
-        r"^    png:IHDR.color_type: 0 \(Grayscale\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(tmp_gray2_png), "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Grayscale", str(identify)
+    assert identify[0]["image"].get("depth") == 2, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "2"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "2"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "0"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "0 (Grayscale)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return tmp_gray2_png
 
 
 @pytest.fixture(scope="session")
 def png_gray4_img(tmp_path_factory, tmp_gray4_png):
-    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray4_png)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Grayscale$",
-        r"^  Depth: 8/4-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 4$",
-        r"^    png:IHDR.bit_depth: 4$",
-        r"^    png:IHDR.color-type-orig: 0$",
-        r"^    png:IHDR.color_type: 0 \(Grayscale\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(tmp_gray4_png), "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Grayscale", str(identify)
+    assert identify[0]["image"].get("depth") == 4, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "4"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "4"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "0"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "0 (Grayscale)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return tmp_gray4_png
 
 
 @pytest.fixture(scope="session")
 def png_gray8_img(tmp_path_factory, tmp_gray8_png):
-    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray8_png)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Grayscale$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 8$",
-        r"^    png:IHDR.bit_depth: 8$",
-        r"^    png:IHDR.color-type-orig: 0$",
-        r"^    png:IHDR.color_type: 0 \(Grayscale\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(tmp_gray8_png), "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Grayscale", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "0"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "0 (Grayscale)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return tmp_gray8_png
 
 
 @pytest.fixture(scope="session")
 def png_gray16_img(tmp_path_factory, tmp_gray16_png):
-    identify = subprocess.check_output(["identify", "-verbose", str(tmp_gray16_png)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Grayscale$",
-        r"^  Depth: 16-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 16$",
-        r"^    png:IHDR.bit_depth: 16$",
-        r"^    png:IHDR.color-type-orig: 0$",
-        r"^    png:IHDR.color_type: 0 \(Grayscale\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(tmp_gray16_png), "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Grayscale", str(identify)
+    assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig")
+        == "16"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "16"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "0"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "0 (Grayscale)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return tmp_gray16_png
 
 
 @pytest.fixture(scope="session")
 def png_palette1_img(tmp_path_factory, tmp_palette1_png):
-    identify = subprocess.check_output(["identify", "-verbose", str(tmp_palette1_png)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 1$",
-        r"^    png:IHDR.bit_depth: 1$",
-        r"^    png:IHDR.color-type-orig: 3$",
-        r"^    png:IHDR.color_type: 3 \(Indexed\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(tmp_palette1_png), "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "1"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "1"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "3"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "3 (Indexed)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return tmp_palette1_png
 
 
 @pytest.fixture(scope="session")
 def png_palette2_img(tmp_path_factory, tmp_palette2_png):
-    identify = subprocess.check_output(["identify", "-verbose", str(tmp_palette2_png)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 2$",
-        r"^    png:IHDR.bit_depth: 2$",
-        r"^    png:IHDR.color-type-orig: 3$",
-        r"^    png:IHDR.color_type: 3 \(Indexed\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(tmp_palette2_png), "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "2"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "2"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "3"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "3 (Indexed)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return tmp_palette2_png
 
 
 @pytest.fixture(scope="session")
 def png_palette4_img(tmp_path_factory, tmp_palette4_png):
-    identify = subprocess.check_output(["identify", "-verbose", str(tmp_palette4_png)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 4$",
-        r"^    png:IHDR.bit_depth: 4$",
-        r"^    png:IHDR.color-type-orig: 3$",
-        r"^    png:IHDR.color_type: 3 \(Indexed\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(tmp_palette4_png), "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "4"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "4"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "3"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "3 (Indexed)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return tmp_palette4_png
 
 
 @pytest.fixture(scope="session")
 def png_palette8_img(tmp_path_factory, tmp_palette8_png):
-    identify = subprocess.check_output(["identify", "-verbose", str(tmp_palette8_png)])
-    expected = [
-        r"^  Format: PNG \(Portable Network Graphics\)$",
-        r"^  Mime type: image/png$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    png:IHDR.bit-depth-orig: 8$",
-        r"^    png:IHDR.bit_depth: 8$",
-        r"^    png:IHDR.color-type-orig: 3$",
-        r"^    png:IHDR.color_type: 3 \(Indexed\)$",
-        r"^    png:IHDR.interlace_method: 0 \(Not interlaced\)$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(tmp_palette8_png), "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "PNG", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.bit_depth") == "8"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color-type-orig")
+        == "3"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("png:IHDR.color_type")
+        == "3 (Indexed)"
+    ), str(identify)
+    assert (
+        identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
+        == "0 (Not interlaced)"
+    ), str(identify)
     return tmp_palette8_png
 
 
@@ -1351,22 +1859,37 @@ def png_palette8_img(tmp_path_factory, tmp_palette8_png):
 def gif_transparent_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("gif_transparent_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_alpha_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: GIF \(CompuServe graphics interchange format\)$",
-        r"^  Mime type: image/gif$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: PaletteAlpha$",
-        r"^  Depth: 8-bit$",
-        r"^  Colormap entries: 256$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: LZW$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "GIF", str(identify)
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "CompuServe graphics interchange format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "PaletteAlpha", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 256, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "LZW", str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1375,22 +1898,37 @@ def gif_transparent_img(tmp_path_factory, tmp_alpha_png):
 def gif_palette1_img(tmp_path_factory, tmp_palette1_png):
     in_img = tmp_path_factory.mktemp("gif_palette1_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_palette1_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: GIF \(CompuServe graphics interchange format\)$",
-        r"^  Mime type: image/gif$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Colormap entries: 2$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: LZW$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "GIF", str(identify)
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "CompuServe graphics interchange format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 2, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "LZW", str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1399,22 +1937,37 @@ def gif_palette1_img(tmp_path_factory, tmp_palette1_png):
 def gif_palette2_img(tmp_path_factory, tmp_palette2_png):
     in_img = tmp_path_factory.mktemp("gif_palette2_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_palette2_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: GIF \(CompuServe graphics interchange format\)$",
-        r"^  Mime type: image/gif$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Colormap entries: 4$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: LZW$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "GIF", str(identify)
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "CompuServe graphics interchange format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 4, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "LZW", str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1423,22 +1976,37 @@ def gif_palette2_img(tmp_path_factory, tmp_palette2_png):
 def gif_palette4_img(tmp_path_factory, tmp_palette4_png):
     in_img = tmp_path_factory.mktemp("gif_palette4_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_palette4_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: GIF \(CompuServe graphics interchange format\)$",
-        r"^  Mime type: image/gif$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Colormap entries: 16$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: LZW$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "GIF", str(identify)
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "CompuServe graphics interchange format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "LZW", str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1447,22 +2015,37 @@ def gif_palette4_img(tmp_path_factory, tmp_palette4_png):
 def gif_palette8_img(tmp_path_factory, tmp_palette8_png):
     in_img = tmp_path_factory.mktemp("gif_palette8_img") / "in.gif"
     subprocess.check_call(["convert", str(tmp_palette8_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: GIF \(CompuServe graphics interchange format\)$",
-        r"^  Mime type: image/gif$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Colormap entries: 256$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: LZW$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "GIF", str(identify)
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "CompuServe graphics interchange format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 256, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "LZW", str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1473,39 +2056,73 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     subprocess.check_call(
         ["convert", str(tmp_normal_png), str(tmp_inverse_png), "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img) + "[0]"])
-    expected = [
-        r"^  Format: GIF \(CompuServe graphics interchange format\)$",
-        r"^  Mime type: image/gif$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Colormap entries: 256$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: LZW$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img) + "[1]"])
-    expected = [
-        r"^  Format: GIF \(CompuServe graphics interchange format\)$",
-        r"^  Mime type: image/gif$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Depth: 8-bit$",
-        r"^  Colormap entries: 256$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: LZW$",
-        r"^  Scene: 1$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(in_img) + "[0]", "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "GIF", str(identify)
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "CompuServe graphics interchange format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 256, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "LZW", str(identify)
+    identify = json.loads(
+        subprocess.check_output(["convert", str(in_img) + "[1]", "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "GIF", str(identify)
+    assert (
+        identify[0]["image"]["formatDescription"]
+        == "CompuServe graphics interchange format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 256, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "LZW", str(identify)
+    assert identify[0]["image"].get("scene") == 1, str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1524,26 +2141,52 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 32/(8|16)-bit$",  # imagemagick may produce a Depth: 32/8-bit or 32/16-bit image
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    quantum:format: floating-point$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: RGB$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("baseDepth") == 32, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("quantum:format")
+        == "floating-point"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1554,25 +2197,48 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
     subprocess.check_call(
         ["convert", str(tmp_normal_png), "-colorspace", "cmyk", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: CMYK$",
-        r"^  Type: ColorSeparation$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: separated$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "CMYK", str(identify)
+    assert identify[0]["image"].get("type") == "ColorSeparation", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "separated"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1591,25 +2257,48 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: CMYK$",
-        r"^  Type: ColorSeparation$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 16-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: separated$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "CMYK", str(identify)
+    assert identify[0]["image"].get("type") == "ColorSeparation", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "separated"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1618,25 +2307,47 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
 def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: RGB$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1647,25 +2358,47 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
     subprocess.check_call(
         ["convert", str(tmp_normal16_png), "-depth", "12", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 12(/16)?-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: RGB$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 12, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1676,25 +2409,47 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
     subprocess.check_call(
         ["convert", str(tmp_normal16_png), "-depth", "14", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 14(/16)?-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: RGB$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 14, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1705,25 +2460,47 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
     subprocess.check_call(
         ["convert", str(tmp_normal16_png), "-depth", "16", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 16-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: RGB$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1734,25 +2511,47 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
     subprocess.check_call(
         ["convert", str(tmp_alpha_png), "-depth", "8", "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColorAlpha$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unassociated$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: RGB$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColorAlpha", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unassociated"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1763,25 +2562,47 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
     subprocess.check_call(
         ["convert", str(tmp_alpha_png), "-depth", "16", "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColorAlpha$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 16-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unassociated$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: RGB$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColorAlpha", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unassociated"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1790,25 +2611,48 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
 def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
     in_img = tmp_path_factory.mktemp("tiff_gray1") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray1_png), "-depth", "1", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Bilevel$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 1-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: min-is-black$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Bilevel", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 1, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-black"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1817,25 +2661,48 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
 def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
     in_img = tmp_path_factory.mktemp("tiff_gray2") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray2_png), "-depth", "2", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Grayscale$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 2-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: min-is-black$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Grayscale", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 2, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-black"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1844,25 +2711,48 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
 def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
     in_img = tmp_path_factory.mktemp("tiff_gray4") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray4_png), "-depth", "4", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Grayscale$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 4-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: min-is-black$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Grayscale", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 4, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-black"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1871,25 +2761,48 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
 def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
     in_img = tmp_path_factory.mktemp("tiff_gray8") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray8_png), "-depth", "8", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Grayscale$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: min-is-black$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Grayscale", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-black"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1898,25 +2811,48 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
 def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
     in_img = tmp_path_factory.mktemp("tiff_gray16") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_gray16_png), "-depth", "16", str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Grayscale$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 16-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: min-is-black$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Grayscale", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-black"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1927,45 +2863,93 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     subprocess.check_call(
         ["convert", str(tmp_normal_png), str(tmp_inverse_png), "-strip", str(in_img)]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img) + "[0]"])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: RGB$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img) + "[1]"])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: TrueColor$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 8-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: RGB$",
-        r"^  Scene: 1$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(
+        subprocess.check_output(["convert", str(in_img) + "[0]", "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
+    ), str(identify)
+    identify = json.loads(
+        subprocess.check_output(["convert", str(in_img) + "[1]", "json:"])
+    )
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColor", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
+    ), str(identify)
+    assert identify[0]["image"].get("scene") == 1, str(identify)
     yield in_img
     in_img.unlink()
 
@@ -1974,26 +2958,49 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
 def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
     in_img = tmp_path_factory.mktemp("tiff_palette1_img") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_palette1_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 1/8-bit$",
-        r"^  Colormap entries: 2$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: palette$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("baseDepth") == 1, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 2, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -2002,26 +3009,49 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
 def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
     in_img = tmp_path_factory.mktemp("tiff_palette2_img") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_palette2_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 2/8-bit$",
-        r"^  Colormap entries: 4$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: palette$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("baseDepth") == 2, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 4, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -2030,26 +3060,49 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
 def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
     in_img = tmp_path_factory.mktemp("tiff_palette4_img") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_palette4_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 4/8-bit$",
-        r"^  Colormap entries: 16$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: palette$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("baseDepth") == 4, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -2058,26 +3111,48 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
 def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
     in_img = tmp_path_factory.mktemp("tiff_palette8_img") / "in.tiff"
     subprocess.check_call(["convert", str(tmp_palette8_png), str(in_img)])
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: sRGB$",
-        r"^  Type: Palette$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 8-bit$",
-        r"^  Colormap entries: 256$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Zip$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: palette$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "Palette", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("colormapEntries") == 256, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Zip", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
+    ), str(identify)
     yield in_img
     in_img.unlink()
 
@@ -2100,26 +3175,51 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Bilevel$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 1-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Group4$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: min-is-white$",
-        r"^    tiff:rows-per-strip: 60$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Bilevel", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 1, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Group4", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-white"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:rows-per-strip") == "60"
+    ), str(identify)
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -2156,26 +3256,52 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Bilevel$",
-        r"^  Endiann?ess: MSB$",
-        r"^  Depth: 1-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Group4$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: msb$",
-        r"^    tiff:photometric: min-is-white$",
-        r"^    tiff:rows-per-strip: 60$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Bilevel", str(identify)
+    assert identify[0]["image"].get("endianess") in [
+        "Undefined",
+        "MSB",
+    ]  # FIXME: should be MSB
+    assert identify[0]["image"].get("depth") == 1, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Group4", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "msb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-white"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:rows-per-strip") == "60"
+    ), str(identify)
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -2212,26 +3338,52 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Bilevel$",
-        r"^  Endiann?ess: MSB$",
-        r"^  Depth: 1-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Group4$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: msb$",
-        r"^    tiff:photometric: min-is-white$",
-        r"^    tiff:rows-per-strip: 60$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Bilevel", str(identify)
+    assert identify[0]["image"].get("endianess") in [
+        "Undefined",
+        "MSB",
+    ]  # FIXME: should be MSB
+    assert identify[0]["image"].get("depth") == 1, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Group4", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "msb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-white"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:rows-per-strip") == "60"
+    ), str(identify)
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -2273,26 +3425,51 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Bilevel$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 1-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Group4$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: min-is-black$",
-        r"^    tiff:rows-per-strip: 60$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Bilevel", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 1, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Group4", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-black"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:rows-per-strip") == "60"
+    ), str(identify)
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -2338,26 +3515,51 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
     subprocess.check_call(
         ["tiffset", "-u", "277", str(in_img)]
     )  # remove SamplesPerPixel (277)
-    identify = subprocess.check_output(["identify", "-verbose", str(in_img)])
-    expected = [
-        r"^  Format: TIFF \(Tagged Image File Format\)$",
-        r"^  Mime type: image/tiff$",
-        r"^  Geometry: 60x60\+0\+0$",
-        r"^  Colorspace: Gray$",
-        r"^  Type: Bilevel$",
-        r"^  Endiann?ess: LSB$",
-        r"^  Depth: 1-bit$",
-        r"^  Page geometry: 60x60\+0\+0$",
-        r"^  Compression: Group4$",
-        r"^    tiff:alpha: unspecified$",
-        r"^    tiff:endian: lsb$",
-        r"^    tiff:photometric: min-is-white$",
-        r"^    tiff:rows-per-strip: 60$",
-    ]
-    for e in expected:
-        assert re.search(e, identify.decode("utf8"), re.MULTILINE), identify.decode(
-            "utf8"
-        )
+    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("type") == "Bilevel", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 1, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "Group4", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-white"
+    ), str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:rows-per-strip") == "60"
+    ), str(identify)
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
         r"^  Image Width: 60 Image Length: 60",
@@ -2405,24 +3607,35 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     if "image" in identify:
         identify = [identify]
     assert "image" in identify[0]
-    assert identify[0]["image"]["format"] == "TIFF"
-    assert identify[0]["image"]["formatDescription"] == "Tagged Image File Format"
-    assert identify[0]["image"]["mimeType"] == "image/tiff"
-    assert identify[0]["image"]["geometry"] == {
+    assert identify[0]["image"].get("format") == "TIFF", str(identify)
+    assert (
+        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
+    ), str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
+    assert identify[0]["image"].get("geometry") == {
         "width": 60,
         "height": 60,
         "x": 0,
         "y": 0,
-    }
-    assert identify[0]["image"]["units"] == "PixelsPerInch"
-    assert identify[0]["image"]["type"] == "Bilevel"
-    assert identify[0]["image"]["endianess"] == "Undefined"  # FIXME: should be LSB
-    assert identify[0]["image"]["colorspace"] == "Gray"
-    assert identify[0]["image"]["depth"] == 1
-    assert identify[0]["image"]["compression"] == "Group4"
-    assert identify[0]["image"]["properties"]["tiff:alpha"] == "unspecified"
-    assert identify[0]["image"]["properties"]["tiff:endian"] == "lsb"
-    assert identify[0]["image"]["properties"]["tiff:photometric"] == "min-is-white"
+    }, str(identify)
+    assert identify[0]["image"].get("units") == "PixelsPerInch", str(identify)
+    assert identify[0]["image"].get("type") == "Bilevel", str(identify)
+    assert identify[0]["image"].get("endianess") in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
+    assert identify[0]["image"].get("depth") == 1, str(identify)
+    assert identify[0]["image"].get("compression") == "Group4", str(identify)
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
+    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
+        identify
+    )
+    assert (
+        identify[0]["image"].get("properties", {}).get("tiff:photometric")
+        == "min-is-white"
+    ), str(identify)
     assert "tiff:rows-per-strip" not in identify[0]["image"]["properties"]
     tiffinfo = subprocess.check_output(["tiffinfo", str(in_img)])
     expected = [
