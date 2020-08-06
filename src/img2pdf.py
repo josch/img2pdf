@@ -3308,10 +3308,10 @@ RGB.""",
     outargs.add_argument(
         "--pdfa",
         nargs="?",
-        const="/usr/share/color/icc/ghostscript/srgb.icc",
+        const="/usr/share/color/icc/sRGB.icc",
         default=None,
         help="Output a PDF/A-1b complient document. By default, this will "
-        "embed /usr/share/color/icc/ghostscript/srgb.icc as the color profile.",
+        "embed /usr/share/color/icc/sRGB.icc as the color profile.",
     )
 
     sizeargs = parser.add_argument_group(
