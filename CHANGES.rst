@@ -2,6 +2,20 @@
 CHANGES
 =======
 
+0.4.0 (2020-08-07)
+------------------
+
+ - replace --without-pdfrw by --engine=internal or --engine=pdfrw
+ - add pikepdf as additional rendering engine and add --engine=pikepdf
+ - support for creating PDF/A-1b compliant PDF using the --pdfa option
+   (this also requires the presence of an ICC profile somewhere on the system)
+ - support for images with embedded ICC profile as input
+ - rewrite tests
+    * use pytest via tox
+    * use pikepdf instead of pdfrw
+    * use imagemagick json output instead of identify -verbose
+ - format all code with black
+
 0.3.6 (2020-04-30)
 ------------------
 
