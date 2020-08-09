@@ -352,11 +352,13 @@ def compare_ghostscript(tmpdir, img, pdf, gsdevice="png16m", exact=True, icc=Fal
     (tmpdir / ("gs-1." + ext)).unlink()
 
 
-def compare_poppler(tmpdir, img, pdf, exact=True):
+def compare_poppler(tmpdir, img, pdf, exact=True, icc=False):
     subprocess.check_call(
         ["pdftocairo", "-r", "96", "-png", str(pdf), str(tmpdir / "poppler")]
     )
     if exact:
+        if icc:
+            raise Exception("not exact with icc")
         subprocess.check_call(
             [
                 "compare",
@@ -368,18 +370,38 @@ def compare_poppler(tmpdir, img, pdf, exact=True):
             ]
         )
     else:
-        psnr = subprocess.run(
-            [
-                "compare",
-                "-metric",
-                "PSNR",
-                str(img),
-                str(tmpdir / "poppler-1.png"),
-                "null:",
-            ],
-            check=False,
-            stderr=subprocess.PIPE,
-        ).stderr
+        if icc:
+            psnr = subprocess.run(
+                [
+                    "compare",
+                    "-metric",
+                    "PSNR",
+                    "(",
+                    "-profile",
+                    "/usr/share/color/icc/ghostscript/srgb.icc",
+                    "-depth",
+                    "8",
+                    str(img),
+                    ")",
+                    str(tmpdir / "poppler-1.png"),
+                    "null:",
+                ],
+                check=False,
+                stderr=subprocess.PIPE,
+            ).stderr
+        else:
+            psnr = subprocess.run(
+                [
+                    "compare",
+                    "-metric",
+                    "PSNR",
+                    str(img),
+                    str(tmpdir / "poppler-1.png"),
+                    "null:",
+                ],
+                check=False,
+                stderr=subprocess.PIPE,
+            ).stderr
         assert psnr != b"0"
         psnr = float(psnr.strip(b"0"))
         assert psnr != 0  # or otherwise we would use the exact variant
@@ -445,9 +467,11 @@ def compare_pdfimages_tiff(tmpdir, img, pdf):
     (tmpdir / "images-000.tif").unlink()
 
 
-def compare_pdfimages_png(tmpdir, img, pdf, exact=True):
+def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
     subprocess.check_call(["pdfimages", "-png", str(pdf), str(tmpdir / "images")])
     if exact:
+        if icc:
+            raise Exception("not exact with icc")
         subprocess.check_call(
             [
                 "compare",
@@ -459,18 +483,38 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True):
             ]
         )
     else:
-        psnr = subprocess.run(
-            [
-                "compare",
-                "-metric",
-                "PSNR",
-                str(img),
-                str(tmpdir / "images-000.png"),
-                "null:",
-            ],
-            check=False,
-            stderr=subprocess.PIPE,
-        ).stderr
+        if icc:
+            psnr = subprocess.run(
+                [
+                    "compare",
+                    "-metric",
+                    "PSNR",
+                    "(",
+                    "-profile",
+                    "/usr/share/color/icc/ghostscript/srgb.icc",
+                    "-depth",
+                    "8",
+                    str(img),
+                    ")",
+                    str(tmpdir / "images-000.png"),
+                    "null:",
+                ],
+                check=False,
+                stderr=subprocess.PIPE,
+            ).stderr
+        else:
+            psnr = subprocess.run(
+                [
+                    "compare",
+                    "-metric",
+                    "PSNR",
+                    str(img),
+                    str(tmpdir / "images-000.png"),
+                    "null:",
+                ],
+                check=False,
+                stderr=subprocess.PIPE,
+            ).stderr
         assert psnr != b"0"
         psnr = float(psnr.strip(b"0"))
         assert psnr != 0  # or otherwise we would use the exact variant
@@ -504,13 +548,7 @@ def tiff_header_for_ccitt(width, height, img_size, ccitt_group=4):
     )
 
 
-###############################################################################
-#                                 INPUT FIXTURES                              #
-###############################################################################
-
-
-@pytest.fixture(scope="session")
-def alpha():
+def alpha_value():
     # gaussian kernel with sigma=3
     kernel = numpy.array(
         [
@@ -546,6 +584,103 @@ def alpha():
     alpha = numpy.clip(alpha, 0, 0xFFFF)
     alpha = convolve_rgba(alpha, kernel)
     return alpha
+
+
+def icc_profile():
+    PCS = (0.96420288, 1.0, 0.82490540)  # D50 illuminant constants
+    # approximate X,Y,Z values for white, red, green and blue
+    white = (0.95, 1.0, 1.09)
+    red = (0.44, 0.22, 0.014)
+    green = (0.39, 0.72, 0.1)
+    blue = (0.14, 0.06, 0.71)
+
+    getxyz = lambda v: (round(65536 * v[0]), round(65536 * v[1]), round(65536 * v[2]))
+
+    header = (
+        # header
+        +4 * b"\0"  # cmmsignatures
+        + 4 * b"\0"  # version
+        + b"mntr"  # device class
+        + b"RGB "  # color space
+        + b"XYZ "  # PCS
+        + 12 * b"\0"  # datetime
+        + b"\x61\x63\x73\x70"  # static signature
+        + 4 * b"\0"  # platform
+        + 4 * b"\0"  # flags
+        + 4 * b"\0"  # device manufacturer
+        + 4 * b"\0"  # device model
+        + 8 * b"\0"  # device attributes
+        + 4 * b"\0"  # rendering intents
+        + struct.pack(">III", *getxyz(PCS))
+        + 4 * b"\0"  # creator
+        + 16 * b"\0"  # identifier
+        + 28 * b"\0"  # reserved
+    )
+
+    def pad4(s):
+        if len(s) % 4 == 0:
+            return s
+        else:
+            return s + b"\x00" * (4 - len(s) % 4)
+
+    tagdata = [
+        b"desc\x00\x00\x00\x00" + struct.pack(">I", 5) + b"fake" + 79 * b"\x00",
+        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(white)),
+        # by mixing up red, green and blue, we create a test profile
+        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(blue)), # red
+        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(red)), # green
+        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(green)), # blue
+        # by only supplying two values, we create the most trivial "curve",
+        # where the remaining values will be linearly interpolated between them
+        b"curv\x00\x00\x00\x00" + struct.pack(">IHH", 2, 0, 65535),
+        b"text\x00\x00\x00\x00" + b"no copyright, use freely" + 1 * b"\x00",
+    ]
+
+    table = [
+        (b"desc", 0),
+        (b"wtpt", 1),
+        (b"rXYZ", 2),
+        (b"gXYZ", 3),
+        (b"bXYZ", 4),
+        # we use the same curve for all three channels, so the same offset is referenced
+        (b"rTRC", 5),
+        (b"gTRC", 5),
+        (b"bTRC", 5),
+        (b"cprt", 6),
+    ]
+
+    offset = (
+        lambda n: 4  # total size
+        + len(header)  # header length
+        + 4  # number table entries
+        + len(table) * 12  # table length
+        + sum([len(pad4(s)) for s in tagdata[:n]])
+    )
+
+    table = struct.pack(">I", len(table)) + b"".join(
+        [t + struct.pack(">II", offset(o), len(tagdata[o])) for t, o in table]
+    )
+
+    data = b"".join([pad4(s) for s in tagdata])
+
+    data = (
+        struct.pack(">I", 4 + len(header) + len(table) + len(data))
+        + header
+        + table
+        + data
+    )
+
+    return data
+
+
+###############################################################################
+#                                 INPUT FIXTURES                              #
+###############################################################################
+
+
+@pytest.fixture(scope="session")
+def alpha():
+    return alpha_value()
 
 
 @pytest.fixture(scope="session")
@@ -659,19 +794,26 @@ def tmp_inverse_png(tmp_path_factory, alpha):
 
 
 @pytest.fixture(scope="session")
-def tmp_icc_png(tmp_path_factory, alpha):
+def tmp_icc_profile(tmp_path_factory):
+    tmp_icc_profile = tmp_path_factory.mktemp("icc_profile") / "fake.icc"
+    tmp_icc_profile.write_bytes(icc_profile())
+    yield tmp_icc_profile
+    tmp_icc_profile.unlink()
+
+@pytest.fixture(scope="session")
+def tmp_icc_png(tmp_path_factory, alpha, tmp_icc_profile):
     normal16 = alpha[:, :, 0:3]
     tmp_icc_png = tmp_path_factory.mktemp("icc_png") / "icc.png"
     write_png(
-        0xFF - normal16 / 0xFFFF * 0xFF,
+        normal16 / 0xFFFF * 0xFF,
         str(tmp_icc_png),
         8,
         2,
-        iccp="/usr/share/color/icc/sRGB.icc",
+        iccp=str(tmp_icc_profile),
     )
     assert (
         hashlib.md5(tmp_icc_png.read_bytes()).hexdigest()
-        == "d09865464626a87b4e7f398e1f914cca"
+        == "3058ba4703212fe8c18560e6d1cb61b1"
     )
     yield tmp_icc_png
     tmp_icc_png.unlink()
@@ -4249,7 +4391,7 @@ def png_palette8_pdf(tmp_path_factory, tmp_palette8_png, request):
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
-def png_icc_pdf(tmp_path_factory, tmp_icc_png, request):
+def png_icc_pdf(tmp_path_factory, tmp_icc_png, tmp_icc_profile, request):
     out_pdf = tmp_path_factory.mktemp("png_icc_pdf") / "out.pdf"
     subprocess.check_call(
         [
@@ -4272,7 +4414,7 @@ def png_icc_pdf(tmp_path_factory, tmp_icc_png, request):
         assert p.pages[0].Resources.XObject.Im0.ColorSpace[1].Alternate == "/DeviceRGB"
         assert (
             p.pages[0].Resources.XObject.Im0.ColorSpace[1].read_bytes()
-            == pathlib.Path("/usr/share/color/icc/sRGB.icc").read_bytes()
+            == tmp_icc_profile.read_bytes()
         )
         assert p.pages[0].Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
         assert p.pages[0].Resources.XObject.Im0.DecodeParms.Colors == 3
@@ -5319,9 +5461,9 @@ def test_png_palette8(tmp_path_factory, png_palette8_img, png_palette8_pdf):
 def test_png_icc(tmp_path_factory, png_icc_img, png_icc_pdf):
     tmpdir = tmp_path_factory.mktemp("png_icc")
     compare_ghostscript(tmpdir, png_icc_img, png_icc_pdf, icc=True)
-    # compare_poppler(tmpdir, png_icc_img, png_icc_pdf)
-    # compare_mupdf(tmpdir, png_icc_img, png_icc_pdf)
-    # compare_pdfimages_png(tmpdir, png_icc_img, png_icc_pdf)
+    compare_poppler(tmpdir, png_icc_img, png_icc_pdf, exact=False, icc=True)
+    # mupdf ignores the ICC profile
+    compare_pdfimages_png(tmpdir, png_icc_img, png_icc_pdf, exact=False, icc=True)
 
 
 @pytest.mark.skipif(
@@ -6500,3 +6642,19 @@ def test_general(general_input, engine):
         orig_img.close()
     except AttributeError:
         pass
+
+
+def main():
+    normal16 = alpha_value()[:, :, 0:3]
+    pathlib.Path('test.icc').write_bytes(icc_profile())
+    write_png(
+        normal16 / 0xFFFF * 0xFF,
+        "icc.png",
+        8,
+        2,
+        iccp="test.icc",
+    )
+
+
+if __name__ == "__main__":
+    main()
