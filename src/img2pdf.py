@@ -3310,7 +3310,7 @@ RGB.""",
         nargs="?",
         const="/usr/share/color/icc/sRGB.icc",
         default=None,
-        help="Output a PDF/A-1b complient document. By default, this will "
+        help="Output a PDF/A-1b compliant document. By default, this will "
         "embed /usr/share/color/icc/sRGB.icc as the color profile.",
     )
 
