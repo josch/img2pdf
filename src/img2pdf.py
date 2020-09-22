@@ -1991,6 +1991,9 @@ def convert(*images, **kwargs):
 
     if not isinstance(images, (list, tuple)):
         images = [images]
+    else:
+        if len(images) == 0:
+            raise ValueError("Unable to process empty list")
 
     for img in images:
         # img is allowed to be a path, a binary string representing image data
