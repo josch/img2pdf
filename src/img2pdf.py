@@ -34,6 +34,7 @@ import logging
 import struct
 import platform
 import hashlib
+from itertools import chain
 
 have_pdfrw = True
 try:
@@ -2265,27 +2266,36 @@ def parse_borderarg(string):
     return h, v
 
 
-def input_images(path):
-    if path == "-":
+def input_images(path_expr):
+    if path_expr == "-":
         # we slurp in all data from stdin because we need to seek in it later
         result = sys.stdin.buffer.read()
         if len(result) == 0:
-            raise argparse.ArgumentTypeError('"%s" is empty' % path)
+            raise argparse.ArgumentTypeError('"%s" is empty' % path_expr)
     else:
-        try:
-            if os.path.getsize(path) == 0:
-                raise argparse.ArgumentTypeError('"%s" is empty' % path)
-            # test-read a byte from it so that we can abort early in case
-            # we cannot read data from the file
-            with open(path, "rb") as im:
-                im.read(1)
-        except IsADirectoryError:
-            raise argparse.ArgumentTypeError('"%s" is a directory' % path)
-        except PermissionError:
-            raise argparse.ArgumentTypeError('"%s" permission denied' % path)
-        except FileNotFoundError:
-            raise argparse.ArgumentTypeError('"%s" does not exist' % path)
-        result = path
+        result = []
+        paths = [path_expr]
+        if sys.platform == "win32" and ("*" in path_expr or "?" in path_expr):
+            # on windows, program is responsible for expanding wildcards such as *.jpg
+            # glob won't return files that don't exist so we only use it for wildcards
+            # paths without wildcards that do not exist will trigger "does not exist"
+            from glob import glob
+            paths = glob(path_expr)
+        for path in paths:
+            try:
+                if os.path.getsize(path) == 0:
+                    raise argparse.ArgumentTypeError('"%s" is empty' % path)
+                # test-read a byte from it so that we can abort early in case
+                # we cannot read data from the file
+                with open(path, "rb") as im:
+                    im.read(1)
+            except IsADirectoryError:
+                raise argparse.ArgumentTypeError('"%s" is a directory' % path)
+            except PermissionError:
+                raise argparse.ArgumentTypeError('"%s" permission denied' % path)
+            except FileNotFoundError:
+                raise argparse.ArgumentTypeError('"%s" does not exist' % path)
+            result.append(path)
     return result
 
 
@@ -3630,7 +3640,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
 
     try:
         convert(
-            *args.images,
+            *chain.from_iterable(args.images),
             engine=args.engine,
             title=args.title,
             author=args.author,
