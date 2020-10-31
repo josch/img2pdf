@@ -14,11 +14,11 @@ matrix:
             - ghostscript
             - mupdf-tools
             - icc-profiles-free
-    - name: "python 3.8 Windows"
+    - name: "python 3.9 Windows"
       os: windows
       language: shell       # 'language: python' is an error on Travis CI Windows
       before_install: choco install python imagemagick
-      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+      env: PATH=/c/Python39:/c/Python39/Scripts:$PATH
     - name: "python 3.7 MacOs"
       os: osx
       language: shell       # 'language: python' is an error on Travis CI macOS
