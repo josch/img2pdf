@@ -161,26 +161,26 @@ The package can also be used as a library:
 
 	# convert all files ending in .jpg inside a directory
 	dirname = "/path/to/images"
+	imgs = []
+	for fname in os.listdir(dirname):
+		if not fname.endswith(".jpg"):
+			continue
+		path = os.path.join(dirname, fname)
+		if os.path.isdir(path):
+			continue
+		imgs.append(path)
 	with open("name.pdf","wb") as f:
-		imgs = []
-		for fname in os.listdir(dirname):
-			if not fname.endswith(".jpg"):
-				continue
-			path = os.path.join(dirname, fname)
-			if os.path.isdir(path):
-				continue
-			imgs.append(path)
 		f.write(img2pdf.convert(imgs))
 
 	# convert all files ending in .jpg in a directory and its subdirectories
 	dirname = "/path/to/images"
+	imgs = []
+	for r, _, f in os.walk(dirname):
+		for fname in f:
+			if not fname.endswith(".jpg"):
+				continue
+			imgs.append(os.path.join(r, fname))
 	with open("name.pdf","wb") as f:
-		imgs = []
-		for r, _, f in os.walk(dirname):
-			for fname in f:
-				if not fname.endswith(".jpg"):
-					continue
-				imgs.append(os.path.join(r, fname))
 		f.write(img2pdf.convert(imgs))
 
 
