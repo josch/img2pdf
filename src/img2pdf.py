@@ -48,7 +48,7 @@ try:
 except ImportError:
     have_pikepdf = False
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 default_dpi = 96.0
 papersizes = {
     "letter": "8.5inx11in",
@@ -1217,12 +1217,12 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
                     rotation = 180
                 elif value == 8:
                     rotation = 270
-                elif value in (2, 4, 5, 7):
-                    raise ExifOrientationError(
-                        "Unsupported flipped rotation mode (%d)" % value
-                    )
                 else:
-                    raise ExifOrientationError("Invalid rotation (%d)" % value)
+                    rotation = 0
+                    logging.debug(
+                        "Unsupported flipped rotation mode (%d) processing it "
+                        "as value (1)" % value
+                    )
 
     logging.debug("rotation = %d°", rotation)
 
