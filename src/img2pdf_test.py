@@ -6662,7 +6662,32 @@ def test_general(general_input, engine):
         raise Exception("unhandled: %s" % (type(obj)))
 
     y = pikepdf.open(out)
-    assert rec(x.Root) == rec(y.Root)
+    pydictx = rec(x.Root)
+    pydicty = rec(y.Root)
+    if f.endswith(os.path.sep + "animation.gif"):
+        # starting with PIL 8.2.0 the palette is half the size when encoding
+        # our test GIF image as PNG
+        #
+        # to still compare successfully, we truncate the expected palette
+        import PIL
+
+        if PIL.__version__ >= "8.2.0":
+            assert len(pydictx["/Pages"]["/Kids"]) == 2
+            for p in pydictx["/Pages"]["/Kids"]:
+                assert p["/Resources"]["/XObject"]["/Im0"]["/ColorSpace"][2] == 127
+            assert len(pydicty["/Pages"]["/Kids"]) == 2
+            for p in pydicty["/Pages"]["/Kids"]:
+                cs = p["/Resources"]["/XObject"]["/Im0"]["/ColorSpace"]
+                cs[2] = decimal.Decimal("127")
+                cs[3] = cs[3][:384]
+        else:
+            assert (
+                pydictx["/Pages"]["/Kids"][0]["/Resources"]["/XObject"]["/Im0"][
+                    "/ColorSpace"
+                ][2]
+                == 255
+            )
+    assert pydictx == pydicty
     # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
     # close() method
     try:
