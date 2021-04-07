@@ -21,6 +21,7 @@ matrix:
       env: PATH=/c/Python39:/c/Python39/Scripts:$PATH
     - name: "python 3.7 MacOs"
       os: osx
+      osx_image: xcode12.2  # pikepdf import fails with earlier versions
       language: shell       # 'language: python' is an error on Travis CI macOS
       cache:
         directories:
