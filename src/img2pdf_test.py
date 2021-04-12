@@ -548,6 +548,35 @@ def tiff_header_for_ccitt(width, height, img_size, ccitt_group=4):
     )
 
 
+pixel_R = [
+    [1, 1, 1, 0],
+    [1, 0, 0, 1],
+    [1, 0, 0, 1],
+    [1, 1, 1, 0],
+    [1, 0, 0, 1],
+    [1, 0, 0, 1],
+    [1, 0, 0, 1],
+]
+pixel_G = [
+    [0, 1, 1, 0],
+    [1, 0, 0, 1],
+    [1, 0, 0, 0],
+    [1, 0, 1, 1],
+    [1, 0, 0, 1],
+    [1, 0, 0, 1],
+    [0, 1, 1, 0],
+]
+pixel_B = [
+    [1, 1, 1, 0],
+    [1, 0, 0, 1],
+    [1, 0, 0, 1],
+    [1, 1, 1, 0],
+    [1, 0, 0, 1],
+    [1, 0, 0, 1],
+    [1, 1, 1, 0],
+]
+
+
 def alpha_value():
     # gaussian kernel with sigma=3
     kernel = numpy.array(
@@ -583,6 +612,20 @@ def alpha_value():
                     alpha[y + ypos, x + xpos] += color
     alpha = numpy.clip(alpha, 0, 0xFFFF)
     alpha = convolve_rgba(alpha, kernel)
+
+    # draw letters
+    for y, row in enumerate(pixel_R):
+        for x, pos in enumerate(row):
+            if pos:
+                alpha[13 + y, 28 + x] = [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF]
+    for y, row in enumerate(pixel_G):
+        for x, pos in enumerate(row):
+            if pos:
+                alpha[39 + y, 40 + x] = [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF]
+    for y, row in enumerate(pixel_B):
+        for x, pos in enumerate(row):
+            if pos:
+                alpha[39 + y, 15 + x] = [0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF]
     return alpha
 
 
@@ -689,7 +732,7 @@ def tmp_alpha_png(tmp_path_factory, alpha):
     write_png(alpha, str(tmp_alpha_png), 16, 6)
     assert (
         hashlib.md5(tmp_alpha_png.read_bytes()).hexdigest()
-        == "cc611e80cde3b9b7adb7723801a4e5d4"
+        == "600bb4cffb039a022cec6ed55537deba"
     )
     yield tmp_alpha_png
     tmp_alpha_png.unlink()
@@ -708,7 +751,7 @@ def tmp_gray1_png(tmp_path_factory, alpha):
     )
     assert (
         hashlib.md5(tmp_gray1_png.read_bytes()).hexdigest()
-        == "ff4d9f18de39be879926be2e65990167"
+        == "dd2c528152d34324747355b73495a115"
     )
     yield tmp_gray1_png
     tmp_gray1_png.unlink()
@@ -727,7 +770,7 @@ def tmp_gray2_png(tmp_path_factory, alpha):
     )
     assert (
         hashlib.md5(tmp_gray2_png.read_bytes()).hexdigest()
-        == "d51900476658a1c9dd26a7b27db8a21f"
+        == "68e614f4e6a85053d47098dad0ca3976"
     )
     yield tmp_gray2_png
     tmp_gray2_png.unlink()
@@ -746,7 +789,7 @@ def tmp_gray4_png(tmp_path_factory, alpha):
     )
     assert (
         hashlib.md5(tmp_gray4_png.read_bytes()).hexdigest()
-        == "722223ba74be9cba1af4a549076b70d3"
+        == "ff04a6fea88133eb77bbb748692ae0fd"
     )
     yield tmp_gray4_png
     tmp_gray4_png.unlink()
@@ -760,7 +803,7 @@ def tmp_gray8_png(tmp_path_factory, alpha):
     write_png(gray16 / 0xFFFF * 0xFF, tmp_gray8_png, 8, 0)
     assert (
         hashlib.md5(tmp_gray8_png.read_bytes()).hexdigest()
-        == "2320216faa5a10bf0f5f04ebce07f8e1"
+        == "90b4ed9123f295dda7fde499744dede7"
     )
     yield tmp_gray8_png
     tmp_gray8_png.unlink()
@@ -774,7 +817,7 @@ def tmp_gray16_png(tmp_path_factory, alpha):
     write_png(gray16, str(tmp_gray16_png), 16, 0)
     assert (
         hashlib.md5(tmp_gray16_png.read_bytes()).hexdigest()
-        == "706175887af8ca1a33cfd93449f970df"
+        == "f76153d2e72fada11d934c32c8168a57"
     )
     yield tmp_gray16_png
     tmp_gray16_png.unlink()
@@ -787,7 +830,7 @@ def tmp_inverse_png(tmp_path_factory, alpha):
     write_png(0xFF - normal16 / 0xFFFF * 0xFF, str(tmp_inverse_png), 8, 2)
     assert (
         hashlib.md5(tmp_inverse_png.read_bytes()).hexdigest()
-        == "35a47d6ae6de8c9d0b31aa0cda8648f3"
+        == "0a7d57dc09c4d8fd1ad3511b116c7dfa"
     )
     yield tmp_inverse_png
     tmp_inverse_png.unlink()
@@ -813,7 +856,7 @@ def tmp_icc_png(tmp_path_factory, alpha, tmp_icc_profile):
     )
     assert (
         hashlib.md5(tmp_icc_png.read_bytes()).hexdigest()
-        == "3058ba4703212fe8c18560e6d1cb61b1"
+        == "bf25f673c1617f5f9353b2a043747655"
     )
     yield tmp_icc_png
     tmp_icc_png.unlink()
@@ -826,7 +869,7 @@ def tmp_normal16_png(tmp_path_factory, alpha):
     write_png(normal16, str(tmp_normal16_png), 16, 2)
     assert (
         hashlib.md5(tmp_normal16_png.read_bytes()).hexdigest()
-        == "6ad810399058a87d8145d8d9a7734da5"
+        == "820dd30a2566775fc64c110e8ac65c7e"
     )
     yield tmp_normal16_png
     tmp_normal16_png.unlink()
@@ -839,7 +882,7 @@ def tmp_normal_png(tmp_path_factory, alpha):
     write_png(normal16 / 0xFFFF * 0xFF, str(tmp_normal_png), 8, 2)
     assert (
         hashlib.md5(tmp_normal_png.read_bytes()).hexdigest()
-        == "c8d2e1f116f31ecdeae050524efca7b6"
+        == "bc30c705f455991cd04be1c298063002"
     )
     yield tmp_normal_png
     tmp_normal_png.unlink()
@@ -867,7 +910,7 @@ def tmp_palette1_png(tmp_path_factory, alpha):
     )
     assert (
         hashlib.md5(tmp_palette1_png.read_bytes()).hexdigest()
-        == "18a3dfca369f976996ef93389ddfad61"
+        == "3d065f731540e928fb730b3233e4e8a7"
     )
     yield tmp_palette1_png
     tmp_palette1_png.unlink()
@@ -894,7 +937,7 @@ def tmp_palette2_png(tmp_path_factory, alpha):
     )
     assert (
         hashlib.md5(tmp_palette2_png.read_bytes()).hexdigest()
-        == "d38646afa6fa0714be9badef25ff9392"
+        == "0b0d4412c28da26163a622d218ee02ca"
     )
     yield tmp_palette2_png
     tmp_palette2_png.unlink()
@@ -937,7 +980,7 @@ def tmp_palette4_png(tmp_path_factory, alpha):
     )
     assert (
         hashlib.md5(tmp_palette4_png.read_bytes()).hexdigest()
-        == "e1c59e68a68fca3273b6dc164d526ed7"
+        == "163f6d7964b80eefa0dc6a48cb7315dd"
     )
     yield tmp_palette4_png
     tmp_palette4_png.unlink()
@@ -972,7 +1015,7 @@ def tmp_palette8_png(tmp_path_factory, alpha):
     )
     assert (
         hashlib.md5(tmp_palette8_png.read_bytes()).hexdigest()
-        == "50bf09eb3571901f0bf642b9a733038c"
+        == "8847bb734eba0e2d85e3f97fc2849dd4"
     )
     yield tmp_palette8_png
     tmp_palette8_png.unlink()
