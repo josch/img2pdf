@@ -1360,6 +1360,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         # image is jpeg2000
         imgformat = ImageFormat.JPEG2000
     else:
+        logger.debug("PIL format = %s", imgdata.format)
         imgformat = None
         for f in ImageFormat:
             if f.name == imgdata.format:
