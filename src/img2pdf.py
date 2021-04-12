@@ -2283,6 +2283,7 @@ def input_images(path_expr):
             # glob won't return files that don't exist so we only use it for wildcards
             # paths without wildcards that do not exist will trigger "does not exist"
             from glob import glob
+
             paths = glob(path_expr)
         for path in paths:
             try:

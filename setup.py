@@ -40,7 +40,9 @@ setup(
     include_package_data=True,
     zip_safe=True,
     install_requires=INSTALL_REQUIRES,
-    extras_require={"gui": ("tkinter"),},
+    extras_require={
+        "gui": ("tkinter"),
+    },
     entry_points={
         "setuptools.installation": ["eggsecutable = img2pdf:main"],
         "console_scripts": ["img2pdf = img2pdf:main"],

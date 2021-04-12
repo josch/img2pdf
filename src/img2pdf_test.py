@@ -603,9 +603,9 @@ def icc_profile():
         b"desc\x00\x00\x00\x00" + struct.pack(">I", 5) + b"fake" + 79 * b"\x00",
         b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(white)),
         # by mixing up red, green and blue, we create a test profile
-        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(blue)), # red
-        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(red)), # green
-        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(green)), # blue
+        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(blue)),  # red
+        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(red)),  # green
+        b"XYZ \x00\x00\x00\x00" + struct.pack(">III", *getxyz(green)),  # blue
         # by only supplying two values, we create the most trivial "curve",
         # where the remaining values will be linearly interpolated between them
         b"curv\x00\x00\x00\x00" + struct.pack(">IHH", 2, 0, 65535),
@@ -775,6 +775,7 @@ def tmp_icc_profile(tmp_path_factory):
     tmp_icc_profile.write_bytes(icc_profile())
     yield tmp_icc_profile
     tmp_icc_profile.unlink()
+
 
 @pytest.fixture(scope="session")
 def tmp_icc_png(tmp_path_factory, alpha, tmp_icc_profile):
@@ -6542,9 +6543,13 @@ def test_general(general_input, engine):
         assert cur_page.Resources.XObject.keys() == {"/Im0"}
         if engine != img2pdf.Engine.pikepdf:
             assert cur_page.Contents.Length == len(cur_page.Contents.read_bytes())
-        assert cur_page.Contents.read_bytes() == b"q\n%.4f 0 0 %.4f 0.0000 0.0000 cm\n/Im0 Do\nQ" % (
-            pagewidth,
-            pageheight,
+        assert (
+            cur_page.Contents.read_bytes()
+            == b"q\n%.4f 0 0 %.4f 0.0000 0.0000 cm\n/Im0 Do\nQ"
+            % (
+                pagewidth,
+                pageheight,
+            )
         )
 
         imgprops = cur_page.Resources.XObject.Im0
@@ -6682,13 +6687,19 @@ def test_general(general_input, engine):
 
 def main():
     normal16 = alpha_value()[:, :, 0:3]
-    pathlib.Path('test.icc').write_bytes(icc_profile())
+    pathlib.Path("test.icc").write_bytes(icc_profile())
     write_png(
         normal16 / 0xFFFF * 0xFF,
         "icc.png",
         8,
         2,
         iccp="test.icc",
+    )
+    write_png(
+        normal16 / 0xFFFF * 0xFF,
+        "normal.png",
+        8,
+        2,
     )
 
 
