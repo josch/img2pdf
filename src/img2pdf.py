@@ -3618,7 +3618,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
         try:
             args.images = [sys.stdin.buffer.read()]
         except KeyboardInterrupt:
-            exit(0)
+            sys.exit(0)
 
     # with the number of pages being equal to the number of images, the
     # value passed to --viewer-initial-page must be between 1 and that number
@@ -3629,14 +3629,14 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
                 "%s: error: argument --viewer-initial-page: must be "
                 "greater than zero" % parser.prog
             )
-            exit(2)
+            sys.exit(2)
         if args.viewer_initial_page > len(args.images):
             parser.print_usage(file=sys.stderr)
             logging.error(
                 "%s: error: argument --viewer-initial-page: must be "
                 "less than or equal to the total number of pages" % parser.prog
             )
-            exit(2)
+            sys.exit(2)
 
     try:
         convert(
@@ -3674,7 +3674,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
             import traceback
 
             traceback.print_exc(file=sys.stderr)
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
