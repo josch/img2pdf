@@ -5471,9 +5471,9 @@ def test_png_palette8(tmp_path_factory, png_palette8_img, png_palette8_pdf):
 )
 def test_png_icc(tmp_path_factory, png_icc_img, png_icc_pdf):
     tmpdir = tmp_path_factory.mktemp("png_icc")
-    compare_ghostscript(tmpdir, png_icc_img, png_icc_pdf, icc=True)
+    compare_ghostscript(tmpdir, png_icc_img, png_icc_pdf, exact=False, icc=True)
     compare_poppler(tmpdir, png_icc_img, png_icc_pdf, exact=False, icc=True)
-    # mupdf ignores the ICC profile
+    # mupdf ignores the ICC profile in Debian (needs patched thirdparty liblcms2-art)
     compare_pdfimages_png(tmpdir, png_icc_img, png_icc_pdf, exact=False, icc=True)
 
 
