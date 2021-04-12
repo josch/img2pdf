@@ -85,7 +85,7 @@ PageOrientation = Enum("PageOrientation", "portrait landscape")
 
 Colorspace = Enum("Colorspace", "RGB L 1 CMYK CMYK;I RGBA P other")
 
-ImageFormat = Enum("ImageFormat", "JPEG JPEG2000 CCITTGroup4 PNG TIFF other")
+ImageFormat = Enum("ImageFormat", "JPEG JPEG2000 CCITTGroup4 PNG TIFF MPO other")
 
 PageMode = Enum("PageMode", "none outlines thumbs")
 
@@ -1401,6 +1401,61 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 iccp,
             )
         ]
+
+    # The MPO format is multiple JPEG images concatenated together
+    # we use the offset and size information to dissect the MPO into its
+    # individual JPEG images and then embed those into the PDF individually.
+    #
+    # The downside is, that this truncates the first JPEG as the MPO metadata
+    # will still be in it but the referenced images are chopped off. We still
+    # do it that way instead of adding the full MPO as the first image to not
+    # store duplicate image data.
+    if imgformat == ImageFormat.MPO:
+        result = []
+        img_page_count = 0
+        for offset, mpent in zip(
+            imgdata._MpoImageFile__mpoffsets, imgdata.mpinfo[0xB002]
+        ):
+            if first_frame_only and img_page_count > 0:
+                break
+            rawframe = BytesIO(rawdata[offset : offset + mpent["Size"]])
+            imframe = Image.open(rawframe)
+            # The first frame contains the data that makes the JPEG a MPO
+            # Could we thus embed an MPO into another MPO? Lets not support
+            # such madness ;)
+            if img_page_count > 0 and imframe.format != "JPEG":
+                raise Exception("MPO payload must be a JPEG %s", imframe.format)
+            color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
+                imframe, ImageFormat.JPEG, default_dpi, colorspace
+            )
+            imframe.close()
+            rawframe.close()
+            if color == Colorspace["1"]:
+                raise JpegColorspaceError("jpeg can't be monochrome")
+            if color == Colorspace["P"]:
+                raise JpegColorspaceError("jpeg can't have a color palette")
+            if color == Colorspace["RGBA"]:
+                raise JpegColorspaceError("jpeg can't have an alpha channel")
+            logger.debug("read_images() embeds a JPEG from MPO")
+            result.append(
+                (
+                    color,
+                    ndpi,
+                    ImageFormat.JPEG,
+                    rawdata[offset : offset + mpent["Size"]],
+                    imgwidthpx,
+                    imgheightpx,
+                    [],
+                    False,
+                    8,
+                    rotation,
+                    iccp,
+                )
+            )
+            img_page_count += 1
+        imgdata.close()
+        im.close()
+        return result
 
     # We can directly embed the IDAT chunk of PNG images if the PNG is not
     # interlaced
