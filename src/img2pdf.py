@@ -36,6 +36,8 @@ import platform
 import hashlib
 from itertools import chain
 
+logger = logging.getLogger(__name__)
+
 have_pdfrw = True
 try:
     import pdfrw
@@ -1177,10 +1179,10 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
         ics = imgdata.mode
 
     if ics in ["LA", "PA", "RGBA"] or "transparency" in imgdata.info:
-        logging.warning("Image contains transparency which cannot be retained in PDF.")
-        logging.warning("img2pdf will not perform a lossy operation.")
-        logging.warning("You can remove the alpha channel using imagemagick:")
-        logging.warning(
+        logger.warning("Image contains transparency which cannot be retained in PDF.")
+        logger.warning("img2pdf will not perform a lossy operation.")
+        logger.warning("You can remove the alpha channel using imagemagick:")
+        logger.warning(
             "  $ convert input.png -background white -alpha "
             "remove -alpha off output.png"
         )
@@ -1201,7 +1203,7 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
             imgdata.tag_v2.get(TiffImagePlugin.Y_RESOLUTION, default_dpi),
         )
 
-    logging.debug("input dpi = %d x %d", *ndpi)
+    logger.debug("input dpi = %d x %d", *ndpi)
 
     rotation = 0
     if hasattr(imgdata, "_getexif") and imgdata._getexif() is not None:
@@ -1224,11 +1226,11 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
                 else:
                     raise ExifOrientationError("Invalid rotation (%d)" % value)
 
-    logging.debug("rotation = %d°", rotation)
+    logger.debug("rotation = %d°", rotation)
 
     if colorspace:
         color = colorspace
-        logging.debug("input colorspace (forced) = %s", color)
+        logger.debug("input colorspace (forced) = %s", color)
     else:
         color = None
         for c in Colorspace:
@@ -1258,13 +1260,13 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
             # with the first approach for now.
             if "adobe" in imgdata.info:
                 color = Colorspace["CMYK;I"]
-        logging.debug("input colorspace = %s", color.name)
+        logger.debug("input colorspace = %s", color.name)
 
     iccp = None
     if "icc_profile" in imgdata.info:
         iccp = imgdata.info.get("icc_profile")
 
-    logging.debug("width x height = %dpx x %dpx", imgwidthpx, imgheightpx)
+    logger.debug("width x height = %dpx x %dpx", imgwidthpx, imgheightpx)
 
     return (color, ndpi, imgwidthpx, imgheightpx, rotation, iccp)
 
@@ -1292,8 +1294,8 @@ def ccitt_payload_location_from_pil(img):
 
     (offset,), (length,) = strip_offsets, strip_bytes
 
-    logging.debug("TIFF strip_offsets: %d" % offset)
-    logging.debug("TIFF strip_bytes: %d" % length)
+    logger.debug("TIFF strip_offsets: %d" % offset)
+    logger.debug("TIFF strip_bytes: %d" % length)
 
     return offset, length
 
@@ -1301,7 +1303,7 @@ def ccitt_payload_location_from_pil(img):
 def transcode_monochrome(imgdata):
     """Convert the open PIL.Image imgdata to compressed CCITT Group4 data"""
 
-    logging.debug("Converting monochrome to CCITT Group4")
+    logger.debug("Converting monochrome to CCITT Group4")
 
     # Convert the image to Group 4 in memory. If libtiff is not installed and
     # Pillow is not compiled against it, .save() will raise an exception.
@@ -1365,7 +1367,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if imgformat is None:
             imgformat = ImageFormat.other
 
-    logging.debug("imgformat = %s", imgformat.name)
+    logger.debug("imgformat = %s", imgformat.name)
 
     # depending on the input format, determine whether to pass the raw
     # image or the zlib compressed color information
@@ -1382,7 +1384,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if color == Colorspace["RGBA"]:
             raise JpegColorspaceError("jpeg can't have an alpha channel")
         im.close()
-        logging.debug("read_images() embeds a JPEG")
+        logger.debug("read_images() embeds a JPEG")
         return [
             (
                 color,
@@ -1419,7 +1421,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         depth = rawdata[24]
         if depth not in [1, 2, 4, 8, 16]:
             raise ValueError("invalid bit depth: %d" % depth)
-        logging.debug("read_images() embeds a PNG")
+        logger.debug("read_images() embeds a PNG")
         return [
             (
                 color,
@@ -1503,7 +1505,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 # msb-to-lsb: nothing to do
                 pass
             elif fillorder == 2:
-                logging.debug("fillorder is lsb-to-msb => reverse bits")
+                logger.debug("fillorder is lsb-to-msb => reverse bits")
                 # lsb-to-msb: reverse bits of each byte
                 rawdata = bytearray(rawdata)
                 for i in range(len(rawdata)):
@@ -1511,7 +1513,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 rawdata = bytes(rawdata)
             else:
                 raise ValueError("unsupported FillOrder: %d" % fillorder)
-            logging.debug("read_images() embeds Group4 from TIFF")
+            logger.debug("read_images() embeds Group4 from TIFF")
             result.append(
                 (
                     color,
@@ -1530,7 +1532,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             img_page_count += 1
             continue
 
-        logging.debug("Converting frame: %d" % img_page_count)
+        logger.debug("Converting frame: %d" % img_page_count)
 
         color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
             imgdata, imgformat, default_dpi, colorspace
@@ -1540,7 +1542,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if color == Colorspace["1"]:
             try:
                 ccittdata = transcode_monochrome(imgdata)
-                logging.debug("read_images() encoded a B/W image as CCITT group 4")
+                logger.debug("read_images() encoded a B/W image as CCITT group 4")
                 result.append(
                     (
                         color,
@@ -1559,8 +1561,8 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 img_page_count += 1
                 continue
             except Exception as e:
-                logging.debug(e)
-                logging.debug("Converting colorspace 1 to L")
+                logger.debug(e)
+                logger.debug("Converting colorspace 1 to L")
                 newimg = imgdata.convert("L")
                 color = Colorspace.L
         elif color in [
@@ -1570,7 +1572,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             Colorspace["CMYK;I"],
             Colorspace.P,
         ]:
-            logging.debug("Colorspace is OK: %s", color)
+            logger.debug("Colorspace is OK: %s", color)
             newimg = imgdata
         else:
             raise ValueError("unknown or unsupported colorspace: %s" % color.name)
@@ -1578,7 +1580,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         # compression
         if color in [Colorspace.CMYK, Colorspace["CMYK;I"]]:
             imggz = zlib.compress(newimg.tobytes())
-            logging.debug("read_images() encoded CMYK with flate compression")
+            logger.debug("read_images() encoded CMYK with flate compression")
             result.append(
                 (
                     color,
@@ -1609,7 +1611,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             depth = ord(pngbuffer.read(1))
             if depth not in [1, 2, 4, 8, 16]:
                 raise ValueError("invalid bit depth: %d" % depth)
-            logging.debug("read_images() encoded an image as PNG")
+            logger.debug("read_images() encoded an image as PNG")
             result.append(
                 (
                     color,
@@ -2040,7 +2042,7 @@ def convert(*images, **kwargs):
 
             userunit = None
             if pagewidth < 3.00 or pageheight < 3.00:
-                logging.warning(
+                logger.warning(
                     "pdf width or height is below 3.00 - too small for some viewers!"
                 )
             elif pagewidth > 14400.0 or pageheight > 14400.0:
@@ -3614,7 +3616,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
     # if no positional arguments were supplied, read a single image from
     # standard input
     if len(args.images) == 0:
-        logging.info("reading image from standard input")
+        logger.info("reading image from standard input")
         try:
             args.images = [sys.stdin.buffer.read()]
         except KeyboardInterrupt:
@@ -3625,14 +3627,14 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
     if args.viewer_initial_page is not None:
         if args.viewer_initial_page < 1:
             parser.print_usage(file=sys.stderr)
-            logging.error(
+            logger.error(
                 "%s: error: argument --viewer-initial-page: must be "
                 "greater than zero" % parser.prog
             )
             sys.exit(2)
         if args.viewer_initial_page > len(args.images):
             parser.print_usage(file=sys.stderr)
-            logging.error(
+            logger.error(
                 "%s: error: argument --viewer-initial-page: must be "
                 "less than or equal to the total number of pages" % parser.prog
             )
@@ -3669,8 +3671,8 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
             pdfa=args.pdfa,
         )
     except Exception as e:
-        logging.error("error: " + str(e))
-        if logging.getLogger().isEnabledFor(logging.DEBUG):
+        logger.error("error: " + str(e))
+        if logger.isEnabledFor(logging.DEBUG):
             import traceback
 
             traceback.print_exc(file=sys.stderr)
