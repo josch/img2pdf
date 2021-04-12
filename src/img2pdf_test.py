@@ -284,6 +284,46 @@ def write_png(data, path, bitdepth, colortype, palette=None, iccp=None):
         f.write(struct.pack(">I", 0) + block + struct.pack(">I", zlib.crc32(block)))
 
 
+def compare(im1, im2, exact, icc, cmyk):
+    if exact:
+        if cmyk:
+            raise Exception("cmyk cannot be exact")
+        elif icc:
+            raise Exception("icc cannot be exact")
+        else:
+            subprocess.check_call(
+                [
+                    "compare",
+                    "-metric",
+                    "AE",
+                    im1,
+                    im2,
+                    "null:",
+                ]
+            )
+    else:
+        iccargs = []
+        if icc:
+            iccargs = ["-profile", "/usr/share/color/icc/sRGB.icc"]
+        psnr = subprocess.run(
+            ["compare"]
+            + iccargs
+            + [
+                "-metric",
+                "PSNR",
+                im1,
+                im2,
+                "null:",
+            ],
+            check=False,
+            stderr=subprocess.PIPE,
+        ).stderr
+        assert psnr != b"0"
+        psnr = float(psnr.strip(b"0"))
+        assert psnr != 0  # or otherwise we would use the exact variant
+        assert psnr > 50
+
+
 def compare_ghostscript(tmpdir, img, pdf, gsdevice="png16m", exact=True, icc=False):
     if gsdevice in ["png16m", "pnggray"]:
         ext = "png"
@@ -303,52 +343,7 @@ def compare_ghostscript(tmpdir, img, pdf, gsdevice="png16m", exact=True, icc=Fal
             str(pdf),
         ]
     )
-    if exact:
-        if icc:
-            subprocess.check_call(
-                [
-                    "compare",
-                    "-metric",
-                    "AE",
-                    "(",
-                    "-profile",
-                    "/usr/share/color/icc/ghostscript/srgb.icc",
-                    "-depth",
-                    "8",
-                    str(img),
-                    ")",
-                    str(tmpdir / "gs-1.") + ext,
-                    "null:",
-                ]
-            )
-        else:
-            subprocess.check_call(
-                [
-                    "compare",
-                    "-metric",
-                    "AE",
-                    str(img),
-                    str(tmpdir / "gs-1.") + ext,
-                    "null:",
-                ]
-            )
-    else:
-        psnr = subprocess.run(
-            [
-                "compare",
-                "-metric",
-                "PSNR",
-                str(img),
-                str(tmpdir / "gs-1.") + ext,
-                "null:",
-            ],
-            check=False,
-            stderr=subprocess.PIPE,
-        ).stderr
-        assert psnr != b"0"
-        psnr = float(psnr.strip(b"0"))
-        assert psnr != 0  # or otherwise we would use the exact variant
-        assert psnr > 50
+    compare(str(img), str(tmpdir / "gs-1.") + ext, exact, icc, False)
     (tmpdir / ("gs-1." + ext)).unlink()
 
 
@@ -356,56 +351,7 @@ def compare_poppler(tmpdir, img, pdf, exact=True, icc=False):
     subprocess.check_call(
         ["pdftocairo", "-r", "96", "-png", str(pdf), str(tmpdir / "poppler")]
     )
-    if exact:
-        if icc:
-            raise Exception("not exact with icc")
-        subprocess.check_call(
-            [
-                "compare",
-                "-metric",
-                "AE",
-                str(img),
-                str(tmpdir / "poppler-1.png"),
-                "null:",
-            ]
-        )
-    else:
-        if icc:
-            psnr = subprocess.run(
-                [
-                    "compare",
-                    "-metric",
-                    "PSNR",
-                    "(",
-                    "-profile",
-                    "/usr/share/color/icc/ghostscript/srgb.icc",
-                    "-depth",
-                    "8",
-                    str(img),
-                    ")",
-                    str(tmpdir / "poppler-1.png"),
-                    "null:",
-                ],
-                check=False,
-                stderr=subprocess.PIPE,
-            ).stderr
-        else:
-            psnr = subprocess.run(
-                [
-                    "compare",
-                    "-metric",
-                    "PSNR",
-                    str(img),
-                    str(tmpdir / "poppler-1.png"),
-                    "null:",
-                ],
-                check=False,
-                stderr=subprocess.PIPE,
-            ).stderr
-        assert psnr != b"0"
-        psnr = float(psnr.strip(b"0"))
-        assert psnr != 0  # or otherwise we would use the exact variant
-        assert psnr > 50
+    compare(str(img), str(tmpdir / "poppler-1.png"), exact, icc, False)
     (tmpdir / "poppler-1.png").unlink()
 
 
@@ -422,20 +368,7 @@ def compare_mupdf(tmpdir, img, pdf, exact=True, cmyk=False):
         subprocess.check_call(
             ["mutool", "draw", "-r", "96", "-png", "-o", str(out), str(pdf)]
         )
-    if exact:
-        if cmyk:
-            raise Exception("cmyk cannot be exact")
-        subprocess.check_call(["compare", "-metric", "AE", str(img), str(out), "null:"])
-    else:
-        psnr = subprocess.run(
-            ["compare", "-metric", "PSNR", str(img), str(out), "null:"],
-            check=False,
-            stderr=subprocess.PIPE,
-        ).stderr
-        assert psnr != b"0"
-        psnr = float(psnr.strip(b"0"))
-        assert psnr != 0  # or otherwise we would use the exact variant
-        assert psnr > 50
+    compare(str(img), str(out), exact, False, cmyk)
     out.unlink()
 
 
