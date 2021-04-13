@@ -2327,7 +2327,7 @@ def parse_borderarg(string):
 def input_images(path_expr):
     if path_expr == "-":
         # we slurp in all data from stdin because we need to seek in it later
-        result = sys.stdin.buffer.read()
+        result = [sys.stdin.buffer.read()]
         if len(result) == 0:
             raise argparse.ArgumentTypeError('"%s" is empty' % path_expr)
     else:
@@ -3675,7 +3675,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
     if len(args.images) == 0:
         logger.info("reading image from standard input")
         try:
-            args.images = [sys.stdin.buffer.read()]
+            args.images = [[sys.stdin.buffer.read()]]
         except KeyboardInterrupt:
             sys.exit(0)
 
