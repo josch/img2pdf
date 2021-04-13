@@ -2112,6 +2112,17 @@ def convert(*images, **kwargs):
                     raise PdfTooLargeError(
                         "pdf width or height must not exceed 200 inches."
                     )
+            for border in ["crop", "bleed", "trim", "art"]:
+                if kwargs[border + "border"] is None:
+                    continue
+                if pagewidth < 2 * kwargs[border + "border"][1]:
+                    raise ValueError(
+                        "horizontal %s border larger than page width" % border
+                    )
+                if pageheight < 2 * kwargs[border + "border"][0]:
+                    raise ValueError(
+                        "vertical %s border larger than page height" % border
+                    )
             # the image is always centered on the page
             imgxpdf = (pagewidth - imgwidthpdf) / 2.0
             imgypdf = (pageheight - imgheightpdf) / 2.0
