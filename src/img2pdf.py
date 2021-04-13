@@ -901,8 +901,8 @@ class pdfdoc(object):
             page[PdfName.CropBox] = [
                 cropborder[1],
                 cropborder[0],
-                pagewidth - 2 * cropborder[1],
-                pageheight - 2 * cropborder[0],
+                pagewidth - cropborder[1],
+                pageheight - cropborder[0],
             ]
         if bleedborder is None:
             if PdfName.CropBox in page:
@@ -911,8 +911,8 @@ class pdfdoc(object):
             page[PdfName.BleedBox] = [
                 bleedborder[1],
                 bleedborder[0],
-                pagewidth - 2 * bleedborder[1],
-                pageheight - 2 * bleedborder[0],
+                pagewidth - bleedborder[1],
+                pageheight - bleedborder[0],
             ]
         if trimborder is None:
             if PdfName.CropBox in page:
@@ -921,8 +921,8 @@ class pdfdoc(object):
             page[PdfName.TrimBox] = [
                 trimborder[1],
                 trimborder[0],
-                pagewidth - 2 * trimborder[1],
-                pageheight - 2 * trimborder[0],
+                pagewidth - trimborder[1],
+                pageheight - trimborder[0],
             ]
         if artborder is None:
             if PdfName.CropBox in page:
@@ -931,8 +931,8 @@ class pdfdoc(object):
             page[PdfName.ArtBox] = [
                 artborder[1],
                 artborder[0],
-                pagewidth - 2 * artborder[1],
-                pageheight - 2 * artborder[0],
+                pagewidth - artborder[1],
+                pageheight - artborder[0],
             ]
         page[PdfName.Resources] = resources
         page[PdfName.Contents] = content
