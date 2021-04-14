@@ -1368,6 +1368,16 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if imgformat is None:
             imgformat = ImageFormat.other
 
+    def cleanup():
+        if imgdata is not None:
+            # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
+            # close() method
+            try:
+                imgdata.close()
+            except AttributeError:
+                pass
+        im.close()
+
     logger.debug("imgformat = %s", imgformat.name)
 
     # depending on the input format, determine whether to pass the raw
@@ -1384,8 +1394,8 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             raise JpegColorspaceError("jpeg can't have a color palette")
         if color == Colorspace["RGBA"]:
             raise JpegColorspaceError("jpeg can't have an alpha channel")
-        im.close()
         logger.debug("read_images() embeds a JPEG")
+        cleanup()
         return [
             (
                 color,
@@ -1453,8 +1463,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 )
             )
             img_page_count += 1
-        imgdata.close()
-        im.close()
+        cleanup()
         return result
 
     # We can directly embed the IDAT chunk of PNG images if the PNG is not
@@ -1469,7 +1478,6 @@ def read_images(rawdata, colorspace, first_frame_only=False):
             imgdata, imgformat, default_dpi, colorspace, rawdata
         )
         pngidat, palette = parse_png(rawdata)
-        im.close()
         # PIL does not provide the information about the original bits per
         # sample. Thus, we retrieve that info manually by looking at byte 9 in
         # the IHDR chunk. We know where to find that in the file because the
@@ -1478,6 +1486,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         if depth not in [1, 2, 4, 8, 16]:
             raise ValueError("invalid bit depth: %d" % depth)
         logger.debug("read_images() embeds a PNG")
+        cleanup()
         return [
             (
                 color,
@@ -1684,13 +1693,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                 )
             )
         img_page_count += 1
-    # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
-    # close() method
-    try:
-        imgdata.close()
-    except AttributeError:
-        pass
-    im.close()
+    cleanup()
     return result
 
 
