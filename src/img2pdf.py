@@ -1428,18 +1428,23 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         ):
             if first_frame_only and img_page_count > 0:
                 break
-            rawframe = BytesIO(rawdata[offset : offset + mpent["Size"]])
-            imframe = Image.open(rawframe)
-            # The first frame contains the data that makes the JPEG a MPO
-            # Could we thus embed an MPO into another MPO? Lets not support
-            # such madness ;)
-            if img_page_count > 0 and imframe.format != "JPEG":
-                raise Exception("MPO payload must be a JPEG %s", imframe.format)
-            color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
-                imframe, ImageFormat.JPEG, default_dpi, colorspace
-            )
-            imframe.close()
-            rawframe.close()
+            with BytesIO(rawdata[offset : offset + mpent["Size"]]) as rawframe:
+                with Image.open(rawframe) as imframe:
+                    # The first frame contains the data that makes the JPEG a MPO
+                    # Could we thus embed an MPO into another MPO? Lets not support
+                    # such madness ;)
+                    if img_page_count > 0 and imframe.format != "JPEG":
+                        raise Exception("MPO payload must be a JPEG %s", imframe.format)
+                    (
+                        color,
+                        ndpi,
+                        imgwidthpx,
+                        imgheightpx,
+                        rotation,
+                        iccp,
+                    ) = get_imgmetadata(
+                        imframe, ImageFormat.JPEG, default_dpi, colorspace
+                    )
             if color == Colorspace["1"]:
                 raise JpegColorspaceError("jpeg can't be monochrome")
             if color == Colorspace["P"]:
