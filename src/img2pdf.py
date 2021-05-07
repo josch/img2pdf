@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2012-2014 Johannes 'josch' Schauer <j.schauer at email.de>
+# Copyright (C) 2012-2021 Johannes Schauer Marin Rodrigues <josch@mister-muffin.de>
 #
 # This program is free software: you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
