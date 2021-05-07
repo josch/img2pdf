@@ -199,6 +199,16 @@ The package can also be used as a library:
 	with open("name.pdf","wb") as f:
 		f.write(img2pdf.convert('test.jpg', layout_fun=layout_fun))
 
+	# use a fixed dpi of 300 instead of reading it from the image
+	dpix = dpiy = 300
+	layout_fun = img2pdf.get_fixed_dpi_layout_fun((dpix, dpiy))
+	with open("name.pdf","wb") as f:
+		f.write(img2pdf.convert('test.jpg', layout_fun=layout_fun))
+
+	# create a PDF/A-1b compliant document by passing an ICC profile
+	with open("name.pdf","wb") as f:
+		f.write(img2pdf.convert('test.jpg', pdfa="/usr/share/color/icc/sRGB.icc"))
+
 Comparison to ImageMagick
 -------------------------
 
