@@ -2343,6 +2343,31 @@ def parse_borderarg(string):
     return h, v
 
 
+def from_file(path):
+    result = []
+    if path == "-":
+        content = sys.stdin.buffer.read()
+    else:
+        with open(path, "rb") as f:
+            content = f.read()
+    for path in content.split(b"\0"):
+        if path == b"":
+            continue
+        try:
+            # test-read a byte from it so that we can abort early in case
+            # we cannot read data from the file
+            with open(path, "rb") as im:
+                im.read(1)
+        except IsADirectoryError:
+            raise argparse.ArgumentTypeError('"%s" is a directory' % path)
+        except PermissionError:
+            raise argparse.ArgumentTypeError('"%s" permission denied' % path)
+        except FileNotFoundError:
+            raise argparse.ArgumentTypeError('"%s" does not exist' % path)
+        result.append(path)
+    return result
+
+
 def input_images(path_expr):
     if path_expr == "-":
         # we slurp in all data from stdin because we need to seek in it later
@@ -3299,8 +3324,10 @@ Report bugs at https://gitlab.mister-muffin.de/josch/img2pdf/issues
         "the Python Imaging Library (PIL). If no input images are given, then "
         'a single image is read from standard input. The special filename "-" '
         "can be used once to read an image from standard input. To read a "
-        'file in the current directory with the filename "-", pass it to '
-        'img2pdf by explicitly stating its relative path like "./-".',
+        'file in the current directory with the filename "-" (or with a '
+        'filename starting with "-"), pass it to img2pdf by explicitly '
+        'stating its relative path like "./-". Cannot be used together with '
+        "--from-file.",
     )
     parser.add_argument(
         "-v",
@@ -3318,6 +3345,19 @@ Report bugs at https://gitlab.mister-muffin.de/josch/img2pdf/issues
     )
     parser.add_argument(
         "--gui", dest="gui", action="store_true", help="run experimental tkinter gui"
+    )
+    parser.add_argument(
+        "--from-file",
+        metavar="FILE",
+        type=from_file,
+        default=[],
+        help="Read the list of images from FILE instead of passing them as "
+        "positional arguments. If this option is used, then the list of "
+        "positional arguments must be empty. The paths to the input images "
+        'in FILE are separated by NUL bytes. If FILE is "-" then the paths '
+        "are expected on standard input. This option is useful if you want "
+        "to pass more images than the maximum command length of your shell "
+        "permits. This option can be used with commands like `find -print0`.",
     )
 
     outargs = parser.add_argument_group(
@@ -3689,14 +3729,26 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
         args.pagesize, args.imgsize, args.border, args.fit, args.auto_orient
     )
 
-    # if no positional arguments were supplied, read a single image from
-    # standard input
-    if len(args.images) == 0:
+    if len(args.images) > 0 and len(args.from_file) > 0:
+        logger.error(
+            "%s: error: cannot use --from-file with positional arguments" % parser.prog
+        )
+        sys.exit(2)
+    elif len(args.images) == 0 and len(args.from_file) == 0:
+        # if no positional arguments were supplied, read a single image from
+        # standard input
         logger.info("reading image from standard input")
         try:
-            args.images = [[sys.stdin.buffer.read()]]
+            images = [sys.stdin.buffer.read()]
         except KeyboardInterrupt:
             sys.exit(0)
+    elif len(args.images) > 0 and len(args.from_file) == 0:
+        # On windows, each positional argument can expand into multiple paths
+        # because we do globbing ourselves. Here we flatten the list of lists
+        # again.
+        images = chain.from_iterable(args.images)
+    elif len(args.images) == 0 and len(args.from_file) > 0:
+        images = args.from_file
 
     # with the number of pages being equal to the number of images, the
     # value passed to --viewer-initial-page must be between 1 and that number
@@ -3708,7 +3760,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
                 "greater than zero" % parser.prog
             )
             sys.exit(2)
-        if args.viewer_initial_page > len(args.images):
+        if args.viewer_initial_page > len(images):
             parser.print_usage(file=sys.stderr)
             logger.error(
                 "%s: error: argument --viewer-initial-page: must be "
@@ -3718,7 +3770,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
 
     try:
         convert(
-            *chain.from_iterable(args.images),
+            *images,
             engine=args.engine,
             title=args.title,
             author=args.author,
