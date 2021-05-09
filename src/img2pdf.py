@@ -50,7 +50,7 @@ try:
 except ImportError:
     have_pikepdf = False
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 default_dpi = 96.0
 papersizes = {
     "letter": "8.5inx11in",

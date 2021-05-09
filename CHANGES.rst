@@ -2,6 +2,15 @@
 CHANGES
 =======
 
+0.4.1 (2020-05-09)
+------------------
+
+ - support wildcards in paths on windows
+ - support MPO images
+ - fix page border computation
+ - use "img2pdf" logger instead of "root" logger
+ - add --from-file
+
 0.4.0 (2020-08-07)
 ------------------
 
