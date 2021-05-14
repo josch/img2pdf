@@ -79,6 +79,8 @@ papernames = {
 
 Engine = Enum("Engine", "internal pdfrw pikepdf")
 
+Rotation = Enum("Rotation", "auto none ifvalid 0 90 180 270")
+
 FitMode = Enum("FitMode", "into fill exact shrink enlarge")
 
 PageOrientation = Enum("PageOrientation", "portrait landscape")
@@ -1155,7 +1157,9 @@ class pdfdoc(object):
             raise ValueError("unknown engine: %s" % self.engine)
 
 
-def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
+def get_imgmetadata(
+    imgdata, imgformat, default_dpi, colorspace, rawdata=None, rotreq=None
+):
     if imgformat == ImageFormat.JPEG2000 and rawdata is not None and imgdata is None:
         # this codepath gets called if the PIL installation is not able to
         # handle JPEG2000 files
@@ -1206,25 +1210,44 @@ def get_imgmetadata(imgdata, imgformat, default_dpi, colorspace, rawdata=None):
     logger.debug("input dpi = %d x %d", *ndpi)
 
     rotation = 0
-    if hasattr(imgdata, "_getexif") and imgdata._getexif() is not None:
-        for tag, value in imgdata._getexif().items():
-            if TAGS.get(tag, tag) == "Orientation":
-                # Detailed information on EXIF rotation tags:
-                # http://impulseadventure.com/photo/exif-orientation.html
-                if value == 1:
-                    rotation = 0
-                elif value == 6:
-                    rotation = 90
-                elif value == 3:
-                    rotation = 180
-                elif value == 8:
-                    rotation = 270
-                elif value in (2, 4, 5, 7):
-                    raise ExifOrientationError(
-                        "Unsupported flipped rotation mode (%d)" % value
-                    )
-                else:
-                    raise ExifOrientationError("Invalid rotation (%d)" % value)
+    if rotreq in (None, Rotation.auto, Rotation.ifvalid):
+        if hasattr(imgdata, "_getexif") and imgdata._getexif() is not None:
+            for tag, value in imgdata._getexif().items():
+                if TAGS.get(tag, tag) == "Orientation":
+                    # Detailed information on EXIF rotation tags:
+                    # http://impulseadventure.com/photo/exif-orientation.html
+                    if value == 1:
+                        rotation = 0
+                    elif value == 6:
+                        rotation = 90
+                    elif value == 3:
+                        rotation = 180
+                    elif value == 8:
+                        rotation = 270
+                    elif value in (2, 4, 5, 7):
+                        if rotreq == Rotation.ifvalid:
+                            logger.warning(
+                                "Unsupported flipped rotation mode (%d)", value
+                            )
+                        else:
+                            raise ExifOrientationError(
+                                "Unsupported flipped rotation mode (%d)" % value
+                            )
+                    else:
+                        if rotreq == Rotation.ifvalid:
+                            logger.warning("Invalid rotation (%d)", value)
+                        else:
+                            raise ExifOrientationError("Invalid rotation (%d)" % value)
+    elif rotreq in (Rotation.none, Rotation["0"]):
+        rotation = 0
+    elif rotreq == Rotation["90"]:
+        rotation = 90
+    elif rotreq == Rotation["180"]:
+        rotation = 180
+    elif rotreq == Rotation["270"]:
+        rotation = 270
+    else:
+        raise Exception("invalid rotreq")
 
     logger.debug("rotation = %d°", rotation)
 
@@ -1344,7 +1367,7 @@ def parse_png(rawdata):
     return pngidat, palette
 
 
-def read_images(rawdata, colorspace, first_frame_only=False):
+def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
     im = BytesIO(rawdata)
     im.seek(0)
     imgdata = None
@@ -1386,7 +1409,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
     # JPEG and JPEG2000 can be embedded into the PDF as-is
     if imgformat == ImageFormat.JPEG or imgformat == ImageFormat.JPEG2000:
         color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
-            imgdata, imgformat, default_dpi, colorspace, rawdata
+            imgdata, imgformat, default_dpi, colorspace, rawdata, rot
         )
         if color == Colorspace["1"]:
             raise JpegColorspaceError("jpeg can't be monochrome")
@@ -1443,7 +1466,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                         rotation,
                         iccp,
                     ) = get_imgmetadata(
-                        imframe, ImageFormat.JPEG, default_dpi, colorspace
+                        imframe, ImageFormat.JPEG, default_dpi, colorspace, rotreq=rot
                     )
             if color == Colorspace["1"]:
                 raise JpegColorspaceError("jpeg can't be monochrome")
@@ -1480,7 +1503,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
     # must be the first chunk.
     if imgformat == ImageFormat.PNG and rawdata[28] == 0:
         color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
-            imgdata, imgformat, default_dpi, colorspace, rawdata
+            imgdata, imgformat, default_dpi, colorspace, rawdata, rot
         )
         pngidat, palette = parse_png(rawdata)
         # PIL does not provide the information about the original bits per
@@ -1562,7 +1585,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
                     "group4 tiff: %d" % photo
                 )
             color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
-                imgdata, imgformat, default_dpi, colorspace, rawdata
+                imgdata, imgformat, default_dpi, colorspace, rawdata, rot
             )
             offset, length = ccitt_payload_location_from_pil(imgdata)
             im.seek(offset)
@@ -1605,7 +1628,7 @@ def read_images(rawdata, colorspace, first_frame_only=False):
         logger.debug("Converting frame: %d" % img_page_count)
 
         color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
-            imgdata, imgformat, default_dpi, colorspace
+            imgdata, imgformat, default_dpi, colorspace, rotreq=rot
         )
 
         newimg = None
@@ -2022,6 +2045,7 @@ def convert(*images, **kwargs):
         trimborder=None,
         artborder=None,
         pdfa=None,
+        rotation=None,
     )
     for kwname, default in _default_kwargs.items():
         if kwname not in kwargs:
@@ -2099,7 +2123,12 @@ def convert(*images, **kwargs):
             depth,
             rotation,
             iccp,
-        ) in read_images(rawdata, kwargs["colorspace"], kwargs["first_frame_only"]):
+        ) in read_images(
+            rawdata,
+            kwargs["colorspace"],
+            kwargs["first_frame_only"],
+            kwargs["rotation"],
+        ):
             pagewidth, pageheight, imgwidthpdf, imgheightpdf = kwargs["layout_fun"](
                 imgwidthpx, imgheightpx, ndpi
             )
@@ -2400,6 +2429,13 @@ def input_images(path_expr):
                 raise argparse.ArgumentTypeError('"%s" does not exist' % path)
             result.append(path)
     return result
+
+
+def parse_rotationarg(string):
+    for m in Rotation:
+        if m.name == string.lower():
+            return m
+    raise argparse.ArgumentTypeError("unknown rotation value: %s" % string)
 
 
 def parse_fitarg(string):
@@ -3561,6 +3597,23 @@ values set via the --border option.
 """,
     )
     sizeargs.add_argument(
+        "-r",
+        "--rotation",
+        "--orientation",
+        metavar="ROT",
+        type=parse_rotationarg,
+        default=Rotation.auto,
+        help="""
+Specifies how input images should be rotated. ROT can be one of auto, none,
+ifvalid, 0, 90, 180 and 270. The default value is auto and indicates that input
+images are rotated according to their EXIF Orientation tag. The values none and
+0 ignore the EXIF Orientation values of the input images. The value ifvalid
+acts like auto but ignores invalid EXIF rotation values and only issues a
+warning instead of throwing an error. The values 90, 180 and 270 perform a
+clockwise rotation of the image.
+            """,
+    )
+    sizeargs.add_argument(
         "--crop-border",
         metavar="L[:L]",
         type=parse_borderarg,
@@ -3797,6 +3850,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
             trimborder=args.trim_border,
             artborder=args.art_border,
             pdfa=args.pdfa,
+            rotation=args.rotation,
         )
     except Exception as e:
         logger.error("error: " + str(e))
