@@ -742,6 +742,7 @@ class pdfdoc(object):
         imgheightpx,
         imgformat,
         imgdata,
+        smaskdata,
         imgwidthpdf,
         imgheightpdf,
         imgxpdf,
@@ -759,6 +760,8 @@ class pdfdoc(object):
         artborder=None,
         iccp=None,
     ):
+        assert color != Colorspace.RGBA or (imgformat == ImageFormat.PNG and smaskdata is not None)
+
         if self.engine == Engine.pikepdf:
             PdfArray = pikepdf.Array
             PdfDict = pikepdf.Dictionary
@@ -779,7 +782,7 @@ class pdfdoc(object):
 
         if color == Colorspace["1"] or color == Colorspace.L:
             colorspace = PdfName.DeviceGray
-        elif color == Colorspace.RGB:
+        elif color == Colorspace.RGB or color == Colorspace.RGBA:
             colorspace = PdfName.DeviceRGB
         elif color == Colorspace.CMYK or color == Colorspace["CMYK;I"]:
             colorspace = PdfName.DeviceCMYK
@@ -818,7 +821,7 @@ class pdfdoc(object):
             iccpdict[PdfName.Alternate] = colorspace
             if color == Colorspace["1"] or color == Colorspace.L:
                 iccpdict[PdfName.N] = 1
-            elif color == Colorspace.RGB:
+            elif color == Colorspace.RGB or color == Colorspace.RGBA:
                 iccpdict[PdfName.N] = 3
             elif color == Colorspace.CMYK or color == Colorspace["CMYK;I"]:
                 iccpdict[PdfName.N] = 4
@@ -869,15 +872,34 @@ class pdfdoc(object):
             decodeparms[PdfName.Rows] = imgheightpx
             image[PdfName.DecodeParms] = [decodeparms]
         elif imgformat is ImageFormat.PNG:
-            decodeparms = PdfDict()
-            decodeparms[PdfName.Predictor] = 15
-            if color in [Colorspace.P, Colorspace["1"], Colorspace.L]:
-                decodeparms[PdfName.Colors] = 1
+            if color == Colorspace.RGBA:
+                if self.engine == Engine.pikepdf:
+                    smask = self.writer.make_stream(smaskdata)
+                else:
+                    smask = PdfDict(stream=convert_load(smaskdata))
+                smask[PdfName.Type] = PdfName.XObject
+                smask[PdfName.Subtype] = PdfName.Image
+                smask[PdfName.Filter] = PdfName.FlateDecode
+                smask[PdfName.Width] = imgwidthpx
+                smask[PdfName.Height] = imgheightpx
+                smask[PdfName.ColorSpace] = PdfName.DeviceGray
+                smask[PdfName.BitsPerComponent] = depth
+
+                image[PdfName.SMask] = smask
+
+                # /SMask requires PDF 1.4
+                if self.output_version < "1.4":
+                    self.output_version = "1.4"
             else:
-                decodeparms[PdfName.Colors] = 3
-            decodeparms[PdfName.Columns] = imgwidthpx
-            decodeparms[PdfName.BitsPerComponent] = depth
-            image[PdfName.DecodeParms] = decodeparms
+                decodeparms = PdfDict()
+                decodeparms[PdfName.Predictor] = 15
+                if color in [Colorspace.P, Colorspace["1"], Colorspace.L]:
+                    decodeparms[PdfName.Colors] = 1
+                else:
+                    decodeparms[PdfName.Colors] = 3
+                decodeparms[PdfName.Columns] = imgwidthpx
+                decodeparms[PdfName.BitsPerComponent] = depth
+                image[PdfName.DecodeParms] = decodeparms
 
         text = (
             "q\n%0.4f 0 0 %0.4f %0.4f %0.4f cm\n/Im0 Do\nQ"
@@ -954,6 +976,8 @@ class pdfdoc(object):
             if self.engine == Engine.internal:
                 self.writer.addobj(content)
                 self.writer.addobj(image)
+                if smask is not None:
+                    self.writer.addobj(smask)
                 if iccp is not None:
                     self.writer.addobj(iccpdict)
 
@@ -1183,8 +1207,10 @@ def get_imgmetadata(
         # Search online for the 72.009 dpi problem for more info.
         ndpi = (int(round(ndpi[0])), int(round(ndpi[1])))
         ics = imgdata.mode
-
-    if ics in ["LA", "PA", "RGBA"] or "transparency" in imgdata.info:
+    
+    if imgformat == ImageFormat.PNG and ics == "RGBA":
+        logger.warning("Image contains an alpha channel which will be stored as a separate soft mask (/SMask) image in PDF.")
+    elif (ics in ["LA", "PA", "RGBA"] or "transparency" in imgdata.info):
         logger.warning("Image contains transparency which cannot be retained in PDF.")
         logger.warning("img2pdf will not perform a lossy operation.")
         logger.warning("You can remove the alpha channel using imagemagick:")
@@ -1427,6 +1453,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                 ndpi,
                 imgformat,
                 rawdata,
+                None,
                 imgwidthpx,
                 imgheightpx,
                 [],
@@ -1483,6 +1510,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     ndpi,
                     ImageFormat.JPEG,
                     rawdata[offset : offset + mpent["Size"]],
+                    None,
                     imgwidthpx,
                     imgheightpx,
                     [],
@@ -1495,7 +1523,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
             img_page_count += 1
         cleanup()
         return result
-
+    
     # We can directly embed the IDAT chunk of PNG images if the PNG is not
     # interlaced
     #
@@ -1503,35 +1531,46 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
     # or not. Thus, we retrieve that info manually by looking at byte 13 in the
     # IHDR chunk. We know where to find that in the file because the IHDR chunk
     # must be the first chunk.
-    if imgformat == ImageFormat.PNG and rawdata[28] == 0:
+    if imgformat == ImageFormat.PNG:
         color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
             imgdata, imgformat, default_dpi, colorspace, rawdata, rot
         )
-        pngidat, palette = parse_png(rawdata)
-        # PIL does not provide the information about the original bits per
-        # sample. Thus, we retrieve that info manually by looking at byte 9 in
-        # the IHDR chunk. We know where to find that in the file because the
-        # IHDR chunk must be the first chunk
-        depth = rawdata[24]
-        if depth not in [1, 2, 4, 8, 16]:
-            raise ValueError("invalid bit depth: %d" % depth)
-        logger.debug("read_images() embeds a PNG")
-        cleanup()
-        return [
-            (
-                color,
-                ndpi,
-                imgformat,
-                pngidat,
-                imgwidthpx,
-                imgheightpx,
-                palette,
-                False,
-                depth,
-                rotation,
-                iccp,
-            )
-        ]
+
+        if color == Colorspace.RGBA or rawdata[28] == 0:
+            if color == Colorspace.RGBA:
+                r, g, b, a = imgdata.split()
+                pngdata = zlib.compress(Image.merge("RGB", (r, g, b)).tobytes())
+                smaskdata = zlib.compress(a.tobytes())
+                palette = None
+            else:
+                pngdata, palette = parse_png(rawdata)
+                smaskdata = None
+            
+            # PIL does not provide the information about the original bits per
+            # sample. Thus, we retrieve that info manually by looking at byte 9 in
+            # the IHDR chunk. We know where to find that in the file because the
+            # IHDR chunk must be the first chunk
+            depth = rawdata[24]
+            if depth not in [1, 2, 4, 8, 16]:
+                raise ValueError("invalid bit depth: %d" % depth)
+            logger.debug("read_images() embeds a PNG")
+            cleanup()
+            return [
+                (
+                    color,
+                    ndpi,
+                    imgformat,
+                    pngdata,
+                    smaskdata,
+                    imgwidthpx,
+                    imgheightpx,
+                    palette,
+                    False,
+                    depth,
+                    rotation,
+                    iccp,
+                )
+            ]
 
     # If our input is not JPEG or PNG, then we might have a format that
     # supports multiple frames (like TIFF or GIF), so we need a loop to
@@ -1615,6 +1654,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     ndpi,
                     ImageFormat.CCITTGroup4,
                     rawdata,
+                    None,
                     imgwidthpx,
                     imgheightpx,
                     [],
@@ -1644,6 +1684,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                         ndpi,
                         ImageFormat.CCITTGroup4,
                         ccittdata,
+                        None,
                         imgwidthpx,
                         imgheightpx,
                         [],
@@ -1682,6 +1723,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     ndpi,
                     imgformat,
                     imggz,
+                    None,
                     imgwidthpx,
                     imgheightpx,
                     [],
@@ -1713,6 +1755,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     ndpi,
                     ImageFormat.PNG,
                     pngidat,
+                    None,
                     imgwidthpx,
                     imgheightpx,
                     palette,
@@ -2118,6 +2161,7 @@ def convert(*images, **kwargs):
             ndpi,
             imgformat,
             imgdata,
+            smaskdata,
             imgwidthpx,
             imgheightpx,
             palette,
@@ -2171,6 +2215,7 @@ def convert(*images, **kwargs):
                 imgheightpx,
                 imgformat,
                 imgdata,
+                smaskdata,
                 imgwidthpdf,
                 imgheightpdf,
                 imgxpdf,
