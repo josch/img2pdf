@@ -885,6 +885,13 @@ class pdfdoc(object):
                 smask[PdfName.ColorSpace] = PdfName.DeviceGray
                 smask[PdfName.BitsPerComponent] = depth
 
+                decodeparms = PdfDict()
+                decodeparms[PdfName.Predictor] = 15
+                decodeparms[PdfName.Colors] = 1
+                decodeparms[PdfName.Columns] = imgwidthpx
+                decodeparms[PdfName.BitsPerComponent] = depth
+                smask[PdfName.DecodeParms] = decodeparms
+
                 image[PdfName.SMask] = smask
 
                 # /SMask requires PDF 1.4
@@ -1752,11 +1759,11 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     r, g, b, a = newimg.convert(mode="RGBA").split()
                     newimg = Image.merge("RGB", (r, g, b))
 
-                smaskdata = zlib.compress(a.tobytes())
+                smaskidat, _, _ = to_png_data(a)
                 logger.warning("Image contains an alpha channel which will be stored as a separate soft mask (/SMask) image in PDF.")
             else:
                 newcolor = color
-                smaskdata = None
+                smaskidat = None
 
             pngidat, palette, depth = to_png_data(newimg)
             logger.debug("read_images() encoded an image as PNG")
@@ -1766,7 +1773,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     ndpi,
                     ImageFormat.PNG,
                     pngidat,
-                    smaskdata,
+                    smaskidat,
                     imgwidthpx,
                     imgheightpx,
                     palette,
