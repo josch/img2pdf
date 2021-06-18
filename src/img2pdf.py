@@ -760,7 +760,10 @@ class pdfdoc(object):
         artborder=None,
         iccp=None,
     ):
-        assert (color != Colorspace.RGBA and color != Colorspace.LA) or (imgformat == ImageFormat.PNG and smaskdata is not None)
+        assert (
+            (color != Colorspace.RGBA and color != Colorspace.LA)
+            or (imgformat == ImageFormat.PNG and smaskdata is not None)
+        )
 
         if self.engine == Engine.pikepdf:
             PdfArray = pikepdf.Array
@@ -1222,7 +1225,7 @@ def get_imgmetadata(
     ):
         # Must check the IHDR chunk for the bit depth, because PIL would lossily
         # convert 16-bit RGBA/LA images to 8-bit.
-        if imgformat == ImageFormat.PNG and rawdata != None:
+        if imgformat == ImageFormat.PNG and rawdata is not None:
             depth = rawdata[24]
             if depth > 8:
                 logger.warning("Image with transparency and a bit depth of %d." % depth)
@@ -1553,7 +1556,11 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
         color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
             imgdata, imgformat, default_dpi, colorspace, rawdata, rot
         )
-        if color != Colorspace.RGBA and color != Colorspace.LA and "transparency" not in imgdata.info:
+        if (
+            color != Colorspace.RGBA
+            and color != Colorspace.LA
+            and "transparency" not in imgdata.info
+        ):
             pngidat, palette = parse_png(rawdata)
             # PIL does not provide the information about the original bits per
             # sample. Thus, we retrieve that info manually by looking at byte 9 in
@@ -1745,7 +1752,11 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                 )
             )
         else:
-            if color == Colorspace.RGBA or color == Colorspace.LA or "transparency" in newimg.info:
+            if (
+                color == Colorspace.RGBA
+                or color == Colorspace.LA
+                or "transparency" in newimg.info
+            ):
                 if color == Colorspace.RGBA:
                     newcolor = color
                     r, g, b, a = newimg.split()
@@ -1760,7 +1771,10 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     newimg = Image.merge("RGB", (r, g, b))
 
                 smaskidat, _, _ = to_png_data(a)
-                logger.warning("Image contains an alpha channel which will be stored as a separate soft mask (/SMask) image in PDF.")
+                logger.warning(
+                    "Image contains an alpha channel which will be stored "
+                    "as a separate soft mask (/SMask) image in PDF."
+                )
             else:
                 newcolor = color
                 smaskidat = None
