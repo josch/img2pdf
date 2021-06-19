@@ -858,6 +858,8 @@ class pdfdoc(object):
         image[PdfName.ColorSpace] = colorspace
         image[PdfName.BitsPerComponent] = depth
 
+        smask = None
+
         if color == Colorspace["CMYK;I"]:
             # Inverts all four channels
             image[PdfName.Decode] = [1, 0, 1, 0, 1, 0, 1, 0]
