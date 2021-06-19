@@ -2281,7 +2281,15 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
 def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("tiff_cmyk8") / "in.tiff"
     subprocess.check_call(
-        ["convert", str(tmp_normal_png), "-colorspace", "cmyk", str(in_img)]
+        [
+            "convert",
+            str(tmp_normal_png),
+            "-colorspace",
+            "cmyk",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
     )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
@@ -2337,6 +2345,8 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
             "16",
             "-colorspace",
             "cmyk",
+            "-compress",
+            "Zip",
             str(in_img),
         ]
     )
@@ -2386,7 +2396,15 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
 @pytest.fixture(scope="session")
 def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_normal_png),
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -2433,7 +2451,15 @@ def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
 def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
     subprocess.check_call(
-        ["convert", str(tmp_normal16_png), "-depth", "12", str(in_img)]
+        [
+            "convert",
+            str(tmp_normal16_png),
+            "-depth",
+            "12",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
     )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
@@ -2485,7 +2511,15 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
 def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
     subprocess.check_call(
-        ["convert", str(tmp_normal16_png), "-depth", "14", str(in_img)]
+        [
+            "convert",
+            str(tmp_normal16_png),
+            "-depth",
+            "14",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
     )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
@@ -2537,7 +2571,15 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
 def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
     subprocess.check_call(
-        ["convert", str(tmp_normal16_png), "-depth", "16", str(in_img)]
+        [
+            "convert",
+            str(tmp_normal16_png),
+            "-depth",
+            "16",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
     )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
@@ -2585,7 +2627,16 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
 def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("tiff_rgba8") / "in.tiff"
     subprocess.check_call(
-        ["convert", str(tmp_alpha_png), "-depth", "8", "-strip", str(in_img)]
+        [
+            "convert",
+            str(tmp_alpha_png),
+            "-depth",
+            "8",
+            "-strip",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
     )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
@@ -2633,7 +2684,16 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
 def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("tiff_rgba16") / "in.tiff"
     subprocess.check_call(
-        ["convert", str(tmp_alpha_png), "-depth", "16", "-strip", str(in_img)]
+        [
+            "convert",
+            str(tmp_alpha_png),
+            "-depth",
+            "16",
+            "-strip",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
     )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
@@ -2680,7 +2740,17 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
 @pytest.fixture(scope="session")
 def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
     in_img = tmp_path_factory.mktemp("tiff_gray1") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_gray1_png), "-depth", "1", str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_gray1_png),
+            "-depth",
+            "1",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -2727,7 +2797,17 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
 @pytest.fixture(scope="session")
 def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
     in_img = tmp_path_factory.mktemp("tiff_gray2") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_gray2_png), "-depth", "2", str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_gray2_png),
+            "-depth",
+            "2",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -2774,7 +2854,17 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
 @pytest.fixture(scope="session")
 def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
     in_img = tmp_path_factory.mktemp("tiff_gray4") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_gray4_png), "-depth", "4", str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_gray4_png),
+            "-depth",
+            "4",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -2821,7 +2911,17 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
 @pytest.fixture(scope="session")
 def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
     in_img = tmp_path_factory.mktemp("tiff_gray8") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_gray8_png), "-depth", "8", str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_gray8_png),
+            "-depth",
+            "8",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -2868,7 +2968,17 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
 @pytest.fixture(scope="session")
 def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
     in_img = tmp_path_factory.mktemp("tiff_gray16") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_gray16_png), "-depth", "16", str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_gray16_png),
+            "-depth",
+            "16",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -2916,7 +3026,15 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
 def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     in_img = tmp_path_factory.mktemp("tiff_multipage_img") / "in.tiff"
     subprocess.check_call(
-        ["convert", str(tmp_normal_png), str(tmp_inverse_png), "-strip", str(in_img)]
+        [
+            "convert",
+            str(tmp_normal_png),
+            str(tmp_inverse_png),
+            "-strip",
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
     )
     identify = json.loads(
         subprocess.check_output(["convert", str(in_img) + "[0]", "json:"])
@@ -3006,7 +3124,15 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
 @pytest.fixture(scope="session")
 def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
     in_img = tmp_path_factory.mktemp("tiff_palette1_img") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_palette1_png), str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_palette1_png),
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -3054,7 +3180,15 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
 @pytest.fixture(scope="session")
 def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
     in_img = tmp_path_factory.mktemp("tiff_palette2_img") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_palette2_png), str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_palette2_png),
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -3102,7 +3236,15 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
 @pytest.fixture(scope="session")
 def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
     in_img = tmp_path_factory.mktemp("tiff_palette4_img") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_palette4_png), str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_palette4_png),
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -3150,7 +3292,15 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
 @pytest.fixture(scope="session")
 def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
     in_img = tmp_path_factory.mktemp("tiff_palette8_img") / "in.tiff"
-    subprocess.check_call(["convert", str(tmp_palette8_png), str(in_img)])
+    subprocess.check_call(
+        [
+            "convert",
+            str(tmp_palette8_png),
+            "-compress",
+            "Zip",
+            str(in_img)
+        ]
+    )
     identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -3209,6 +3359,8 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
             "tiff:fill-order=msb",
             "-define",
             "quantum:polarity=min-is-white",
+            "-compress",
+            "Group4",
             str(in_img),
         ]
     )
@@ -3288,6 +3440,8 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
             "tiff:fill-order=msb",
             "-define",
             "quantum:polarity=min-is-white",
+            "-compress",
+            "Group4",
             str(in_img),
         ]
     )
@@ -3368,6 +3522,8 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
             "tiff:fill-order=lsb",
             "-define",
             "quantum:polarity=min-is-white",
+            "-compress",
+            "Group4",
             str(in_img),
         ]
     )
@@ -3453,6 +3609,8 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
             "tiff:fill-order=msb",
             "-define",
             "quantum:polarity=min-is-black",
+            "-compress",
+            "Group4",
             str(in_img),
         ]
     )
@@ -3532,6 +3690,8 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
             "tiff:fill-order=msb",
             "-define",
             "quantum:polarity=min-is-white",
+            "-compress",
+            "Group4",
             str(in_img),
         ]
     )
@@ -3620,6 +3780,8 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
             "tiff:fill-order=msb",
             "-define",
             "quantum:polarity=min-is-white",
+            "-compress",
+            "Group4",
             str(in_img),
         ]
     )
@@ -5022,7 +5184,7 @@ def test_jpg_cmyk(tmp_path_factory, jpg_cmyk_img, jpg_cmyk_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.skipif(
@@ -5037,7 +5199,7 @@ def test_jpg_2000(tmp_path_factory, jpg_2000_img, jpg_2000_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_rgb8(tmp_path_factory, png_rgb8_img, png_rgb8_pdf):
@@ -5049,7 +5211,7 @@ def test_png_rgb8(tmp_path_factory, png_rgb8_img, png_rgb8_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_rgb16(tmp_path_factory, png_rgb16_img, png_rgb16_pdf):
@@ -5061,7 +5223,7 @@ def test_png_rgb16(tmp_path_factory, png_rgb16_img, png_rgb16_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5084,7 +5246,7 @@ def test_png_rgba8(tmp_path_factory, png_rgba8_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5107,7 +5269,7 @@ def test_png_rgba16(tmp_path_factory, png_rgba16_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5130,7 +5292,7 @@ def test_png_gray8a(tmp_path_factory, png_gray8a_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5153,7 +5315,7 @@ def test_png_gray16a(tmp_path_factory, png_gray16a_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_interlaced(tmp_path_factory, png_interlaced_img, png_interlaced_pdf):
@@ -5165,7 +5327,7 @@ def test_png_interlaced(tmp_path_factory, png_interlaced_img, png_interlaced_pdf
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_gray1(tmp_path_factory, png_gray1_img, png_gray1_pdf):
@@ -5177,7 +5339,7 @@ def test_png_gray1(tmp_path_factory, png_gray1_img, png_gray1_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_gray2(tmp_path_factory, png_gray2_img, png_gray2_pdf):
@@ -5189,7 +5351,7 @@ def test_png_gray2(tmp_path_factory, png_gray2_img, png_gray2_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_gray4(tmp_path_factory, png_gray4_img, png_gray4_pdf):
@@ -5201,7 +5363,7 @@ def test_png_gray4(tmp_path_factory, png_gray4_img, png_gray4_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_gray8(tmp_path_factory, png_gray8_img, png_gray8_pdf):
@@ -5213,7 +5375,7 @@ def test_png_gray8(tmp_path_factory, png_gray8_img, png_gray8_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_gray16(tmp_path_factory, png_gray16_img, png_gray16_pdf):
@@ -5229,7 +5391,7 @@ def test_png_gray16(tmp_path_factory, png_gray16_img, png_gray16_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_palette1(tmp_path_factory, png_palette1_img, png_palette1_pdf):
@@ -5241,7 +5403,7 @@ def test_png_palette1(tmp_path_factory, png_palette1_img, png_palette1_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_palette2(tmp_path_factory, png_palette2_img, png_palette2_pdf):
@@ -5253,7 +5415,7 @@ def test_png_palette2(tmp_path_factory, png_palette2_img, png_palette2_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_palette4(tmp_path_factory, png_palette4_img, png_palette4_pdf):
@@ -5265,7 +5427,7 @@ def test_png_palette4(tmp_path_factory, png_palette4_img, png_palette4_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_png_palette8(tmp_path_factory, png_palette8_img, png_palette8_pdf):
@@ -5289,7 +5451,7 @@ def test_png_icc(tmp_path_factory, png_icc_img, png_icc_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5312,7 +5474,7 @@ def test_gif_transparent(tmp_path_factory, gif_transparent_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_gif_palette1(tmp_path_factory, gif_palette1_img, gif_palette1_pdf):
@@ -5324,7 +5486,7 @@ def test_gif_palette1(tmp_path_factory, gif_palette1_img, gif_palette1_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_gif_palette2(tmp_path_factory, gif_palette2_img, gif_palette2_pdf):
@@ -5336,7 +5498,7 @@ def test_gif_palette2(tmp_path_factory, gif_palette2_img, gif_palette2_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_gif_palette4(tmp_path_factory, gif_palette4_img, gif_palette4_pdf):
@@ -5348,7 +5510,7 @@ def test_gif_palette4(tmp_path_factory, gif_palette4_img, gif_palette4_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_gif_palette8(tmp_path_factory, gif_palette8_img, gif_palette8_pdf):
@@ -5360,7 +5522,7 @@ def test_gif_palette8(tmp_path_factory, gif_palette8_img, gif_palette8_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_gif_animation(tmp_path_factory, gif_animation_img, gif_animation_pdf):
@@ -5407,7 +5569,7 @@ def test_tiff_float(tmp_path_factory, tiff_float_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_cmyk8(tmp_path_factory, tiff_cmyk8_img, tiff_cmyk8_pdf):
@@ -5421,7 +5583,7 @@ def test_tiff_cmyk8(tmp_path_factory, tiff_cmyk8_img, tiff_cmyk8_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5445,7 +5607,7 @@ def test_tiff_cmyk16(tmp_path_factory, tiff_cmyk16_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_rgb8(tmp_path_factory, tiff_rgb8_img, tiff_rgb8_pdf):
@@ -5457,7 +5619,7 @@ def test_tiff_rgb8(tmp_path_factory, tiff_rgb8_img, tiff_rgb8_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5481,7 +5643,7 @@ def test_tiff_rgb12(tmp_path_factory, tiff_rgb12_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5505,7 +5667,7 @@ def test_tiff_rgb14(tmp_path_factory, tiff_rgb14_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5529,7 +5691,7 @@ def test_tiff_rgb16(tmp_path_factory, tiff_rgb16_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5552,7 +5714,7 @@ def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5575,7 +5737,7 @@ def test_tiff_rgba16(tmp_path_factory, tiff_rgba16_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_gray1(tmp_path_factory, tiff_gray1_img, tiff_gray1_pdf):
@@ -5587,7 +5749,7 @@ def test_tiff_gray1(tmp_path_factory, tiff_gray1_img, tiff_gray1_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_gray2(tmp_path_factory, tiff_gray2_img, tiff_gray2_pdf):
@@ -5599,7 +5761,7 @@ def test_tiff_gray2(tmp_path_factory, tiff_gray2_img, tiff_gray2_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_gray4(tmp_path_factory, tiff_gray4_img, tiff_gray4_pdf):
@@ -5611,7 +5773,7 @@ def test_tiff_gray4(tmp_path_factory, tiff_gray4_img, tiff_gray4_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_gray8(tmp_path_factory, tiff_gray8_img, tiff_gray8_pdf):
@@ -5623,7 +5785,7 @@ def test_tiff_gray8(tmp_path_factory, tiff_gray8_img, tiff_gray8_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
@@ -5646,7 +5808,7 @@ def test_tiff_gray16(tmp_path_factory, tiff_gray16_img, engine):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_multipage(tmp_path_factory, tiff_multipage_img, tiff_multipage_pdf):
@@ -5676,7 +5838,7 @@ def test_tiff_multipage(tmp_path_factory, tiff_multipage_img, tiff_multipage_pdf
     reason="requires imagemagick with support for keeping the palette depth",
 )
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_palette1(tmp_path_factory, tiff_palette1_img, tiff_palette1_pdf):
@@ -5692,7 +5854,7 @@ def test_tiff_palette1(tmp_path_factory, tiff_palette1_img, tiff_palette1_pdf):
     reason="requires imagemagick with support for keeping the palette depth",
 )
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_palette2(tmp_path_factory, tiff_palette2_img, tiff_palette2_pdf):
@@ -5708,7 +5870,7 @@ def test_tiff_palette2(tmp_path_factory, tiff_palette2_img, tiff_palette2_pdf):
     reason="requires imagemagick with support for keeping the palette depth",
 )
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_palette4(tmp_path_factory, tiff_palette4_img, tiff_palette4_pdf):
@@ -5720,7 +5882,7 @@ def test_tiff_palette4(tmp_path_factory, tiff_palette4_img, tiff_palette4_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_palette8(tmp_path_factory, tiff_palette8_img, tiff_palette8_pdf):
@@ -5732,7 +5894,7 @@ def test_tiff_palette8(tmp_path_factory, tiff_palette8_img, tiff_palette8_pdf):
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_ccitt_lsb_m2l_white(
@@ -5753,7 +5915,7 @@ def test_tiff_ccitt_lsb_m2l_white(
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_ccitt_msb_m2l_white(
@@ -5774,7 +5936,7 @@ def test_tiff_ccitt_msb_m2l_white(
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_ccitt_msb_l2m_white(
@@ -5799,7 +5961,7 @@ def test_tiff_ccitt_msb_l2m_white(
     reason="requires imagemagick with support for min-is-black",
 )
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_ccitt_lsb_m2l_black(
@@ -5820,7 +5982,7 @@ def test_tiff_ccitt_lsb_m2l_black(
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_ccitt_nometa1(
@@ -5836,7 +5998,7 @@ def test_tiff_ccitt_nometa1(
 
 
 @pytest.mark.skipif(
-    sys.platform in ["darwin", "win32"],
+    sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
 def test_tiff_ccitt_nometa2(
