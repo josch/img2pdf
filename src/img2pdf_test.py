@@ -419,6 +419,23 @@ def compare_pdfimages_tiff(tmpdir, img, pdf):
 
 def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
     subprocess.check_call(["pdfimages", "-png", str(pdf), str(tmpdir / "images")])
+    # images-001.png is the grayscale SMask image (the original alpha channel)
+    if os.path.isfile(tmpdir / "images-001.png"):
+        subprocess.check_call(
+            [
+                "convert",
+                str(tmpdir / "images-000.png"),
+                str(tmpdir / "images-001.png"),
+                "-compose",
+                "copy-opacity",
+                "-composite",
+                str(tmpdir / "composite.png")
+            ]
+        )
+        (tmpdir / "images-000.png").unlink()
+        (tmpdir / "images-001.png").unlink()
+        os.rename(tmpdir / "composite.png", tmpdir / "images-000.png")
+
     if exact:
         if icc:
             raise Exception("not exact with icc")
@@ -4041,6 +4058,86 @@ def png_rgb8_pdf(tmp_path_factory, png_rgb8_img, request):
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+def png_rgba8_pdf(tmp_path_factory, png_rgba8_img, request):
+    out_pdf = tmp_path_factory.mktemp("png_rgba8_pdf") / "out.pdf"
+    subprocess.check_call(
+        [
+            "src/img2pdf.py",
+            "--producer=",
+            "--nodate",
+            "--engine=" + request.param,
+            "--output=" + str(out_pdf),
+            str(png_rgba8_img),
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert (
+            p.pages[0].Contents.read_bytes()
+            == b"q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ"
+        )
+        assert p.pages[0].Resources.XObject.Im0.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Colors == 3
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Predictor == 15
+        assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.Width == 60
+        assert p.pages[0].Resources.XObject.Im0.SMask is not None
+
+        assert p.pages[0].Resources.XObject.Im0.SMask.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.SMask.ColorSpace == "/DeviceGray"
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.Colors == 1
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.Predictor == 15
+        assert p.pages[0].Resources.XObject.Im0.SMask.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.SMask.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.SMask.Width == 60
+    yield out_pdf
+    out_pdf.unlink()
+
+
+@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+def gif_transparent_pdf(tmp_path_factory, gif_transparent_img, request):
+    out_pdf = tmp_path_factory.mktemp("gif_transparent_pdf") / "out.pdf"
+    subprocess.check_call(
+        [
+            "src/img2pdf.py",
+            "--producer=",
+            "--nodate",
+            "--engine=" + request.param,
+            "--output=" + str(out_pdf),
+            str(gif_transparent_img),
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert (
+            p.pages[0].Contents.read_bytes()
+            == b"q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ"
+        )
+        assert p.pages[0].Resources.XObject.Im0.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Colors == 3
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Predictor == 15
+        assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.Width == 60
+        assert p.pages[0].Resources.XObject.Im0.SMask is not None
+
+        assert p.pages[0].Resources.XObject.Im0.SMask.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.SMask.ColorSpace == "/DeviceGray"
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.Colors == 1
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.Predictor == 15
+        assert p.pages[0].Resources.XObject.Im0.SMask.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.SMask.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.SMask.Width == 60
+    yield out_pdf
+    out_pdf.unlink()
+
+
+@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
 def png_rgb16_pdf(tmp_path_factory, png_rgb16_img, request):
     out_pdf = tmp_path_factory.mktemp("png_rgb16_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4216,6 +4313,46 @@ def png_gray8_pdf(tmp_path_factory, tmp_gray8_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
+    yield out_pdf
+    out_pdf.unlink()
+
+
+@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+def png_gray8a_pdf(tmp_path_factory, png_gray8a_img, request):
+    out_pdf = tmp_path_factory.mktemp("png_gray8a_pdf") / "out.pdf"
+    subprocess.check_call(
+        [
+            "src/img2pdf.py",
+            "--producer=",
+            "--nodate",
+            "--engine=" + request.param,
+            "--output=" + str(out_pdf),
+            str(png_gray8a_img),
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert (
+            p.pages[0].Contents.read_bytes()
+            == b"q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ"
+        )
+        assert p.pages[0].Resources.XObject.Im0.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace == "/DeviceGray"
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Colors == 1
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Predictor == 15
+        assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.Width == 60
+        assert p.pages[0].Resources.XObject.Im0.SMask is not None
+
+        assert p.pages[0].Resources.XObject.Im0.SMask.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.SMask.ColorSpace == "/DeviceGray"
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.Colors == 1
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.Predictor == 15
+        assert p.pages[0].Resources.XObject.Im0.SMask.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.SMask.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.SMask.Width == 60
     yield out_pdf
     out_pdf.unlink()
 
@@ -5226,24 +5363,9 @@ def test_png_rgb16(tmp_path_factory, png_rgb16_img, png_rgb16_pdf):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
-def test_png_rgba8(tmp_path_factory, png_rgba8_img, engine):
-    out_pdf = tmp_path_factory.mktemp("png_rgba8") / "out.pdf"
-    assert (
-        0
-        != subprocess.run(
-            [
-                "src/img2pdf.py",
-                "--producer=",
-                "--nodate",
-                "--engine=" + engine,
-                "--output=" + str(out_pdf),
-                str(png_rgba8_img),
-            ]
-        ).returncode
-    )
-    out_pdf.unlink()
-
+def test_png_rgba8(tmp_path_factory, png_rgba8_img, png_rgba8_pdf):
+    tmpdir = tmp_path_factory.mktemp("png_rgba8")
+    compare_pdfimages_png(tmpdir, png_rgba8_img, png_rgba8_pdf)
 
 @pytest.mark.skipif(
     sys.platform in ["win32"],
@@ -5272,23 +5394,9 @@ def test_png_rgba16(tmp_path_factory, png_rgba16_img, engine):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
-def test_png_gray8a(tmp_path_factory, png_gray8a_img, engine):
-    out_pdf = tmp_path_factory.mktemp("png_gray8a") / "out.pdf"
-    assert (
-        0
-        != subprocess.run(
-            [
-                "src/img2pdf.py",
-                "--producer=",
-                "--nodate",
-                "--engine=" + engine,
-                "--output=" + str(out_pdf),
-                str(png_gray8a_img),
-            ]
-        ).returncode
-    )
-    out_pdf.unlink()
+def test_png_gray8a(tmp_path_factory, png_gray8a_img, png_gray8a_pdf):
+    tmpdir = tmp_path_factory.mktemp("png_gray8a")
+    compare_pdfimages_png(tmpdir, png_gray8a_img, png_gray8a_pdf)
 
 
 @pytest.mark.skipif(
@@ -5454,23 +5562,9 @@ def test_png_icc(tmp_path_factory, png_icc_img, png_icc_pdf):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
-def test_gif_transparent(tmp_path_factory, gif_transparent_img, engine):
-    out_pdf = tmp_path_factory.mktemp("gif_transparent") / "out.pdf"
-    assert (
-        0
-        != subprocess.run(
-            [
-                "src/img2pdf.py",
-                "--producer=",
-                "--nodate",
-                "--engine=" + engine,
-                "--output=" + str(out_pdf),
-                str(gif_transparent_img),
-            ]
-        ).returncode
-    )
-    out_pdf.unlink()
+def test_gif_transparent(tmp_path_factory, gif_transparent_img, gif_transparent_pdf):
+    tmpdir = tmp_path_factory.mktemp("gif_transparent")
+    compare_pdfimages_png(tmpdir, gif_transparent_img, gif_transparent_pdf)
 
 
 @pytest.mark.skipif(
