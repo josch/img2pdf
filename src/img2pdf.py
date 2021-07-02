@@ -2414,7 +2414,7 @@ def input_images(path_expr):
             # paths without wildcards that do not exist will trigger "does not exist"
             from glob import glob
 
-            paths = glob(path_expr)
+            paths = sorted(glob(path_expr))
         for path in paths:
             try:
                 if os.path.getsize(path) == 0:
