@@ -304,7 +304,11 @@ def compare(im1, im2, exact, icc, cmyk):
     else:
         iccargs = []
         if icc:
-            iccargs = ["-profile", "/usr/share/color/icc/sRGB.icc"]
+            profile = "/usr/share/color/icc/sRGB.icc"
+            if not os.path.isfile(profile):
+                warnings.warn(profile + " not present, skipping checks...")
+                return
+            iccargs = ["-profile", profile]
         psnr = subprocess.run(
             ["compare"]
             + iccargs
@@ -417,6 +421,10 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
         )
     else:
         if icc:
+            profile = "/usr/share/color/icc/ghostscript/srgb.icc"
+            if not os.path.isfile(profile):
+                warnings.warn(profile + " not present, skipping checks...")
+                return
             psnr = subprocess.run(
                 [
                     "compare",
@@ -424,7 +432,7 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
                     "PSNR",
                     "(",
                     "-profile",
-                    "/usr/share/color/icc/ghostscript/srgb.icc",
+                    profile,
                     "-depth",
                     "8",
                     str(img),
