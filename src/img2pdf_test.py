@@ -968,10 +968,6 @@ def jpg_img(tmp_path_factory, tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "JPEG", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "Joint Photographic Experts Group JFIF format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/jpeg", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1028,10 +1024,6 @@ def jpg_rot_img(tmp_path_factory, tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "JPEG", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "Joint Photographic Experts Group JFIF format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/jpeg", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1071,10 +1063,6 @@ def jpg_cmyk_img(tmp_path_factory, tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "JPEG", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "Joint Photographic Experts Group JFIF format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/jpeg", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1109,9 +1097,6 @@ def jpg_2000_img(tmp_path_factory, tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "JP2", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "JPEG-2000 File Format Syntax"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/jp2", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1145,9 +1130,6 @@ def png_rgb8_img(tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1198,9 +1180,6 @@ def png_rgb16_img(tmp_normal16_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1255,9 +1234,6 @@ def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1309,9 +1285,6 @@ def png_rgba16_img(tmp_alpha_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1379,9 +1352,6 @@ def png_gray8a_img(tmp_path_factory, tmp_alpha_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1445,9 +1415,6 @@ def png_gray16a_img(tmp_path_factory, tmp_alpha_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1503,9 +1470,6 @@ def png_interlaced_img(tmp_path_factory, tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1558,9 +1522,6 @@ def png_gray1_img(tmp_path_factory, tmp_gray1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1612,9 +1573,6 @@ def png_gray2_img(tmp_path_factory, tmp_gray2_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1666,9 +1624,6 @@ def png_gray4_img(tmp_path_factory, tmp_gray4_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1720,9 +1675,6 @@ def png_gray8_img(tmp_path_factory, tmp_gray8_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1774,9 +1726,6 @@ def png_gray16_img(tmp_path_factory, tmp_gray16_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1829,9 +1778,6 @@ def png_palette1_img(tmp_path_factory, tmp_palette1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1883,9 +1829,6 @@ def png_palette2_img(tmp_path_factory, tmp_palette2_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1937,9 +1880,6 @@ def png_palette4_img(tmp_path_factory, tmp_palette4_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -1991,9 +1931,6 @@ def png_palette8_img(tmp_path_factory, tmp_palette8_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2045,10 +1982,6 @@ def gif_transparent_img(tmp_path_factory, tmp_alpha_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "GIF", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "CompuServe graphics interchange format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2084,10 +2017,6 @@ def gif_palette1_img(tmp_path_factory, tmp_palette1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "GIF", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "CompuServe graphics interchange format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2123,10 +2052,6 @@ def gif_palette2_img(tmp_path_factory, tmp_palette2_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "GIF", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "CompuServe graphics interchange format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2162,10 +2087,6 @@ def gif_palette4_img(tmp_path_factory, tmp_palette4_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "GIF", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "CompuServe graphics interchange format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2201,10 +2122,6 @@ def gif_palette8_img(tmp_path_factory, tmp_palette8_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "GIF", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "CompuServe graphics interchange format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2244,10 +2161,6 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "GIF", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "CompuServe graphics interchange format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2277,10 +2190,6 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "GIF", str(identify)
-    assert (
-        identify[0]["image"]["formatDescription"]
-        == "CompuServe graphics interchange format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/gif", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2327,9 +2236,6 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2384,9 +2290,6 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2445,9 +2348,6 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2496,9 +2396,6 @@ def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2548,9 +2445,6 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2604,9 +2498,6 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2660,9 +2551,6 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2712,9 +2600,6 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2764,9 +2649,6 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2814,9 +2696,6 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2865,9 +2744,6 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2916,9 +2792,6 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -2967,9 +2840,6 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3018,9 +2888,6 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3073,9 +2940,6 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3117,9 +2981,6 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3168,9 +3029,6 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3220,9 +3078,6 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3272,9 +3127,6 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3324,9 +3176,6 @@ def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3389,9 +3238,6 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3471,9 +3317,6 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3554,9 +3397,6 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3642,9 +3482,6 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3733,9 +3570,6 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3818,9 +3652,6 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "TIFF", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Tagged Image File Format"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/tiff", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
@@ -3880,9 +3711,6 @@ def png_icc_img(tmp_icc_png):
         identify = [identify]
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "PNG", str(identify)
-    assert (
-        identify[0]["image"].get("formatDescription") == "Portable Network Graphics"
-    ), str(identify)
     assert identify[0]["image"].get("mimeType") == "image/png", str(identify)
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
