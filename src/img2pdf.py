@@ -3610,8 +3610,9 @@ ifvalid, 0, 90, 180 and 270. The default value is auto and indicates that input
 images are rotated according to their EXIF Orientation tag. The values none and
 0 ignore the EXIF Orientation values of the input images. The value ifvalid
 acts like auto but ignores invalid EXIF rotation values and only issues a
-warning instead of throwing an error. The values 90, 180 and 270 perform a
-clockwise rotation of the image.
+warning instead of throwing an error. This is useful because many devices like
+Android phones, Canon cameras or scanners emit an invalid Orientation tag value
+of zero. The values 90, 180 and 270 perform a clockwise rotation of the image.
             """,
     )
     sizeargs.add_argument(
