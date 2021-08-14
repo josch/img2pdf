@@ -80,7 +80,17 @@ Bugs
  - Input images with alpha channels are not allowed. PDF only supports
    transparency using binary masks but is unable to store 8-bit transparency
    information as part of the image itself. But img2pdf will always be lossless
-   and thus, input images must not carry transparency information.
+   and thus, input images must not carry transparency information. You can
+   remove the alpha channel for example with imagemagick:
+
+    convert input.png -background white -alpha remove -alpha off output.png
+
+ - An error is produced if the input image is broken. This commonly happens if
+   the input image has an invalid EXIF Orientation value of zero. Even though
+   only nine different values from 1 to 9 are permitted, Anroid phones and
+   Canon DSLR cameras produce JPEG images with the invalid value of zero.
+   Either fix your input images with `exiftool` or similar software before
+   passing the JPEG to `img2pdf` or run `img2pdf` with `--rotation=ifvalid`.
 
  - img2pdf uses PIL (or Pillow) to obtain image meta data and to convert the
    input if necessary. To prevent decompression bomb denial of service attacks,
