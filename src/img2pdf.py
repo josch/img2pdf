@@ -2651,7 +2651,6 @@ def gui():
 
     args = {
         "engine": tkinter.StringVar(),
-        "first_frame_only": tkinter.BooleanVar(),
         "auto_orient": tkinter.BooleanVar(),
         "fit": tkinter.StringVar(),
         "title": tkinter.StringVar(),
