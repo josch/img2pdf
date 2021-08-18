@@ -1154,7 +1154,6 @@ def png_rgb8_img(tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
     ), str(identify)
@@ -1204,7 +1203,6 @@ def png_rgb16_img(tmp_normal16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig")
         == "16"
@@ -1258,7 +1256,6 @@ def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
     ), str(identify)
@@ -1309,7 +1306,6 @@ def png_rgba16_img(tmp_alpha_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig")
         == "16"
@@ -1376,7 +1372,6 @@ def png_gray8a_img(tmp_path_factory, tmp_alpha_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
     ), str(identify)
@@ -1439,7 +1434,6 @@ def png_gray16a_img(tmp_path_factory, tmp_alpha_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig")
         == "16"
@@ -1494,7 +1488,6 @@ def png_interlaced_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
     ), str(identify)
@@ -1546,7 +1539,6 @@ def png_gray1_img(tmp_path_factory, tmp_gray1_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "1"
     ), str(identify)
@@ -1597,7 +1589,6 @@ def png_gray2_img(tmp_path_factory, tmp_gray2_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "2"
     ), str(identify)
@@ -1648,7 +1639,6 @@ def png_gray4_img(tmp_path_factory, tmp_gray4_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "4"
     ), str(identify)
@@ -1699,7 +1689,6 @@ def png_gray8_img(tmp_path_factory, tmp_gray8_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
     ), str(identify)
@@ -1750,7 +1739,6 @@ def png_gray16_img(tmp_path_factory, tmp_gray16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig")
         == "16"
@@ -1802,7 +1790,6 @@ def png_palette1_img(tmp_path_factory, tmp_palette1_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "1"
     ), str(identify)
@@ -1853,7 +1840,6 @@ def png_palette2_img(tmp_path_factory, tmp_palette2_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "2"
     ), str(identify)
@@ -1904,7 +1890,6 @@ def png_palette4_img(tmp_path_factory, tmp_palette4_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "4"
     ), str(identify)
@@ -1955,7 +1940,6 @@ def png_palette8_img(tmp_path_factory, tmp_palette8_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
     ), str(identify)
@@ -2265,7 +2249,6 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("quantum:format")
         == "floating-point"
@@ -2318,7 +2301,6 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2376,7 +2358,6 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2424,7 +2405,6 @@ def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2477,7 +2457,6 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2530,7 +2509,6 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2579,7 +2557,6 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2628,7 +2605,6 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unassociated"
     ), str(identify)
@@ -2677,7 +2653,6 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unassociated"
     ), str(identify)
@@ -2724,7 +2699,6 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2772,7 +2746,6 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2820,7 +2793,6 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2868,7 +2840,6 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2916,7 +2887,6 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -2968,7 +2938,6 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -3009,7 +2978,6 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -3059,7 +3027,6 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -3108,7 +3075,6 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -3157,7 +3123,6 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -3205,7 +3170,6 @@ def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
     ), str(identify)
@@ -3735,7 +3699,6 @@ def png_icc_img(tmp_icc_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert identify[0]["image"].get("compression") == "Zip", str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("png:IHDR.bit-depth-orig") == "8"
     ), str(identify)
