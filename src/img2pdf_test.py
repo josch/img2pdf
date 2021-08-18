@@ -20,6 +20,21 @@ import warnings
 import json
 import pathlib
 
+ICC_PROFILE = None
+ICC_PROFILE_PATHS = (
+        # Debian
+        "/usr/share/color/icc/ghostscript/srgb.icc",
+        # Fedora
+        "/usr/share/ghostscript/iccprofiles/srgb.icc",
+        # Archlinux and Gentoo
+        "/usr/share/ghostscript/*/iccprofiles/srgb.icc",
+)
+for glob in ICC_PROFILE_PATHS:
+    for path in pathlib.Path("/").glob(glob.lstrip("/")):
+        if path.is_file():
+            ICC_PROFILE = path
+            break
+
 HAVE_MUTOOL = True
 try:
     ver = subprocess.check_output(["mutool", "-v"], stderr=subprocess.STDOUT)
@@ -304,11 +319,9 @@ def compare(im1, im2, exact, icc, cmyk):
     else:
         iccargs = []
         if icc:
-            profile = "/usr/share/color/icc/sRGB.icc"
-            if not os.path.isfile(profile):
-                warnings.warn(profile + " not present, skipping checks...")
-                return
-            iccargs = ["-profile", profile]
+            if ICC_PROFILE is None:
+                pytest.skip("Could not locate an ICC profile")
+            iccargs = ["-profile", ICC_PROFILE]
         psnr = subprocess.run(
             ["compare"]
             + iccargs
@@ -421,10 +434,8 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
         )
     else:
         if icc:
-            profile = "/usr/share/color/icc/ghostscript/srgb.icc"
-            if not os.path.isfile(profile):
-                warnings.warn(profile + " not present, skipping checks...")
-                return
+            if ICC_PROFILE is None:
+                pytest.skip("Could not locate an ICC profile")
             psnr = subprocess.run(
                 [
                     "compare",
@@ -432,7 +443,7 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
                     "PSNR",
                     "(",
                     "-profile",
-                    profile,
+                    ICC_PROFILE,
                     "-depth",
                     "8",
                     str(img),
