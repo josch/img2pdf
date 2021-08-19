@@ -1,5 +1,5 @@
-[![Travis Status](https://travis-ci.org/josch/img2pdf.svg?branch=master)](https://travis-ci.org/josch/img2pdf)
-[![Appveyor Status](https://ci.appveyor.com/api/projects/status/2kws3wkqvi526llj/branch/master?svg=true)](https://ci.appveyor.com/project/josch/img2pdf/branch/master)
+[![Travis Status](https://travis-ci.com/josch/img2pdf.svg?branch=main)](https://app.travis-ci.com/josch/img2pdf)
+[![Appveyor Status](https://ci.appveyor.com/api/projects/status/2kws3wkqvi526llj/branch/main?svg=true)](https://ci.appveyor.com/project/josch/img2pdf/branch/main)
 
 img2pdf
 =======
