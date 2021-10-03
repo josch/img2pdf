@@ -1230,16 +1230,11 @@ def get_imgmetadata(
             if depth > 8:
                 logger.warning("Image with transparency and a bit depth of %d." % depth)
                 logger.warning("This is unsupported due to PIL limitations.")
-                raise AlphaChannelError("Refusing to work with multiple >8bit channels.")
-    elif (ics in ["LA", "PA", "RGBA"] or "transparency" in imgdata.info):
-        logger.warning("Image contains transparency which cannot be retained in PDF.")
-        logger.warning("img2pdf will not perform a lossy operation.")
-        logger.warning("You can remove the alpha channel using imagemagick:")
-        logger.warning(
-            "  $ convert input.png -background white -alpha "
-            "remove -alpha off output.png"
-        )
-        raise AlphaChannelError("Refusing to work on images with alpha channel")
+                raise AlphaChannelError(
+                    "Refusing to work with multiple >8bit channels."
+                )
+    elif ics in ["LA", "PA", "RGBA"] or "transparency" in imgdata.info:
+        raise AlphaChannelError("This function must not be called on images with alpha")
 
     # Since commit 07a96209597c5e8dfe785c757d7051ce67a980fb or release 4.1.0
     # Pillow retrieves the DPI from EXIF if it cannot find the DPI in the JPEG
