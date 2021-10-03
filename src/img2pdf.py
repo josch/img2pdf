@@ -829,9 +829,7 @@ class pdfdoc(object):
             elif color == Colorspace.CMYK or color == Colorspace["CMYK;I"]:
                 iccpdict[PdfName.N] = 4
             elif color == Colorspace.P:
-                # Only the png format can have an icc profile as well as a
-                # color palette. A png palette is always RGB.
-                iccpdict[PdfName.N] = 3
+                raise Exception("Cannot have Palette images with ICC profile")
             colorspace = [PdfName.ICCBased, iccpdict]
 
         # either embed the whole jpeg or deflate the bitmap representation
