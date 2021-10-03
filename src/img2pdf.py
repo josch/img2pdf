@@ -1357,14 +1357,15 @@ def ccitt_payload_location_from_pil(img):
     # Read the TIFF tags to find the offset(s) of the compressed data strips.
     strip_offsets = img.tag_v2[TiffImagePlugin.STRIPOFFSETS]
     strip_bytes = img.tag_v2[TiffImagePlugin.STRIPBYTECOUNTS]
-    rows_per_strip = img.tag_v2.get(TiffImagePlugin.ROWSPERSTRIP, 2 ** 32 - 1)
 
     # PIL always seems to create a single strip even for very large TIFFs when
     # it saves images, so assume we only have to read a single strip.
     # A test ~10 GPixel image was still encoded as a single strip. Just to be
     # safe check throw an error if there is more than one offset.
     if len(strip_offsets) != 1 or len(strip_bytes) != 1:
-        raise NotImplementedError("Transcoding multiple strips not supported")
+        raise NotImplementedError(
+            "Transcoding multiple strips not supported by the PDF format"
+        )
 
     (offset,), (length,) = strip_offsets, strip_bytes
 
@@ -1388,7 +1389,33 @@ def transcode_monochrome(imgdata):
     # killed by a SIGABRT:
     #   https://gitlab.mister-muffin.de/josch/img2pdf/issues/46
     im = Image.frombytes(imgdata.mode, imgdata.size, imgdata.tobytes())
-    im.save(newimgio, format="TIFF", compression="group4")
+
+    # Since version 8.3.0 Pillow limits strips to 64 KB. Since PDF only
+    # supports single strip CCITT Group4 payloads, we have to coerce it back
+    # into putting everything into a single strip. Thanks to Andrew Murray for
+    # the hack.
+    #
+    # This can be dropped once this gets merged:
+    # https://github.com/python-pillow/Pillow/pull/5744
+    pillow__getitem__ = TiffImagePlugin.ImageFileDirectory_v2.__getitem__
+
+    def __getitem__(self, tag):
+        overrides = {
+            TiffImagePlugin.ROWSPERSTRIP: imgdata.size[1],
+            TiffImagePlugin.STRIPBYTECOUNTS: [
+                (imgdata.size[0] + 7) // 8 * imgdata.size[1]
+            ],
+            TiffImagePlugin.STRIPOFFSETS: [0],
+        }
+        return overrides.get(tag, pillow__getitem__(self, tag))
+
+    # use try/finally to make sure that __getitem__ is reset even if save()
+    # raises an exception
+    try:
+        TiffImagePlugin.ImageFileDirectory_v2.__getitem__ = __getitem__
+        im.save(newimgio, format="TIFF", compression="group4")
+    finally:
+        TiffImagePlugin.ImageFileDirectory_v2.__getitem__ = pillow__getitem__
 
     # Open new image in memory
     newimgio.seek(0)
@@ -1633,6 +1660,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
             imgformat == ImageFormat.TIFF
             and imgdata.info["compression"] == "group4"
             and len(imgdata.tag_v2[TiffImagePlugin.STRIPOFFSETS]) == 1
+            and len(imgdata.tag_v2[TiffImagePlugin.STRIPBYTECOUNTS]) == 1
         ):
             photo = imgdata.tag_v2[TiffImagePlugin.PHOTOMETRIC_INTERPRETATION]
             inverted = False
