@@ -1597,24 +1597,28 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
             depth = rawdata[24]
             if depth not in [1, 2, 4, 8, 16]:
                 raise ValueError("invalid bit depth: %d" % depth)
-            logger.debug("read_images() embeds a PNG")
-            cleanup()
-            return [
-                (
-                    color,
-                    ndpi,
-                    imgformat,
-                    pngidat,
-                    None,
-                    imgwidthpx,
-                    imgheightpx,
-                    palette,
-                    False,
-                    depth,
-                    rotation,
-                    iccp,
-                )
-            ]
+            # we embed the PNG only if it is not at the same time palette based
+            # and has an icc profile because PDF doesn't support icc profiles
+            # on palette images
+            if palette == b"" or iccp is None:
+                logger.debug("read_images() embeds a PNG")
+                cleanup()
+                return [
+                    (
+                        color,
+                        ndpi,
+                        imgformat,
+                        pngidat,
+                        None,
+                        imgwidthpx,
+                        imgheightpx,
+                        palette,
+                        False,
+                        depth,
+                        rotation,
+                        iccp,
+                    )
+                ]
 
     # If our input is not JPEG or PNG, then we might have a format that
     # supports multiple frames (like TIFF or GIF), so we need a loop to
@@ -1805,6 +1809,15 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     "Image contains an alpha channel which will be stored "
                     "as a separate soft mask (/SMask) image in PDF."
                 )
+            elif color in [Colorspace.P, Colorspace.PA] and iccp is not None:
+                # PDF does not support palette images with icc profile
+                if color == Colorspace.P:
+                    newcolor = Colorspace.RGB
+                    newimg = newimg.convert(mode="RGB")
+                elif color == Colorspace.PA:
+                    newcolor = Colorspace.RGBA
+                    newimg = newimg.convert(mode="RGBA")
+                smaskidat = None
             else:
                 newcolor = color
                 smaskidat = None
