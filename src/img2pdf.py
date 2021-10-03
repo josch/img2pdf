@@ -760,9 +760,8 @@ class pdfdoc(object):
         artborder=None,
         iccp=None,
     ):
-        assert (
-            (color != Colorspace.RGBA and color != Colorspace.LA)
-            or (imgformat == ImageFormat.PNG and smaskdata is not None)
+        assert (color != Colorspace.RGBA and color != Colorspace.LA) or (
+            imgformat == ImageFormat.PNG and smaskdata is not None
         )
 
         if self.engine == Engine.pikepdf:
@@ -822,7 +821,11 @@ class pdfdoc(object):
             else:
                 iccpdict = PdfDict(stream=convert_load(iccp))
             iccpdict[PdfName.Alternate] = colorspace
-            if color == Colorspace["1"] or color == Colorspace.L or color == Colorspace.LA:
+            if (
+                color == Colorspace["1"]
+                or color == Colorspace.L
+                or color == Colorspace.LA
+            ):
                 iccpdict[PdfName.N] = 1
             elif color == Colorspace.RGB or color == Colorspace.RGBA:
                 iccpdict[PdfName.N] = 3
@@ -1217,11 +1220,10 @@ def get_imgmetadata(
         # Search online for the 72.009 dpi problem for more info.
         ndpi = (int(round(ndpi[0])), int(round(ndpi[1])))
         ics = imgdata.mode
-    
+
     # GIF and PNG files with transparency are supported
-    if (
-        (imgformat == ImageFormat.PNG or imgformat == ImageFormat.GIF)
-        and (ics in ["RGBA", "LA"] or "transparency" in imgdata.info)
+    if (imgformat == ImageFormat.PNG or imgformat == ImageFormat.GIF) and (
+        ics in ["RGBA", "LA"] or "transparency" in imgdata.info
     ):
         # Must check the IHDR chunk for the bit depth, because PIL would lossily
         # convert 16-bit RGBA/LA images to 8-bit.
@@ -1839,6 +1841,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
     cleanup()
     return result
 
+
 def to_png_data(img):
     # cheapo version to retrieve a PNG encoding of the payload is to
     # just save it with PIL. In the future this could be replaced by
@@ -1856,6 +1859,7 @@ def to_png_data(img):
     if depth not in [1, 2, 4, 8, 16]:
         raise ValueError("invalid bit depth: %d" % depth)
     return pngidat, palette, depth
+
 
 # converts a length in pixels to a length in PDF units (1/72 of an inch)
 def px_to_pt(length, dpi):
