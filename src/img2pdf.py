@@ -85,7 +85,7 @@ FitMode = Enum("FitMode", "into fill exact shrink enlarge")
 
 PageOrientation = Enum("PageOrientation", "portrait landscape")
 
-Colorspace = Enum("Colorspace", "RGB RGBA L LA 1 CMYK CMYK;I P other")
+Colorspace = Enum("Colorspace", "RGB RGBA L LA 1 CMYK CMYK;I P PA other")
 
 ImageFormat = Enum("ImageFormat", "JPEG JPEG2000 CCITTGroup4 PNG GIF TIFF MPO other")
 
@@ -1586,6 +1586,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
         if (
             color != Colorspace.RGBA
             and color != Colorspace.LA
+            and color != Colorspace.PA
             and "transparency" not in imgdata.info
         ):
             pngidat, palette = parse_png(rawdata)
@@ -1783,6 +1784,7 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
             if (
                 color == Colorspace.RGBA
                 or color == Colorspace.LA
+                or color == Colorspace.PA
                 or "transparency" in newimg.info
             ):
                 if color == Colorspace.RGBA:
