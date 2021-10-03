@@ -22,12 +22,12 @@ import pathlib
 
 ICC_PROFILE = None
 ICC_PROFILE_PATHS = (
-        # Debian
-        "/usr/share/color/icc/ghostscript/srgb.icc",
-        # Fedora
-        "/usr/share/ghostscript/iccprofiles/srgb.icc",
-        # Archlinux and Gentoo
-        "/usr/share/ghostscript/*/iccprofiles/srgb.icc",
+    # Debian
+    "/usr/share/color/icc/ghostscript/srgb.icc",
+    # Fedora
+    "/usr/share/ghostscript/iccprofiles/srgb.icc",
+    # Archlinux and Gentoo
+    "/usr/share/ghostscript/*/iccprofiles/srgb.icc",
 )
 for glob in ICC_PROFILE_PATHS:
     for path in pathlib.Path("/").glob(glob.lstrip("/")):
@@ -65,9 +65,16 @@ except FileNotFoundError:
 if not HAVE_PDFIMAGES_CMYK:
     warnings.warn("pdfimages >= 0.42.0 not available, skipping CMYK checks...")
 
+for prog in ["convert", "compare", "identify"]:
+    try:
+        subprocess.check_call([prog] + ["-version"], stderr=subprocess.STDOUT)
+        globals()[prog.upper()] = [prog]
+    except subprocess.CalledProcessError:
+        globals()[prog.upper()] = ["magick", prog]
+
 HAVE_IMAGEMAGICK_MODERN = True
 try:
-    ver = subprocess.check_output(["convert", "-version"], stderr=subprocess.STDOUT)
+    ver = subprocess.check_output(CONVERT + ["-version"], stderr=subprocess.STDOUT)
     m = re.fullmatch(
         r"Version: ImageMagick ([0-9.]+-[0-9]+) .*", ver.split(b"\n")[0].decode("utf8")
     )
@@ -87,7 +94,7 @@ if not HAVE_IMAGEMAGICK_MODERN:
 HAVE_JP2 = True
 try:
     ver = subprocess.check_output(
-        ["identify", "-list", "format"], stderr=subprocess.STDOUT
+        IDENTIFY + ["-list", "format"], stderr=subprocess.STDOUT
     )
     found = False
     for line in ver.split(b"\n"):
@@ -307,8 +314,8 @@ def compare(im1, im2, exact, icc, cmyk):
             raise Exception("icc cannot be exact")
         else:
             subprocess.check_call(
-                [
-                    "compare",
+                COMPARE
+                + [
                     "-metric",
                     "AE",
                     im1,
@@ -323,7 +330,7 @@ def compare(im1, im2, exact, icc, cmyk):
                 pytest.skip("Could not locate an ICC profile")
             iccargs = ["-profile", ICC_PROFILE]
         psnr = subprocess.run(
-            ["compare"]
+            COMPARE
             + iccargs
             + [
                 "-metric",
@@ -412,7 +419,14 @@ def compare_pdfimages_jp2(tmpdir, img, pdf):
 def compare_pdfimages_tiff(tmpdir, img, pdf):
     subprocess.check_call(["pdfimages", "-tiff", str(pdf), str(tmpdir / "images")])
     subprocess.check_call(
-        ["compare", "-metric", "AE", str(img), str(tmpdir / "images-000.tif"), "null:"]
+        COMPARE
+        + [
+            "-metric",
+            "AE",
+            str(img),
+            str(tmpdir / "images-000.tif"),
+            "null:",
+        ]
     )
     (tmpdir / "images-000.tif").unlink()
 
@@ -422,14 +436,14 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
     # images-001.png is the grayscale SMask image (the original alpha channel)
     if os.path.isfile(tmpdir / "images-001.png"):
         subprocess.check_call(
-            [
-                "convert",
+            CONVERT
+            + [
                 str(tmpdir / "images-000.png"),
                 str(tmpdir / "images-001.png"),
                 "-compose",
                 "copy-opacity",
                 "-composite",
-                str(tmpdir / "composite.png")
+                str(tmpdir / "composite.png"),
             ]
         )
         (tmpdir / "images-000.png").unlink()
@@ -440,8 +454,8 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
         if icc:
             raise Exception("not exact with icc")
         subprocess.check_call(
-            [
-                "compare",
+            COMPARE
+            + [
                 "-metric",
                 "AE",
                 str(img),
@@ -454,8 +468,8 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
             if ICC_PROFILE is None:
                 pytest.skip("Could not locate an ICC profile")
             psnr = subprocess.run(
-                [
-                    "compare",
+                COMPARE
+                + [
                     "-metric",
                     "PSNR",
                     "(",
@@ -473,8 +487,8 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
             ).stderr
         else:
             psnr = subprocess.run(
-                [
-                    "compare",
+                COMPARE
+                + [
                     "-metric",
                     "PSNR",
                     str(img),
@@ -994,8 +1008,8 @@ def tmp_palette8_png(tmp_path_factory, alpha):
 @pytest.fixture(scope="session")
 def jpg_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("jpg") / "in.jpg"
-    subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    subprocess.check_call(CONVERT + [str(tmp_normal_png), str(in_img)])
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1036,7 +1050,7 @@ def jpg_img(tmp_path_factory, tmp_normal_png):
 @pytest.fixture(scope="session")
 def jpg_rot_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("jpg_rot") / "in.jpg"
-    subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
+    subprocess.check_call(CONVERT + [str(tmp_normal_png), str(in_img)])
     subprocess.check_call(
         ["exiftool", "-overwrite_original", "-all=", str(in_img), "-n"]
     )
@@ -1051,7 +1065,7 @@ def jpg_rot_img(tmp_path_factory, tmp_normal_png):
             str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1088,9 +1102,9 @@ def jpg_rot_img(tmp_path_factory, tmp_normal_png):
 def jpg_cmyk_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("jpg_cmyk") / "in.jpg"
     subprocess.check_call(
-        ["convert", str(tmp_normal_png), "-colorspace", "cmyk", str(in_img)]
+        CONVERT + [str(tmp_normal_png), "-colorspace", "cmyk", str(in_img)]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1123,8 +1137,8 @@ def jpg_cmyk_img(tmp_path_factory, tmp_normal_png):
 @pytest.fixture(scope="session")
 def jpg_2000_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("jpg_2000") / "in.jp2"
-    subprocess.check_call(["convert", str(tmp_normal_png), str(in_img)])
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    subprocess.check_call(CONVERT + [str(tmp_normal_png), str(in_img)])
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1157,7 +1171,7 @@ def jpg_2000_img(tmp_path_factory, tmp_normal_png):
 @pytest.fixture(scope="session")
 def png_rgb8_img(tmp_normal_png):
     in_img = tmp_normal_png
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1206,7 +1220,7 @@ def png_rgb8_img(tmp_normal_png):
 @pytest.fixture(scope="session")
 def png_rgb16_img(tmp_normal16_png):
     in_img = tmp_normal16_png
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1257,9 +1271,9 @@ def png_rgb16_img(tmp_normal16_png):
 def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("png_rgba8") / "in.png"
     subprocess.check_call(
-        ["convert", str(tmp_alpha_png), "-depth", "8", "-strip", str(in_img)]
+        CONVERT + [str(tmp_alpha_png), "-depth", "8", "-strip", str(in_img)]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1309,7 +1323,7 @@ def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
 @pytest.fixture(scope="session")
 def png_rgba16_img(tmp_alpha_png):
     in_img = tmp_alpha_png
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1360,8 +1374,8 @@ def png_rgba16_img(tmp_alpha_png):
 def png_gray8a_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("png_gray8a") / "in.png"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_alpha_png),
             "-colorspace",
             "Gray",
@@ -1375,7 +1389,7 @@ def png_gray8a_img(tmp_path_factory, tmp_alpha_png):
             str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1426,8 +1440,8 @@ def png_gray8a_img(tmp_path_factory, tmp_alpha_png):
 def png_gray16a_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("png_gray16a") / "in.png"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_alpha_png),
             "-colorspace",
             "Gray",
@@ -1437,7 +1451,7 @@ def png_gray16a_img(tmp_path_factory, tmp_alpha_png):
             str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1489,9 +1503,16 @@ def png_gray16a_img(tmp_path_factory, tmp_alpha_png):
 def png_interlaced_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("png_interlaced") / "in.png"
     subprocess.check_call(
-        ["convert", str(tmp_normal_png), "-interlace", "PNG", "-strip", str(in_img)]
+        CONVERT
+        + [
+            str(tmp_normal_png),
+            "-interlace",
+            "PNG",
+            "-strip",
+            str(in_img),
+        ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -1541,7 +1562,7 @@ def png_interlaced_img(tmp_path_factory, tmp_normal_png):
 @pytest.fixture(scope="session")
 def png_gray1_img(tmp_path_factory, tmp_gray1_png):
     identify = json.loads(
-        subprocess.check_output(["convert", str(tmp_gray1_png), "json:"])
+        subprocess.check_output(CONVERT + [str(tmp_gray1_png), "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -1591,7 +1612,7 @@ def png_gray1_img(tmp_path_factory, tmp_gray1_png):
 @pytest.fixture(scope="session")
 def png_gray2_img(tmp_path_factory, tmp_gray2_png):
     identify = json.loads(
-        subprocess.check_output(["convert", str(tmp_gray2_png), "json:"])
+        subprocess.check_output(CONVERT + [str(tmp_gray2_png), "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -1641,7 +1662,7 @@ def png_gray2_img(tmp_path_factory, tmp_gray2_png):
 @pytest.fixture(scope="session")
 def png_gray4_img(tmp_path_factory, tmp_gray4_png):
     identify = json.loads(
-        subprocess.check_output(["convert", str(tmp_gray4_png), "json:"])
+        subprocess.check_output(CONVERT + [str(tmp_gray4_png), "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -1691,7 +1712,7 @@ def png_gray4_img(tmp_path_factory, tmp_gray4_png):
 @pytest.fixture(scope="session")
 def png_gray8_img(tmp_path_factory, tmp_gray8_png):
     identify = json.loads(
-        subprocess.check_output(["convert", str(tmp_gray8_png), "json:"])
+        subprocess.check_output(CONVERT + [str(tmp_gray8_png), "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -1741,7 +1762,7 @@ def png_gray8_img(tmp_path_factory, tmp_gray8_png):
 @pytest.fixture(scope="session")
 def png_gray16_img(tmp_path_factory, tmp_gray16_png):
     identify = json.loads(
-        subprocess.check_output(["convert", str(tmp_gray16_png), "json:"])
+        subprocess.check_output(CONVERT + [str(tmp_gray16_png), "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -1792,7 +1813,7 @@ def png_gray16_img(tmp_path_factory, tmp_gray16_png):
 @pytest.fixture(scope="session")
 def png_palette1_img(tmp_path_factory, tmp_palette1_png):
     identify = json.loads(
-        subprocess.check_output(["convert", str(tmp_palette1_png), "json:"])
+        subprocess.check_output(CONVERT + [str(tmp_palette1_png), "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -1842,7 +1863,7 @@ def png_palette1_img(tmp_path_factory, tmp_palette1_png):
 @pytest.fixture(scope="session")
 def png_palette2_img(tmp_path_factory, tmp_palette2_png):
     identify = json.loads(
-        subprocess.check_output(["convert", str(tmp_palette2_png), "json:"])
+        subprocess.check_output(CONVERT + [str(tmp_palette2_png), "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -1892,7 +1913,7 @@ def png_palette2_img(tmp_path_factory, tmp_palette2_png):
 @pytest.fixture(scope="session")
 def png_palette4_img(tmp_path_factory, tmp_palette4_png):
     identify = json.loads(
-        subprocess.check_output(["convert", str(tmp_palette4_png), "json:"])
+        subprocess.check_output(CONVERT + [str(tmp_palette4_png), "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -1942,7 +1963,7 @@ def png_palette4_img(tmp_path_factory, tmp_palette4_png):
 @pytest.fixture(scope="session")
 def png_palette8_img(tmp_path_factory, tmp_palette8_png):
     identify = json.loads(
-        subprocess.check_output(["convert", str(tmp_palette8_png), "json:"])
+        subprocess.check_output(CONVERT + [str(tmp_palette8_png), "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -1992,8 +2013,8 @@ def png_palette8_img(tmp_path_factory, tmp_palette8_png):
 @pytest.fixture(scope="session")
 def gif_transparent_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("gif_transparent_img") / "in.gif"
-    subprocess.check_call(["convert", str(tmp_alpha_png), str(in_img)])
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    subprocess.check_call(CONVERT + [str(tmp_alpha_png), str(in_img)])
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2027,8 +2048,8 @@ def gif_transparent_img(tmp_path_factory, tmp_alpha_png):
 @pytest.fixture(scope="session")
 def gif_palette1_img(tmp_path_factory, tmp_palette1_png):
     in_img = tmp_path_factory.mktemp("gif_palette1_img") / "in.gif"
-    subprocess.check_call(["convert", str(tmp_palette1_png), str(in_img)])
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    subprocess.check_call(CONVERT + [str(tmp_palette1_png), str(in_img)])
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2062,8 +2083,8 @@ def gif_palette1_img(tmp_path_factory, tmp_palette1_png):
 @pytest.fixture(scope="session")
 def gif_palette2_img(tmp_path_factory, tmp_palette2_png):
     in_img = tmp_path_factory.mktemp("gif_palette2_img") / "in.gif"
-    subprocess.check_call(["convert", str(tmp_palette2_png), str(in_img)])
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    subprocess.check_call(CONVERT + [str(tmp_palette2_png), str(in_img)])
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2097,8 +2118,8 @@ def gif_palette2_img(tmp_path_factory, tmp_palette2_png):
 @pytest.fixture(scope="session")
 def gif_palette4_img(tmp_path_factory, tmp_palette4_png):
     in_img = tmp_path_factory.mktemp("gif_palette4_img") / "in.gif"
-    subprocess.check_call(["convert", str(tmp_palette4_png), str(in_img)])
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    subprocess.check_call(CONVERT + [str(tmp_palette4_png), str(in_img)])
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2132,8 +2153,8 @@ def gif_palette4_img(tmp_path_factory, tmp_palette4_png):
 @pytest.fixture(scope="session")
 def gif_palette8_img(tmp_path_factory, tmp_palette8_png):
     in_img = tmp_path_factory.mktemp("gif_palette8_img") / "in.gif"
-    subprocess.check_call(["convert", str(tmp_palette8_png), str(in_img)])
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    subprocess.check_call(CONVERT + [str(tmp_palette8_png), str(in_img)])
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2168,10 +2189,16 @@ def gif_palette8_img(tmp_path_factory, tmp_palette8_png):
 def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     in_img = tmp_path_factory.mktemp("gif_animation_img") / "in.gif"
     subprocess.check_call(
-        ["convert", str(tmp_normal_png), str(tmp_inverse_png), "-strip", str(in_img)]
+        CONVERT
+        + [
+            str(tmp_normal_png),
+            str(tmp_inverse_png),
+            "-strip",
+            str(in_img),
+        ]
     )
     identify = json.loads(
-        subprocess.check_output(["convert", str(in_img) + "[0]", "json:"])
+        subprocess.check_output(CONVERT + [str(in_img) + "[0]", "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -2200,7 +2227,7 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     }, str(identify)
     assert identify[0]["image"].get("compression") == "LZW", str(identify)
     identify = json.loads(
-        subprocess.check_output(["convert", str(in_img) + "[1]", "json:"])
+        subprocess.check_output(CONVERT + [str(in_img) + "[1]", "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -2237,8 +2264,8 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
 def tiff_float_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("tiff_float_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_normal_png),
             "-depth",
             "32",
@@ -2247,7 +2274,7 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
             str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2298,17 +2325,17 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
 def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("tiff_cmyk8") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_normal_png),
             "-colorspace",
             "cmyk",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2355,8 +2382,8 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
 def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("tiff_cmyk16") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_normal_png),
             "-depth",
             "16",
@@ -2367,7 +2394,7 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
             str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2414,15 +2441,9 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
 def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
-            str(tmp_normal_png),
-            "-compress",
-            "Zip",
-            str(in_img)
-        ]
+        CONVERT + [str(tmp_normal_png), "-compress", "Zip", str(in_img)]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2468,17 +2489,17 @@ def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
 def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_normal16_png),
             "-depth",
             "12",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2528,17 +2549,17 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
 def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_normal16_png),
             "-depth",
             "14",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2560,10 +2581,7 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
     assert identify[0]["image"].get(endian) in ["Undefined", "LSB",], str(
         identify
     )  # FIXME: should be LSB
-    if identify[0].get("version", "0") < "1.0":
-        assert identify[0]["image"].get("depth") == 14, str(identify)
-    else:
-        assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("depth") == 16, str(identify)
     assert identify[0]["image"].get("baseDepth") == 14, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2588,17 +2606,17 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
 def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
     in_img = tmp_path_factory.mktemp("tiff_rgb8") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_normal16_png),
             "-depth",
             "16",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2644,18 +2662,18 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
 def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("tiff_rgba8") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_alpha_png),
             "-depth",
             "8",
             "-strip",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2701,18 +2719,18 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
 def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
     in_img = tmp_path_factory.mktemp("tiff_rgba16") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_alpha_png),
             "-depth",
             "16",
             "-strip",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2758,17 +2776,17 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
 def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
     in_img = tmp_path_factory.mktemp("tiff_gray1") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray1_png),
             "-depth",
             "1",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2815,17 +2833,17 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
 def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
     in_img = tmp_path_factory.mktemp("tiff_gray2") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray2_png),
             "-depth",
             "2",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2872,17 +2890,17 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
 def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
     in_img = tmp_path_factory.mktemp("tiff_gray4") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray4_png),
             "-depth",
             "4",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2929,17 +2947,17 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
 def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
     in_img = tmp_path_factory.mktemp("tiff_gray8") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray8_png),
             "-depth",
             "8",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -2986,17 +3004,17 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
 def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
     in_img = tmp_path_factory.mktemp("tiff_gray16") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray16_png),
             "-depth",
             "16",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3043,18 +3061,18 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
 def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     in_img = tmp_path_factory.mktemp("tiff_multipage_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_normal_png),
             str(tmp_inverse_png),
             "-strip",
             "-compress",
             "Zip",
-            str(in_img)
+            str(in_img),
         ]
     )
     identify = json.loads(
-        subprocess.check_output(["convert", str(in_img) + "[0]", "json:"])
+        subprocess.check_output(CONVERT + [str(in_img) + "[0]", "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -3094,7 +3112,7 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
     identify = json.loads(
-        subprocess.check_output(["convert", str(in_img) + "[1]", "json:"])
+        subprocess.check_output(CONVERT + [str(in_img) + "[1]", "json:"])
     )
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
@@ -3142,15 +3160,9 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
 def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
     in_img = tmp_path_factory.mktemp("tiff_palette1_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
-            str(tmp_palette1_png),
-            "-compress",
-            "Zip",
-            str(in_img)
-        ]
+        CONVERT + [str(tmp_palette1_png), "-compress", "Zip", str(in_img)]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3198,15 +3210,9 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
 def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
     in_img = tmp_path_factory.mktemp("tiff_palette2_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
-            str(tmp_palette2_png),
-            "-compress",
-            "Zip",
-            str(in_img)
-        ]
+        CONVERT + [str(tmp_palette2_png), "-compress", "Zip", str(in_img)]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3254,15 +3260,9 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
 def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
     in_img = tmp_path_factory.mktemp("tiff_palette4_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
-            str(tmp_palette4_png),
-            "-compress",
-            "Zip",
-            str(in_img)
-        ]
+        CONVERT + [str(tmp_palette4_png), "-compress", "Zip", str(in_img)]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3310,15 +3310,9 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
 def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
     in_img = tmp_path_factory.mktemp("tiff_palette8_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
-            str(tmp_palette8_png),
-            "-compress",
-            "Zip",
-            str(in_img)
-        ]
+        CONVERT + [str(tmp_palette8_png), "-compress", "Zip", str(in_img)]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3365,8 +3359,8 @@ def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
 def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
     in_img = tmp_path_factory.mktemp("tiff_ccitt_lsb_m2l_white_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray1_png),
             "-compress",
             "group4",
@@ -3381,7 +3375,7 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3446,8 +3440,8 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
 def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
     in_img = tmp_path_factory.mktemp("tiff_ccitt_msb_m2l_white_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray1_png),
             "-compress",
             "group4",
@@ -3462,7 +3456,7 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3528,8 +3522,8 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
 def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
     in_img = tmp_path_factory.mktemp("tiff_ccitt_msb_l2m_white_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray1_png),
             "-compress",
             "group4",
@@ -3544,7 +3538,7 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3615,8 +3609,8 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
     # or at least 6.9.10-12 from Sep 7, 2018 (for the ImageMagick6 branch)
     # also see: https://www.imagemagick.org/discourse-server/viewtopic.php?f=1&t=34605
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray1_png),
             "-compress",
             "group4",
@@ -3631,7 +3625,7 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
             str(in_img),
         ]
     )
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3696,8 +3690,8 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
 def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
     in_img = tmp_path_factory.mktemp("tiff_ccitt_nometa1_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray1_png),
             "-compress",
             "group4",
@@ -3721,7 +3715,7 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
     subprocess.check_call(
         ["tiffset", "-u", "277", str(in_img)]
     )  # remove SamplesPerPixel (277)
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3786,8 +3780,8 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
 def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     in_img = tmp_path_factory.mktemp("tiff_ccitt_nometa2_img") / "in.tiff"
     subprocess.check_call(
-        [
-            "convert",
+        CONVERT
+        + [
             str(tmp_gray1_png),
             "-compress",
             "group4",
@@ -3805,7 +3799,7 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     subprocess.check_call(
         ["tiffset", "-u", "278", str(in_img)]
     )  # remove RowsPerStrip (278)
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -3864,7 +3858,7 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
 @pytest.fixture(scope="session")
 def png_icc_img(tmp_icc_png):
     in_img = tmp_icc_png
-    identify = json.loads(subprocess.check_output(["convert", str(in_img), "json:"]))
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
     assert len(identify) == 1
     # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
     # put into an array, here we cater for the older version containing just
@@ -5296,7 +5290,7 @@ def test_jpg_rot(tmp_path_factory, jpg_rot_img, jpg_rot_pdf):
     )
     jpg_rot_png = tmpdir / "jpg_rot.png"
     subprocess.check_call(
-        ["convert", "-rotate", "90", str(jpg_rot_pnm), str(jpg_rot_png)]
+        CONVERT + ["-rotate", "90", str(jpg_rot_pnm), str(jpg_rot_png)]
     )
     jpg_rot_pnm.unlink()
     compare_ghostscript(tmpdir, jpg_rot_png, jpg_rot_pdf)
@@ -5366,6 +5360,7 @@ def test_png_rgb16(tmp_path_factory, png_rgb16_img, png_rgb16_pdf):
 def test_png_rgba8(tmp_path_factory, png_rgba8_img, png_rgba8_pdf):
     tmpdir = tmp_path_factory.mktemp("png_rgba8")
     compare_pdfimages_png(tmpdir, png_rgba8_img, png_rgba8_pdf)
+
 
 @pytest.mark.skipif(
     sys.platform in ["win32"],
