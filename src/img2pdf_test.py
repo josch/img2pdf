@@ -3909,7 +3909,7 @@ def png_icc_img(tmp_icc_png):
 ###############################################################################
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def jpg_pdf(tmp_path_factory, jpg_img, request):
     out_pdf = tmp_path_factory.mktemp("jpg_pdf") / "out.pdf"
     subprocess.check_call(
@@ -3936,7 +3936,7 @@ def jpg_pdf(tmp_path_factory, jpg_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def jpg_rot_pdf(tmp_path_factory, jpg_rot_img, request):
     out_pdf = tmp_path_factory.mktemp("jpg_rot_pdf") / "out.pdf"
     subprocess.check_call(
@@ -3964,7 +3964,7 @@ def jpg_rot_pdf(tmp_path_factory, jpg_rot_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def jpg_cmyk_pdf(tmp_path_factory, jpg_cmyk_img, request):
     out_pdf = tmp_path_factory.mktemp("jpg_cmyk_pdf") / "out.pdf"
     subprocess.check_call(
@@ -3994,7 +3994,7 @@ def jpg_cmyk_pdf(tmp_path_factory, jpg_cmyk_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def jpg_2000_pdf(tmp_path_factory, jpg_2000_img, request):
     out_pdf = tmp_path_factory.mktemp("jpg_2000_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4021,7 +4021,7 @@ def jpg_2000_pdf(tmp_path_factory, jpg_2000_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_rgb8_pdf(tmp_path_factory, png_rgb8_img, request):
     out_pdf = tmp_path_factory.mktemp("png_rgb8_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4051,7 +4051,7 @@ def png_rgb8_pdf(tmp_path_factory, png_rgb8_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_rgba8_pdf(tmp_path_factory, png_rgba8_img, request):
     out_pdf = tmp_path_factory.mktemp("png_rgba8_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4091,7 +4091,7 @@ def png_rgba8_pdf(tmp_path_factory, png_rgba8_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def gif_transparent_pdf(tmp_path_factory, gif_transparent_img, request):
     out_pdf = tmp_path_factory.mktemp("gif_transparent_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4131,7 +4131,7 @@ def gif_transparent_pdf(tmp_path_factory, gif_transparent_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_rgb16_pdf(tmp_path_factory, png_rgb16_img, request):
     out_pdf = tmp_path_factory.mktemp("png_rgb16_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4161,7 +4161,7 @@ def png_rgb16_pdf(tmp_path_factory, png_rgb16_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_interlaced_pdf(tmp_path_factory, png_interlaced_img, request):
     out_pdf = tmp_path_factory.mktemp("png_interlaced_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4191,7 +4191,7 @@ def png_interlaced_pdf(tmp_path_factory, png_interlaced_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_gray1_pdf(tmp_path_factory, tmp_gray1_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray1_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4221,7 +4221,7 @@ def png_gray1_pdf(tmp_path_factory, tmp_gray1_png, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_gray2_pdf(tmp_path_factory, tmp_gray2_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray2_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4251,7 +4251,7 @@ def png_gray2_pdf(tmp_path_factory, tmp_gray2_png, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_gray4_pdf(tmp_path_factory, tmp_gray4_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray4_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4281,7 +4281,7 @@ def png_gray4_pdf(tmp_path_factory, tmp_gray4_png, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_gray8_pdf(tmp_path_factory, tmp_gray8_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray8_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4311,7 +4311,7 @@ def png_gray8_pdf(tmp_path_factory, tmp_gray8_png, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_gray8a_pdf(tmp_path_factory, png_gray8a_img, request):
     out_pdf = tmp_path_factory.mktemp("png_gray8a_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4351,7 +4351,7 @@ def png_gray8a_pdf(tmp_path_factory, png_gray8a_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_gray16_pdf(tmp_path_factory, tmp_gray16_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray16_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4505,7 +4505,7 @@ def png_palette8_pdf(tmp_path_factory, tmp_palette8_png, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_icc_pdf(tmp_path_factory, tmp_icc_png, tmp_icc_profile, request):
     out_pdf = tmp_path_factory.mktemp("png_icc_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4705,7 +4705,7 @@ def gif_animation_pdf(tmp_path_factory, gif_animation_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_cmyk8_pdf(tmp_path_factory, tiff_cmyk8_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_cmyk8_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4732,7 +4732,7 @@ def tiff_cmyk8_pdf(tmp_path_factory, tiff_cmyk8_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_rgb8_pdf(tmp_path_factory, tiff_rgb8_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_rgb8_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4762,7 +4762,7 @@ def tiff_rgb8_pdf(tmp_path_factory, tiff_rgb8_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_gray1_pdf(tmp_path_factory, tiff_gray1_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_gray1_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4793,7 +4793,7 @@ def tiff_gray1_pdf(tmp_path_factory, tiff_gray1_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_gray2_pdf(tmp_path_factory, tiff_gray2_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_gray2_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4823,7 +4823,7 @@ def tiff_gray2_pdf(tmp_path_factory, tiff_gray2_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_gray4_pdf(tmp_path_factory, tiff_gray4_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_gray4_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4853,7 +4853,7 @@ def tiff_gray4_pdf(tmp_path_factory, tiff_gray4_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_gray8_pdf(tmp_path_factory, tiff_gray8_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_gray8_pdf") / "out.pdf"
     subprocess.check_call(
@@ -4883,7 +4883,7 @@ def tiff_gray8_pdf(tmp_path_factory, tiff_gray8_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_multipage_pdf(tmp_path_factory, tiff_multipage_img, request):
     tmpdir = tmp_path_factory.mktemp("tiff_multipage_pdf")
     out_pdf = tmpdir / "out.pdf"
@@ -5046,7 +5046,7 @@ def tiff_palette8_pdf(tmp_path_factory, tiff_palette8_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_ccitt_lsb_m2l_white_pdf(
     tmp_path_factory, tiff_ccitt_lsb_m2l_white_img, request
 ):
@@ -5079,7 +5079,7 @@ def tiff_ccitt_lsb_m2l_white_pdf(
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_ccitt_msb_m2l_white_pdf(
     tmp_path_factory, tiff_ccitt_msb_m2l_white_img, request
 ):
@@ -5112,7 +5112,7 @@ def tiff_ccitt_msb_m2l_white_pdf(
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_ccitt_msb_l2m_white_pdf(
     tmp_path_factory, tiff_ccitt_msb_l2m_white_img, request
 ):
@@ -5145,7 +5145,7 @@ def tiff_ccitt_msb_l2m_white_pdf(
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_ccitt_lsb_m2l_black_pdf(
     tmp_path_factory, tiff_ccitt_lsb_m2l_black_img, request
 ):
@@ -5178,7 +5178,7 @@ def tiff_ccitt_lsb_m2l_black_pdf(
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_ccitt_nometa1_pdf(tmp_path_factory, tiff_ccitt_nometa1_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_ccitt_nometa1_pdf") / "out.pdf"
     subprocess.check_call(
@@ -5209,7 +5209,7 @@ def tiff_ccitt_nometa1_pdf(tmp_path_factory, tiff_ccitt_nometa1_img, request):
     out_pdf.unlink()
 
 
-@pytest.fixture(scope="session", params=["internal", "pikepdf", "pdfrw"])
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_ccitt_nometa2_pdf(tmp_path_factory, tiff_ccitt_nometa2_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_ccitt_nometa2_pdf") / "out.pdf"
     subprocess.check_call(
@@ -5366,7 +5366,7 @@ def test_png_rgba8(tmp_path_factory, png_rgba8_img, png_rgba8_pdf):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_png_rgba16(tmp_path_factory, png_rgba16_img, engine):
     out_pdf = tmp_path_factory.mktemp("png_rgba16") / "out.pdf"
     assert (
@@ -5398,7 +5398,7 @@ def test_png_gray8a(tmp_path_factory, png_gray8a_img, png_gray8a_pdf):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_png_gray16a(tmp_path_factory, png_gray16a_img, engine):
     out_pdf = tmp_path_factory.mktemp("png_gray16a") / "out.pdf"
     assert (
@@ -5638,7 +5638,7 @@ def test_gif_animation(tmp_path_factory, gif_animation_img, gif_animation_pdf):
     sys.platform in ["darwin", "win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_float(tmp_path_factory, tiff_float_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_float") / "out.pdf"
     assert (
@@ -5675,7 +5675,7 @@ def test_tiff_cmyk8(tmp_path_factory, tiff_cmyk8_img, tiff_cmyk8_pdf):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_cmyk16(tmp_path_factory, tiff_cmyk16_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_cmyk16") / "out.pdf"
     # PIL is unable to read 16 bit CMYK images
@@ -5711,7 +5711,7 @@ def test_tiff_rgb8(tmp_path_factory, tiff_rgb8_img, tiff_rgb8_pdf):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_rgb12(tmp_path_factory, tiff_rgb12_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgb12") / "out.pdf"
     # PIL is unable to preserve more than 8 bits per sample
@@ -5735,7 +5735,7 @@ def test_tiff_rgb12(tmp_path_factory, tiff_rgb12_img, engine):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_rgb14(tmp_path_factory, tiff_rgb14_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgb14") / "out.pdf"
     # PIL is unable to preserve more than 8 bits per sample
@@ -5759,7 +5759,7 @@ def test_tiff_rgb14(tmp_path_factory, tiff_rgb14_img, engine):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_rgb16(tmp_path_factory, tiff_rgb16_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgb16") / "out.pdf"
     # PIL is unable to preserve more than 8 bits per sample
@@ -5783,7 +5783,7 @@ def test_tiff_rgb16(tmp_path_factory, tiff_rgb16_img, engine):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgba8") / "out.pdf"
     assert (
@@ -5806,7 +5806,7 @@ def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, engine):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_rgba16(tmp_path_factory, tiff_rgba16_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgba16") / "out.pdf"
     assert (
@@ -5877,7 +5877,7 @@ def test_tiff_gray8(tmp_path_factory, tiff_gray8_img, tiff_gray8_pdf):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_gray16(tmp_path_factory, tiff_gray16_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_gray16") / "out.pdf"
     assert (
@@ -6533,7 +6533,7 @@ def general_input(request):
     return request.param
 
 
-@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_general(general_input, engine):
     inputf = os.path.join(os.path.dirname(__file__), "tests", "input", general_input)
     outputf = os.path.join(
@@ -6545,10 +6545,6 @@ def test_general(general_input, engine):
 
     engine = getattr(img2pdf.Engine, engine)
 
-    # we do not test animation.gif with pdfrw because it doesn't support
-    # saving hexadecimal palette data
-    if f.endswith(os.path.sep + "animation.gif") and engine == img2pdf.Engine.pdfrw:
-        return
     with open(f, "rb") as inf:
         orig_imgdata = inf.read()
     output = img2pdf.convert(orig_imgdata, nodate=True, engine=engine)
