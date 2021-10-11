@@ -2,7 +2,16 @@
 CHANGES
 =======
 
-0.4.1 (2020-05-09)
+0.4.2 (2021-10-11)
+------------------
+
+ - add --rotation
+ - allow palette PNG images with ICC profile
+ - sort globbing result on windows
+ - convert 8-bit PNG alpha channels to /SMasks in PDF
+ - remove pdfrw from tests
+
+0.4.1 (2021-05-09)
 ------------------
 
  - support wildcards in paths on windows
