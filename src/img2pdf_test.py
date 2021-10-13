@@ -20,6 +20,8 @@ import warnings
 import json
 import pathlib
 
+img2pdfprog = os.getenv("img2pdfprog", default="src/img2pdf.py")
+
 ICC_PROFILE = None
 ICC_PROFILE_PATHS = (
     # Debian
@@ -3914,7 +3916,7 @@ def jpg_pdf(tmp_path_factory, jpg_img, request):
     out_pdf = tmp_path_factory.mktemp("jpg_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -3941,7 +3943,7 @@ def jpg_rot_pdf(tmp_path_factory, jpg_rot_img, request):
     out_pdf = tmp_path_factory.mktemp("jpg_rot_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -3969,7 +3971,7 @@ def jpg_cmyk_pdf(tmp_path_factory, jpg_cmyk_img, request):
     out_pdf = tmp_path_factory.mktemp("jpg_cmyk_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -3999,7 +4001,7 @@ def jpg_2000_pdf(tmp_path_factory, jpg_2000_img, request):
     out_pdf = tmp_path_factory.mktemp("jpg_2000_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4026,7 +4028,7 @@ def png_rgb8_pdf(tmp_path_factory, png_rgb8_img, request):
     out_pdf = tmp_path_factory.mktemp("png_rgb8_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4056,7 +4058,7 @@ def png_rgba8_pdf(tmp_path_factory, png_rgba8_img, request):
     out_pdf = tmp_path_factory.mktemp("png_rgba8_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4096,7 +4098,7 @@ def gif_transparent_pdf(tmp_path_factory, gif_transparent_img, request):
     out_pdf = tmp_path_factory.mktemp("gif_transparent_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4136,7 +4138,7 @@ def png_rgb16_pdf(tmp_path_factory, png_rgb16_img, request):
     out_pdf = tmp_path_factory.mktemp("png_rgb16_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4166,7 +4168,7 @@ def png_interlaced_pdf(tmp_path_factory, png_interlaced_img, request):
     out_pdf = tmp_path_factory.mktemp("png_interlaced_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4196,7 +4198,7 @@ def png_gray1_pdf(tmp_path_factory, tmp_gray1_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray1_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4226,7 +4228,7 @@ def png_gray2_pdf(tmp_path_factory, tmp_gray2_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray2_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4256,7 +4258,7 @@ def png_gray4_pdf(tmp_path_factory, tmp_gray4_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray4_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4286,7 +4288,7 @@ def png_gray8_pdf(tmp_path_factory, tmp_gray8_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray8_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4316,7 +4318,7 @@ def png_gray8a_pdf(tmp_path_factory, png_gray8a_img, request):
     out_pdf = tmp_path_factory.mktemp("png_gray8a_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4356,7 +4358,7 @@ def png_gray16_pdf(tmp_path_factory, tmp_gray16_png, request):
     out_pdf = tmp_path_factory.mktemp("png_gray16_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4386,7 +4388,7 @@ def png_palette1_pdf(tmp_path_factory, tmp_palette1_png, request):
     out_pdf = tmp_path_factory.mktemp("png_palette1_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4417,7 +4419,7 @@ def png_palette2_pdf(tmp_path_factory, tmp_palette2_png, request):
     out_pdf = tmp_path_factory.mktemp("png_palette2_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4448,7 +4450,7 @@ def png_palette4_pdf(tmp_path_factory, tmp_palette4_png, request):
     out_pdf = tmp_path_factory.mktemp("png_palette4_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4479,7 +4481,7 @@ def png_palette8_pdf(tmp_path_factory, tmp_palette8_png, request):
     out_pdf = tmp_path_factory.mktemp("png_palette8_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4510,7 +4512,7 @@ def png_icc_pdf(tmp_path_factory, tmp_icc_png, tmp_icc_profile, request):
     out_pdf = tmp_path_factory.mktemp("png_icc_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4546,7 +4548,7 @@ def gif_palette1_pdf(tmp_path_factory, gif_palette1_img, request):
     out_pdf = tmp_path_factory.mktemp("gif_palette1_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4577,7 +4579,7 @@ def gif_palette2_pdf(tmp_path_factory, gif_palette2_img, request):
     out_pdf = tmp_path_factory.mktemp("gif_palette2_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4608,7 +4610,7 @@ def gif_palette4_pdf(tmp_path_factory, gif_palette4_img, request):
     out_pdf = tmp_path_factory.mktemp("gif_palette4_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4639,7 +4641,7 @@ def gif_palette8_pdf(tmp_path_factory, gif_palette8_img, request):
     out_pdf = tmp_path_factory.mktemp("gif_palette8_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4671,7 +4673,7 @@ def gif_animation_pdf(tmp_path_factory, gif_animation_img, request):
     out_pdf = tmpdir / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4710,7 +4712,7 @@ def tiff_cmyk8_pdf(tmp_path_factory, tiff_cmyk8_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_cmyk8_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4737,7 +4739,7 @@ def tiff_rgb8_pdf(tmp_path_factory, tiff_rgb8_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_rgb8_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4767,7 +4769,7 @@ def tiff_gray1_pdf(tmp_path_factory, tiff_gray1_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_gray1_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4798,7 +4800,7 @@ def tiff_gray2_pdf(tmp_path_factory, tiff_gray2_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_gray2_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4828,7 +4830,7 @@ def tiff_gray4_pdf(tmp_path_factory, tiff_gray4_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_gray4_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4858,7 +4860,7 @@ def tiff_gray8_pdf(tmp_path_factory, tiff_gray8_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_gray8_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4889,7 +4891,7 @@ def tiff_multipage_pdf(tmp_path_factory, tiff_multipage_img, request):
     out_pdf = tmpdir / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4927,7 +4929,7 @@ def tiff_palette1_pdf(tmp_path_factory, tiff_palette1_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_palette1_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4958,7 +4960,7 @@ def tiff_palette2_pdf(tmp_path_factory, tiff_palette2_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_palette2_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -4989,7 +4991,7 @@ def tiff_palette4_pdf(tmp_path_factory, tiff_palette4_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_palette4_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -5020,7 +5022,7 @@ def tiff_palette8_pdf(tmp_path_factory, tiff_palette8_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_palette8_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -5053,7 +5055,7 @@ def tiff_ccitt_lsb_m2l_white_pdf(
     out_pdf = tmp_path_factory.mktemp("tiff_ccitt_lsb_m2l_white_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -5086,7 +5088,7 @@ def tiff_ccitt_msb_m2l_white_pdf(
     out_pdf = tmp_path_factory.mktemp("tiff_ccitt_msb_m2l_white_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -5119,7 +5121,7 @@ def tiff_ccitt_msb_l2m_white_pdf(
     out_pdf = tmp_path_factory.mktemp("tiff_ccitt_msb_l2m_white_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -5152,7 +5154,7 @@ def tiff_ccitt_lsb_m2l_black_pdf(
     out_pdf = tmp_path_factory.mktemp("tiff_ccitt_lsb_m2l_black_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -5183,7 +5185,7 @@ def tiff_ccitt_nometa1_pdf(tmp_path_factory, tiff_ccitt_nometa1_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_ccitt_nometa1_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -5214,7 +5216,7 @@ def tiff_ccitt_nometa2_pdf(tmp_path_factory, tiff_ccitt_nometa2_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_ccitt_nometa2_pdf") / "out.pdf"
     subprocess.check_call(
         [
-            "src/img2pdf.py",
+            img2pdfprog,
             "--producer=",
             "--nodate",
             "--engine=" + request.param,
@@ -5373,7 +5375,7 @@ def test_png_rgba16(tmp_path_factory, png_rgba16_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
@@ -5405,7 +5407,7 @@ def test_png_gray16a(tmp_path_factory, png_gray16a_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
@@ -5645,7 +5647,7 @@ def test_tiff_float(tmp_path_factory, tiff_float_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
@@ -5683,7 +5685,7 @@ def test_tiff_cmyk16(tmp_path_factory, tiff_cmyk16_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
@@ -5719,7 +5721,7 @@ def test_tiff_rgb12(tmp_path_factory, tiff_rgb12_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
@@ -5743,7 +5745,7 @@ def test_tiff_rgb14(tmp_path_factory, tiff_rgb14_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
@@ -5767,7 +5769,7 @@ def test_tiff_rgb16(tmp_path_factory, tiff_rgb16_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
@@ -5790,7 +5792,7 @@ def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
@@ -5813,7 +5815,7 @@ def test_tiff_rgba16(tmp_path_factory, tiff_rgba16_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
@@ -5884,7 +5886,7 @@ def test_tiff_gray16(tmp_path_factory, tiff_gray16_img, engine):
         0
         != subprocess.run(
             [
-                "src/img2pdf.py",
+                img2pdfprog,
                 "--producer=",
                 "--nodate",
                 "--engine=" + engine,
