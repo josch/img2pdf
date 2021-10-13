@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2013 Johannes 'josch' Schauer <j.schauer at email.de>
+# Copyright (C) 2013 Johannes Schauer Marin Rodrigues <j.schauer at email.de>
 #
 # this module is heavily based upon jpylyzer which is
 # KB / National Library of the Netherlands, Open Planets Foundation

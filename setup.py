@@ -11,7 +11,7 @@ INSTALL_REQUIRES = (
 setup(
     name="img2pdf",
     version=VERSION,
-    author="Johannes 'josch' Schauer",
+    author="Johannes Schauer Marin Rodrigues",
     author_email="josch@mister-muffin.de",
     description="Convert images to PDF via direct JPEG inclusion.",
     long_description=open("README.md").read(),

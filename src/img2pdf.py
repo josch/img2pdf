@@ -3481,7 +3481,7 @@ Examples:
 
     $ img2pdf --output out.pdf --colorspace L input.jp2
 
-Written by Johannes 'josch' Schauer <josch@mister-muffin.de>
+Written by Johannes Schauer Marin Rodrigues <josch@mister-muffin.de>
 
 Report bugs at https://gitlab.mister-muffin.de/josch/img2pdf/issues
 """
