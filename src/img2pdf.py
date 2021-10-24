@@ -3937,7 +3937,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
         # On windows, each positional argument can expand into multiple paths
         # because we do globbing ourselves. Here we flatten the list of lists
         # again.
-        images = chain.from_iterable(args.images)
+        images = list(chain.from_iterable(args.images))
     elif len(args.images) == 0 and len(args.from_file) > 0:
         images = args.from_file
 
