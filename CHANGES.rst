@@ -2,6 +2,11 @@
 CHANGES
 =======
 
+0.4.3 (2021-10-24)
+------------------
+
+ - fix --viewer-initial-page (broken in last release)
+
 0.4.2 (2021-10-11)
 ------------------
 
