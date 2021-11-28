@@ -1106,6 +1106,10 @@ class pdfdoc(object):
                 [initial_page, PdfName.XYZ, NullObject, NullObject, 0]
             )
 
+        # the /OpenAction array must contain the page as an indirect object
+        if self.engine == Engine.pikepdf:
+            initial_page = self.writer.make_indirect(initial_page)
+
         if self.magnification == Magnification.fit:
             catalog[PdfName.OpenAction] = PdfArray([initial_page, PdfName.Fit])
         elif self.magnification == Magnification.fith:
