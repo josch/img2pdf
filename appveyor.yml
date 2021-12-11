@@ -20,8 +20,9 @@ install:
 
 build: off
 
-test_script:
-  - "%PYTHON%\\python.exe -m tox"
+# don't run tests on windows because we don't have imagemagick
+#test_script:
+#  - "%PYTHON%\\python.exe -m tox"
 
 after_test:
   - "%PYTHON%\\python.exe setup.py bdist_wheel"
