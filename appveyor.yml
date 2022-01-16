@@ -16,7 +16,7 @@ environment:
     - PYTHON: "C:\\Python37-x64"
 
 install:
-  - "%PYTHON%\\python.exe -m pip install tox wheel pyinstaller pil"
+  - "%PYTHON%\\python.exe -m pip install tox wheel pyinstaller Pillow"
 
 build: off
 
