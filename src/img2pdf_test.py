@@ -2190,15 +2190,37 @@ def gif_palette8_img(tmp_path_factory, tmp_palette8_png):
 @pytest.fixture(scope="session")
 def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     in_img = tmp_path_factory.mktemp("gif_animation_img") / "in.gif"
+    pal_img = tmp_path_factory.mktemp("gif_animation_img") / "pal.gif"
+    tmp_img = tmp_path_factory.mktemp("gif_animation_img") / "tmp.gif"
     subprocess.check_call(
         CONVERT
         + [
             str(tmp_normal_png),
             str(tmp_inverse_png),
-            "-strip",
-            str(in_img),
+            str(tmp_img),
         ]
     )
+    # create palette image with all unique colors
+    subprocess.check_call(
+        CONVERT
+        + [
+            str(tmp_img),
+            "-unique-colors",
+            str(pal_img),
+        ]
+    )
+    # make sure all frames have the same palette by using -remap
+    subprocess.check_call(
+        CONVERT
+        + [
+            str(tmp_img),
+            "-strip",
+            "-remap", str(pal_img),
+            str(in_img)
+        ]
+    )
+    pal_img.unlink()
+    tmp_img.unlink()
     identify = json.loads(
         subprocess.check_output(CONVERT + [str(in_img) + "[0]", "json:"])
     )
@@ -2228,6 +2250,7 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "LZW", str(identify)
+    colormap_frame0 = identify[0]["image"].get("colormap")
     identify = json.loads(
         subprocess.check_output(CONVERT + [str(in_img) + "[1]", "json:"])
     )
@@ -2258,6 +2281,8 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     }, str(identify)
     assert identify[0]["image"].get("compression") == "LZW", str(identify)
     assert identify[0]["image"].get("scene") == 1, str(identify)
+    colormap_frame1 = identify[0]["image"].get("colormap")
+    assert colormap_frame0 == colormap_frame1
     yield in_img
     in_img.unlink()
 
@@ -6712,29 +6737,6 @@ def test_general(general_input, engine):
     y = pikepdf.open(out)
     pydictx = rec(x.Root)
     pydicty = rec(y.Root)
-    if f.endswith(os.path.sep + "animation.gif"):
-        # starting with PIL 8.2.0 the palette is half the size when encoding
-        # our test GIF image as PNG
-        #
-        # to still compare successfully, we truncate the expected palette
-        import PIL
-
-        if PIL.__version__ >= "8.2.0":
-            assert len(pydictx["/Pages"]["/Kids"]) == 2
-            for p in pydictx["/Pages"]["/Kids"]:
-                assert p["/Resources"]["/XObject"]["/Im0"]["/ColorSpace"][2] == 127
-            assert len(pydicty["/Pages"]["/Kids"]) == 2
-            for p in pydicty["/Pages"]["/Kids"]:
-                cs = p["/Resources"]["/XObject"]["/Im0"]["/ColorSpace"]
-                cs[2] = decimal.Decimal("127")
-                cs[3] = cs[3][:384]
-        else:
-            assert (
-                pydictx["/Pages"]["/Kids"][0]["/Resources"]["/XObject"]["/Im0"][
-                    "/ColorSpace"
-                ][2]
-                == 255
-            )
     assert pydictx == pydicty
     # the python-pil version 2.3.0-1ubuntu3 in Ubuntu does not have the
     # close() method
