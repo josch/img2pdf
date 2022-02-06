@@ -82,7 +82,10 @@ Bugs
    only nine different values from 1 to 9 are permitted, Anroid phones and
    Canon DSLR cameras produce JPEG images with the invalid value of zero.
    Either fix your input images with `exiftool` or similar software before
-   passing the JPEG to `img2pdf` or run `img2pdf` with `--rotation=ifvalid`.
+   passing the JPEG to `img2pdf` or run `img2pdf` with `--rotation=ifvalid`
+   (if you run img2pdf from the commandline) or by passing
+   `rotation=img2pdf.Rotation.ifvalid` as an argument to `convert()` when using
+   img2pdf as a library.
 
  - img2pdf uses PIL (or Pillow) to obtain image meta data and to convert the
    input if necessary. To prevent decompression bomb denial of service attacks,
@@ -190,6 +193,10 @@ The package can also be used as a library:
 	import glob
 	with open("name.pdf","wb") as f:
 		f.write(img2pdf.convert(glob.glob("/path/to/*.jpg")))
+
+	# ignore invalid rotation values in the input images
+	with open("name.pdf","wb") as f:
+		f.write(img2pdf.convert('test.jpg'), rotation=img2pdf.Rotation.ifvalid)
 
 	# writing to file descriptor
 	with open("name.pdf","wb") as f1, open("test.jpg") as f2:

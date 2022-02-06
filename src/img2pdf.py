@@ -1277,17 +1277,25 @@ def get_imgmetadata(
                     elif value in (2, 4, 5, 7):
                         if rotreq == Rotation.ifvalid:
                             logger.warning(
-                                "Unsupported flipped rotation mode (%d)", value
+                                "Unsupported flipped rotation mode (%d): use "
+                                "--rotation=ifvalid or "
+                                "rotation=img2pdf.Rotation.ifvalid to ignore",
+                                value,
                             )
                         else:
                             raise ExifOrientationError(
-                                "Unsupported flipped rotation mode (%d)" % value
+                                "Unsupported flipped rotation mode (%d): use "
+                                "--rotation=ifvalid or "
+                                "rotation=img2pdf.Rotation.ifvalid to ignore" % value
                             )
                     else:
                         if rotreq == Rotation.ifvalid:
                             logger.warning("Invalid rotation (%d)", value)
                         else:
-                            raise ExifOrientationError("Invalid rotation (%d)" % value)
+                            raise ExifOrientationError(
+                                "Invalid rotation (%d): use --rotation=ifvalid "
+                                "or rotation=img2pdf.Rotation.ifvalid to ignore" % value
+                            )
     elif rotreq in (Rotation.none, Rotation["0"]):
         rotation = 0
     elif rotreq == Rotation["90"]:
