@@ -91,7 +91,7 @@ ImageFormat = Enum("ImageFormat", "JPEG JPEG2000 CCITTGroup4 PNG GIF TIFF MPO ot
 
 PageMode = Enum("PageMode", "none outlines thumbs")
 
-PageLayout = Enum("PageLayout", "single onecolumn twocolumnright twocolumnleft")
+PageLayout = Enum("PageLayout", "single onecolumn twocolumnright twocolumnleft twopageright twopageleft")
 
 Magnification = Enum("Magnification", "fit fith fitbh")
 
@@ -1140,6 +1140,14 @@ class pdfdoc(object):
             catalog[PdfName.PageLayout] = PdfName.TwoColumnRight
         elif self.page_layout == PageLayout.twocolumnleft:
             catalog[PdfName.PageLayout] = PdfName.TwoColumnLeft
+        elif self.page_layout == PageLayout.twopageright:
+            catalog[PdfName.PageLayout] = PdfName.TwoPageRight
+            if self.output_version < "1.5":
+                self.output_version = "1.5"
+        elif self.page_layout == PageLayout.twopageleft:
+            catalog[PdfName.PageLayout] = PdfName.TwoPageLeft
+            if self.output_version < "1.5":
+                self.output_version = "1.5"
         elif self.page_layout is None:
             pass
         else:
@@ -3902,7 +3910,9 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
         'Valid values are "single" (display single pages), "onecolumn" '
         '(one continuous column), "twocolumnright" (two continuous '
         'columns with odd number pages on the right) and "twocolumnleft" '
-        "(two continuous columns with odd numbered pages on the left)",
+        "(two continuous columns with odd numbered pages on the left), "
+        '"twopageright" (two pages with odd numbered page on the right) '
+        'and "twopageleft" (two pages with odd numbered page on the left)',
     )
     viewerargs.add_argument(
         "--viewer-fit-window",
