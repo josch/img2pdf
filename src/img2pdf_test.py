@@ -2211,13 +2211,7 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     )
     # make sure all frames have the same palette by using -remap
     subprocess.check_call(
-        CONVERT
-        + [
-            str(tmp_img),
-            "-strip",
-            "-remap", str(pal_img),
-            str(in_img)
-        ]
+        CONVERT + [str(tmp_img), "-strip", "-remap", str(pal_img), str(in_img)]
     )
     pal_img.unlink()
     tmp_img.unlink()
