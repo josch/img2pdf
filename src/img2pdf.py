@@ -2147,7 +2147,11 @@ def get_fixed_dpi_layout_fun(fixed_dpi):
 
 def find_scale(pagewidth, pageheight):
     """Find the power of 10 (10, 100, 1000...) that will reduce the scale
-    below the PDF specification limit of 14400 PDF units (=200 inches)"""
+    below the PDF specification limit of 14400 PDF units (=200 inches).
+    In principle we could also choose a scale that is not a power of 10.
+    We use powers of 10 because numbers in the PDF format are represented
+    in base-10 and using powers of 10 will thus just shift the comma and
+    keep the numbers easily readable by humans as well."""
     from math import log10, ceil
 
     major = max(pagewidth, pageheight)
