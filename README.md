@@ -72,11 +72,6 @@ Bugs
    when embedded into the PDF cannot be read by the Adobe Acrobat Reader,
    please contact me.
 
- - I have not yet figured out how to determine the colorspace of JPEG2000
-   files.  Therefore JPEG2000 files use DeviceRGB by default. For JPEG2000
-   files with other colorspaces, you must explicitly specify it using the
-   `--colorspace` option.
-
  - An error is produced if the input image is broken. This commonly happens if
    the input image has an invalid EXIF Orientation value of zero. Even though
    only nine different values from 1 to 9 are permitted, Anroid phones and
