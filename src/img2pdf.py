@@ -399,6 +399,28 @@ class ExifOrientationError(Exception):
     pass
 
 
+# temporary change the attribute of an object using a context manager
+class temp_attr:
+    def __init__(self, obj, field, value):
+        self.obj = obj
+        self.field = field
+        self.value = value
+
+    def __enter__(self):
+        self.exists = False
+        if hasattr(self.obj, self.field):
+            self.exists = True
+            self.old_value = getattr(self.obj, self.field)
+        print(f"setting {self.obj}.{self.field} = {self.value}")
+        setattr(self.obj, self.field, self.value)
+
+    def __exit__(self, exctype, excinst, exctb):
+        if self.exists:
+            setattr(self.obj, self.field, self.old_value)
+        else:
+            delattr(self.obj, self.field)
+
+
 # without pdfrw this function is a no-op
 def my_convert_load(string):
     return string
@@ -1428,27 +1450,29 @@ def transcode_monochrome(imgdata):
     # into putting everything into a single strip. Thanks to Andrew Murray for
     # the hack.
     #
-    # This can be dropped once this gets merged:
-    # https://github.com/python-pillow/Pillow/pull/5744
-    pillow__getitem__ = TiffImagePlugin.ImageFileDirectory_v2.__getitem__
+    # Since version 8.4.0 Pillow allows us to modify the strip size explicitly
+    tmp_strip_size = (imgdata.size[0] + 7) // 8 * imgdata.size[1]
+    if hasattr(TiffImagePlugin, "STRIP_SIZE"):
+        # we are using Pillow 8.4.0 or later
+        with temp_attr(TiffImagePlugin, "STRIP_SIZE", tmp_strip_size):
+            im.save(newimgio, format="TIFF", compression="group4")
+    else:
+        # only needed for Pillow 8.3.x but works for versions before that as
+        # well
+        pillow__getitem__ = TiffImagePlugin.ImageFileDirectory_v2.__getitem__
 
-    def __getitem__(self, tag):
-        overrides = {
-            TiffImagePlugin.ROWSPERSTRIP: imgdata.size[1],
-            TiffImagePlugin.STRIPBYTECOUNTS: [
-                (imgdata.size[0] + 7) // 8 * imgdata.size[1]
-            ],
-            TiffImagePlugin.STRIPOFFSETS: [0],
-        }
-        return overrides.get(tag, pillow__getitem__(self, tag))
+        def __getitem__(self, tag):
+            overrides = {
+                TiffImagePlugin.ROWSPERSTRIP: imgdata.size[1],
+                TiffImagePlugin.STRIPBYTECOUNTS: [tmp_strip_size],
+                TiffImagePlugin.STRIPOFFSETS: [0],
+            }
+            return overrides.get(tag, pillow__getitem__(self, tag))
 
-    # use try/finally to make sure that __getitem__ is reset even if save()
-    # raises an exception
-    try:
-        TiffImagePlugin.ImageFileDirectory_v2.__getitem__ = __getitem__
-        im.save(newimgio, format="TIFF", compression="group4")
-    finally:
-        TiffImagePlugin.ImageFileDirectory_v2.__getitem__ = pillow__getitem__
+        with temp_attr(
+            TiffImagePlugin.ImageFileDirectory_v2, "__getitem__", __getitem__
+        ):
+            im.save(newimgio, format="TIFF", compression="group4")
 
     # Open new image in memory
     newimgio.seek(0)
