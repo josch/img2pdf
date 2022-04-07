@@ -101,7 +101,10 @@ ImageFormat = Enum("ImageFormat", "JPEG JPEG2000 CCITTGroup4 PNG GIF TIFF MPO ot
 
 PageMode = Enum("PageMode", "none outlines thumbs")
 
-PageLayout = Enum("PageLayout", "single onecolumn twocolumnright twocolumnleft twopageright twopageleft")
+PageLayout = Enum(
+    "PageLayout",
+    "single onecolumn twocolumnright twocolumnleft twopageright twopageleft",
+)
 
 Magnification = Enum("Magnification", "fit fith fitbh")
 
