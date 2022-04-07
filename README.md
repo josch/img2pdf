@@ -27,15 +27,15 @@ software, because the raw pixel data never has to be loaded into memory.
 The following table shows how img2pdf handles different input depending on the
 input file format and image color space.
 
-| Format               | Colorspace                     | Result        |
-| -------------------- | ------------------------------ | ------------- |
-| JPEG                 | any                            | direct        |
-| JPEG2000             | any                            | direct        |
-| PNG (non-interlaced) | any                            | direct        |
-| TIFF (CCITT Group 4) | monochrome                     | direct        |
-| any                  | any except CMYK and monochrome | PNG Paeth     |
-| any                  | monochrome                     | CCITT Group 4 |
-| any                  | CMYK                           | flate         |
+| Format                                | Colorspace                     | Result        |
+| ------------------------------------- | ------------------------------ | ------------- |
+| JPEG                                  | any                            | direct        |
+| JPEG2000                              | any                            | direct        |
+| PNG (non-interlaced, no transparency) | any                            | direct        |
+| TIFF (CCITT Group 4)                  | monochrome                     | direct        |
+| any                                   | any except CMYK and monochrome | PNG Paeth     |
+| any                                   | monochrome                     | CCITT Group 4 |
+| any                                   | CMYK                           | flate         |
 
 For JPEG, JPEG2000, non-interlaced PNG and TIFF images with CCITT Group 4
 encoded data, img2pdf directly embeds the image data into the PDF without

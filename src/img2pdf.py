@@ -1823,8 +1823,8 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
 
                 smaskidat, _, _ = to_png_data(a)
                 logger.warning(
-                    "Image contains an alpha channel which will be stored "
-                    "as a separate soft mask (/SMask) image in PDF."
+                    "Image contains an alpha channel. Computing a separate "
+                    "soft mask (/SMask) image to store transparency in PDF."
                 )
             elif color in [Colorspace.P, Colorspace.PA] and iccp is not None:
                 # PDF does not support palette images with icc profile
