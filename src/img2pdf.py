@@ -22,7 +22,17 @@ import sys
 import os
 import zlib
 import argparse
-from PIL import Image, TiffImagePlugin
+from PIL import Image, TiffImagePlugin, GifImagePlugin
+
+if hasattr(GifImagePlugin, "LoadingStrategy"):
+    # Pillow 9.0.0 started emitting all frames but the first as RGB instead of
+    # P to make sure that more than 256 colors can be represented. But palette
+    # images compress far better than RGB images in PDF so we instruct Pillow
+    # to only emit RGB frames if the palette differs and return P otherwise.
+    # This works since Pillow 9.1.0.
+    GifImagePlugin.LOADING_STRATEGY = (
+        GifImagePlugin.LoadingStrategy.RGB_AFTER_DIFFERENT_PALETTE_ONLY
+    )
 
 # TiffImagePlugin.DEBUG = True
 from PIL.ExifTags import TAGS
