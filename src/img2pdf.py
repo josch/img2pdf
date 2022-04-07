@@ -1106,9 +1106,17 @@ class pdfdoc(object):
                 [initial_page, PdfName.XYZ, NullObject, NullObject, 0]
             )
 
-        # the /OpenAction array must contain the page as an indirect object
+        # The /OpenAction array must contain the page as an indirect object.
+        # This changed some time after 4.2.0 and on or before 5.0.0 and current
+        # versions require to use .obj or otherwise we get:
+        #   TypeError: Can't convert ObjectHelper (or subclass) to Object
+        #   implicitly. Use .obj to get access the underlying object.
+        # See https://github.com/pikepdf/pikepdf/issues/313 for details.
         if self.engine == Engine.pikepdf:
-            initial_page = self.writer.make_indirect(initial_page)
+            if isinstance(initial_page, pikepdf.Page):
+                initial_page = self.writer.make_indirect(initial_page.obj)
+            else:
+                initial_page = self.writer.make_indirect(initial_page)
 
         if self.magnification == Magnification.fit:
             catalog[PdfName.OpenAction] = PdfArray([initial_page, PdfName.Fit])
