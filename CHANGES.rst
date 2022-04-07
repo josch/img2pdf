@@ -2,6 +2,13 @@
 CHANGES
 =======
 
+0.4.4 (2022-04-07)
+------------------
+
+ - --viewer-page-layout support for twopageright and twopageleft
+ - Add B and JB paper sizes
+ - support for pikepdf (>= 5.0.0) and Pillow (>= 9.1.0)
+
 0.4.3 (2021-10-24)
 ------------------
 
