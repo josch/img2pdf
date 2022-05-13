@@ -117,10 +117,8 @@ You can then test the converter using:
 
 	$ ve/bin/img2pdf -o test.pdf src/tests/test.jpg
 
-For Microsoft Windows users, PyInstaller based .exe files are produced by
-appveyor. If you don't want to install Python before using img2pdf you can head
-to appveyor and click on "Artifacts" to download the latest version:
-https://ci.appveyor.com/project/josch/img2pdf
+If you don't want to setup Python on Windows, then head to the
+[releases](releases) section and download the latest `img2pdf.exe`.
 
 GUI
 ---
