@@ -299,3 +299,14 @@ Tesseract might not do a lossless conversion. For example it converts CMYK
 input to RGB and removes the alpha channel from images with transparency. For
 multipage TIFF or animated GIF, it will only convert the first frame.
 
+Comparison to econvert from ExactImage
+--------------------------------------
+
+Like pdflatex and podofoimg2pf, econvert is able to embed JPEG images into PDF
+directly without re-encoding but when given other file formats, it stores them
+just using flate compressen, which unnecessarily increases the filesize.
+Furthermore, it throws an error with CMYK TIF input. It also doesn't store CMYK
+jpeg files as CMYK but converts them to RGB, so it's not lossless. When trying
+to feed it 16bit files, it errors out with Unhandled bps/spp combination. It
+also seems to choose JPEG encoding when using it on some file types (like
+palette images) making it again not lossless for that input as well.
