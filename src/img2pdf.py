@@ -45,6 +45,7 @@ import struct
 import platform
 import hashlib
 from itertools import chain
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,9 @@ PageOrientation = Enum("PageOrientation", "portrait landscape")
 
 Colorspace = Enum("Colorspace", "RGB RGBA L LA 1 CMYK CMYK;I P PA other")
 
-ImageFormat = Enum("ImageFormat", "JPEG JPEG2000 CCITTGroup4 PNG GIF TIFF MPO other")
+ImageFormat = Enum(
+    "ImageFormat", "JPEG JPEG2000 CCITTGroup4 PNG GIF TIFF MPO MIFF other"
+)
 
 PageMode = Enum("PageMode", "none outlines thumbs")
 
@@ -1533,6 +1536,166 @@ def parse_png(rawdata):
     return pngidat, palette
 
 
+
+miff_re = re.compile(
+    r"""
+    [^\x00-\x20\x7f-\x9f] # the field name must not start with a control char or space
+    [^=]+                 # the field name can even contain spaces
+    =                     # field name and value are separated by an equal sign
+    (?:
+        [^\x00-\x20\x7f-\x9f{}] # either chars that are not braces and not control chars
+        |{[^}]*}                # or any kind of char surrounded by braces
+    )+""",
+    re.VERBOSE,
+)
+
+# https://imagemagick.org/script/miff.php
+def parse_miff(data):
+    results = []
+    header, rest = data.split(b":\x1a", 1)
+    header = header.decode("ISO-8859-1")
+    assert header.lower().startswith("id=imagemagick")
+    hdata = {}
+    for i, line in enumerate(re.findall(miff_re, header)):
+        if not line:
+            continue
+        k, v = line.split("=", 1)
+        if i == 0:
+            assert k.lower() == "id"
+            assert v.lower() == "imagemagick"
+        match k.lower():
+            case "class":
+                match v:
+                    case "DirectClass" | "PseudoClass":
+                        hdata["class"] = v
+                    case _:
+                        print("cannot understand class", v)
+            case "colorspace":
+                # theoretically RGBA and CMYKA should be supported as well
+                # please teach me how to create such a MIFF file
+                match v:
+                    case "sRGB" | "CMYK" | "Gray":
+                        hdata["colorspace"] = v
+                    case _:
+                        print("cannot understand colorspace", v)
+            case "depth":
+                match v:
+                    case "8" | "16" | "32":
+                        hdata["depth"] = int(v)
+                    case _:
+                        print("cannot understand depth", v)
+            case "colors":
+                hdata["colors"] = int(v)
+            case "matte":
+                match v:
+                    case "True":
+                        hdata["matte"] = True
+                    case "False":
+                        hdata["matte"] = False
+                    case _:
+                        print("cannot understand matte", v)
+            case "columns" | "rows":
+                hdata[k.lower()] = int(v)
+            case "compression":
+                print("compression not yet supported")
+            case "profile":
+                assert v in ["icc", "exif"]
+                hdata["profile"] = v
+            case "resolution":
+                dpix, dpiy = v.split("x", 1)
+                hdata["resolution"] = (float(dpix), float(dpiy))
+
+    assert "depth" in hdata
+    assert "columns" in hdata
+    assert "rows" in hdata
+    match hdata["class"]:
+        case "DirectClass":
+            if "colors" in hdata:
+                assert hdata["colors"] == 0
+            match hdata["colorspace"]:
+                case "sRGB":
+                    numchannels = 3
+                    colorspace = Colorspace.RGB
+                case "CMYK":
+                    numchannels = 4
+                    colorspace = Colorspace.CMYK
+                case "Gray":
+                    numchannels = 1
+                    colorspace = Colorspace.L
+            if hdata["matte"]:
+                numchannels += 1
+            if hdata.get("profile"):
+                # there is no key encoding the length of icc or exif data
+                # according to the docs, the profile-icc key is supposed to do this
+                print("FAIL: exif")
+            else:
+                lenimgdata = (
+                    hdata["depth"] // 8 * numchannels * hdata["columns"] * hdata["rows"]
+                )
+                assert len(rest) >= lenimgdata, (
+                    len(rest),
+                    hdata["depth"],
+                    numchannels,
+                    hdata["columns"],
+                    hdata["rows"],
+                    lenimgdata,
+                )
+                results.append(
+                    (
+                        colorspace,
+                        hdata.get("resolution") or (default_dpi, default_dpi),
+                        ImageFormat.MIFF,
+                        zlib.compress(rest[:lenimgdata]),
+                        None,  # smask
+                        hdata["columns"],
+                        hdata["rows"],
+                        [],  # palette
+                        False,  # inverted
+                        hdata["depth"],
+                        0,  # rotation
+                        None,  # icc profile
+                    )
+                )
+                if len(rest) > lenimgdata:
+                    # another image is here
+                    assert rest[lenimgdata:][:14].lower() == b"id=imagemagick"
+                    results.extend(parse_miff(rest[lenimgdata:]))
+        case "PseudoClass":
+            assert "colors" in hdata
+            if hdata["matte"]:
+                numchannels = 2
+            else:
+                numchannels = 1
+            lenpal = 3 * hdata["colors"] * hdata["depth"] // 8
+            lenimgdata = numchannels * hdata["rows"] * hdata["columns"]
+            assert len(rest) >= lenpal + lenimgdata, (len(rest), lenpal, lenimgdata)
+            results.append(
+                (
+                    Colorspace.RGB,
+                    hdata.get("resolution") or (default_dpi, default_dpi),
+                    ImageFormat.MIFF,
+                    zlib.compress(rest[lenpal : lenpal + lenimgdata]),
+                    None,  # FIXME: allow alpha channel smask
+                    hdata["columns"],
+                    hdata["rows"],
+                    rest[:lenpal],  # palette
+                    False,  # inverted
+                    hdata["depth"],
+                    0,  # rotation
+                    None,  # icc profile
+                )
+            )
+            if len(rest) > lenpal + lenimgdata:
+                # another image is here
+                assert rest[lenpal + lenimgdata :][:14].lower() == b"id=imagemagick", (
+                    len(rest),
+                    lenpal,
+                    lenimgdata,
+                )
+                results.extend(parse_miff(rest[lenpal + lenimgdata :]))
+    return results
+
+
 def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
     im = BytesIO(rawdata)
     im.seek(0)
@@ -1541,13 +1704,19 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
         imgdata = Image.open(im)
     except IOError as e:
         # test if it is a jpeg2000 image
-        if rawdata[:12] != b"\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+        if rawdata[:12] == b"\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+            # image is jpeg2000
+            imgformat = ImageFormat.JPEG2000
+        if rawdata[:14].lower() == b"id=imagemagick":
+            # image is in MIFF format
+            # this is useful for 16 bit CMYK because PNG cannot do CMYK and thus
+            # we need PIL but PIL cannot do 16 bit
+            imgformat = ImageFormat.MIFF
+        else:
             raise ImageOpenError(
                 "cannot read input image (not jpeg2000). "
                 "PIL: error reading image: %s" % e
             )
-        # image is jpeg2000
-        imgformat = ImageFormat.JPEG2000
     else:
         logger.debug("PIL format = %s", imgdata.format)
         imgformat = None
@@ -1709,6 +1878,10 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                         iccp,
                     )
                 ]
+
+
+    if imgformat == ImageFormat.MIFF:
+        return parse_miff(rawdata)
 
     # If our input is not JPEG or PNG, then we might have a format that
     # supports multiple frames (like TIFF or GIF), so we need a loop to
@@ -2343,6 +2516,10 @@ def convert(*images, **kwargs):
                 # differently.
                 rawdata = f.read()
                 f.close()
+
+        #md5 = hashlib.md5(rawdata).hexdigest()
+        #with open("./testdata/" + md5, "wb") as f:
+        #    f.write(rawdata)
 
         for (
             color,

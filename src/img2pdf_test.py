@@ -3875,6 +3875,51 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     yield in_img
     in_img.unlink()
 
+@pytest.fixture(scope="session")
+def miff_cmyk16_img(tmp_path_factory, tmp_normal_png):
+    in_img = tmp_path_factory.mktemp("miff_cmyk16") / "in.miff"
+    subprocess.check_call(
+        CONVERT
+        + [
+            str(tmp_normal_png),
+            "-depth",
+            "16",
+            "-colorspace",
+            "cmyk",
+            str(in_img),
+        ]
+    )
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "MIFF", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "CMYK", str(identify)
+    assert identify[0]["image"].get("type") == "ColorSeparation", str(identify)
+    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
+    assert identify[0]["image"].get(endian) in ["Undefined", "LSB",], str(
+        identify
+    )  # FIXME: should be LSB
+    assert identify[0]["image"].get("depth") == 16, str(identify)
+    assert identify[0]["image"].get("baseDepth") == 16, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    yield in_img
+    in_img.unlink()
 
 @pytest.fixture(scope="session")
 def png_icc_img(tmp_icc_png):
@@ -5261,6 +5306,35 @@ def tiff_ccitt_nometa2_pdf(tmp_path_factory, tiff_ccitt_nometa2_img, request):
     out_pdf.unlink()
 
 
+
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
+def miff_cmyk16_pdf(tmp_path_factory, miff_cmyk16_img, request):
+    out_pdf = tmp_path_factory.mktemp("miff_cmyk16_pdf") / "out.pdf"
+    subprocess.check_call(
+        [
+            img2pdfprog,
+            "--producer=",
+            "--nodate",
+            "--engine=" + request.param,
+            "--output=" + str(out_pdf),
+            str(miff_cmyk16_img),
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert (
+            p.pages[0].Contents.read_bytes()
+            == b"q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ"
+        )
+        assert p.pages[0].Resources.XObject.Im0.BitsPerComponent == 16
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace == "/DeviceCMYK"
+        assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.Width == 60
+    yield out_pdf
+    out_pdf.unlink()
+
+
+
 ###############################################################################
 #                                  TEST CASES                                 #
 ###############################################################################
@@ -6121,6 +6195,20 @@ def test_tiff_ccitt_nometa2(
     compare_poppler(tmpdir, tiff_ccitt_nometa2_img, tiff_ccitt_nometa2_pdf)
     compare_mupdf(tmpdir, tiff_ccitt_nometa2_img, tiff_ccitt_nometa2_pdf)
     compare_pdfimages_tiff(tmpdir, tiff_ccitt_nometa2_img, tiff_ccitt_nometa2_pdf)
+
+
+@pytest.mark.skipif(
+    sys.platform in ["win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
+def test_miff_cmyk16(tmp_path_factory, miff_cmyk16_img, tiff_cmyk16_img, miff_cmyk16_pdf):
+    tmpdir = tmp_path_factory.mktemp("miff_cmyk16")
+    compare_ghostscript(
+        tmpdir, tiff_cmyk16_img, miff_cmyk16_pdf, gsdevice="tiff32nc", exact=False
+    )
+    # not testing with poppler as it cannot write CMYK images
+    compare_mupdf(tmpdir, tiff_cmyk16_img, miff_cmyk16_pdf, exact=False, cmyk=True)
+    #compare_pdfimages_tiff(tmpdir, tiff_cmyk16_img, miff_cmyk16_pdf)
 
 
 # we define some variables so that the table below can be narrower
