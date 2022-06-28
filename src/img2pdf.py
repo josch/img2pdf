@@ -1664,12 +1664,21 @@ def parse_miff(data):
                     hdata["rows"],
                     lenimgdata,
                 )
+                if colorspace == Colorspace.RGB and hdata["depth"] == 8:
+                    newimg = Image.frombytes("RGB", (hdata["columns"], hdata["rows"]), rest[:lenimgdata])
+                    imgdata, palette, depth = to_png_data(newimg)
+                    assert palette == b""
+                    assert depth == hdata["depth"]
+                    imgfmt = ImageFormat.PNG
+                else:
+                    imgdata = zlib.compress(rest[:lenimgdata])
+                    imgfmt = ImageFormat.MIFF
                 results.append(
                     (
                         colorspace,
                         hdata.get("resolution") or (default_dpi, default_dpi),
-                        ImageFormat.MIFF,
-                        zlib.compress(rest[:lenimgdata]),
+                        imgfmt,
+                        imgdata,
                         None,  # smask
                         hdata["columns"],
                         hdata["rows"],
