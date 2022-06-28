@@ -1536,7 +1536,6 @@ def parse_png(rawdata):
     return pngidat, palette
 
 
-
 miff_re = re.compile(
     r"""
     [^\x00-\x20\x7f-\x9f] # the field name must not start with a control char or space
@@ -1550,6 +1549,9 @@ miff_re = re.compile(
 )
 
 # https://imagemagick.org/script/miff.php
+# turn off black formatting until python 3.10 is available on more platforms
+# and we can use match/case
+# fmt: off
 def parse_miff(data):
     results = []
     header, rest = data.split(b":\x1a", 1)
@@ -1563,63 +1565,85 @@ def parse_miff(data):
         if i == 0:
             assert k.lower() == "id"
             assert v.lower() == "imagemagick"
-        match k.lower():
-            case "class":
-                match v:
-                    case "DirectClass" | "PseudoClass":
+        #match k.lower():
+        #    case "class":
+        if k.lower() == "class":
+                #match v:
+                #    case "DirectClass" | "PseudoClass":
+                if v in ["DirectClass", "PseudoClass"]:
                         hdata["class"] = v
-                    case _:
+                #    case _:
+                else:
                         print("cannot understand class", v)
-            case "colorspace":
+        #    case "colorspace":
+        elif k.lower() == "colorspace":
                 # theoretically RGBA and CMYKA should be supported as well
                 # please teach me how to create such a MIFF file
-                match v:
-                    case "sRGB" | "CMYK" | "Gray":
+                #match v:
+                #    case "sRGB" | "CMYK" | "Gray":
+                if v in ["sRGB", "CMYK", "Gray"]:
                         hdata["colorspace"] = v
-                    case _:
+                #    case _:
+                else:
                         print("cannot understand colorspace", v)
-            case "depth":
-                match v:
-                    case "8" | "16" | "32":
+        #    case "depth":
+        elif k.lower() == "depth":
+                #match v:
+                #    case "8" | "16" | "32":
+                if v in ["8", "16", "32"]:
                         hdata["depth"] = int(v)
-                    case _:
+                #    case _:
+                else:
                         print("cannot understand depth", v)
-            case "colors":
+        #    case "colors":
+        elif k.lower() == "colors":
                 hdata["colors"] = int(v)
-            case "matte":
-                match v:
-                    case "True":
+        #    case "matte":
+        elif k.lower() == "matte":
+                #match v:
+                #    case "True":
+                if v == "True":
                         hdata["matte"] = True
-                    case "False":
+                #    case "False":
+                elif v == "False":
                         hdata["matte"] = False
-                    case _:
+                #    case _:
+                else:
                         print("cannot understand matte", v)
-            case "columns" | "rows":
+        #    case "columns" | "rows":
+        elif k.lower() in ["columns", "rows"]:
                 hdata[k.lower()] = int(v)
-            case "compression":
+        #    case "compression":
+        elif k.lower() == "compression":
                 print("compression not yet supported")
-            case "profile":
+        #    case "profile":
+        elif k.lower() == "profile":
                 assert v in ["icc", "exif"]
                 hdata["profile"] = v
-            case "resolution":
+        #    case "resolution":
+        elif k.lower() == "resolution":
                 dpix, dpiy = v.split("x", 1)
                 hdata["resolution"] = (float(dpix), float(dpiy))
 
     assert "depth" in hdata
     assert "columns" in hdata
     assert "rows" in hdata
-    match hdata["class"]:
-        case "DirectClass":
+    #match hdata["class"]:
+    #    case "DirectClass":
+    if hdata["class"] == "DirectClass":
             if "colors" in hdata:
                 assert hdata["colors"] == 0
-            match hdata["colorspace"]:
-                case "sRGB":
+            #match hdata["colorspace"]:
+            #    case "sRGB":
+            if hdata["colorspace"] == "sRGB":
                     numchannels = 3
                     colorspace = Colorspace.RGB
-                case "CMYK":
+            #    case "CMYK":
+            elif hdata["colorspace"] == "CMYK":
                     numchannels = 4
                     colorspace = Colorspace.CMYK
-                case "Gray":
+            #    case "Gray":
+            elif hdata["colorspace"] == "Gray":
                     numchannels = 1
                     colorspace = Colorspace.L
             if hdata["matte"]:
@@ -1660,7 +1684,8 @@ def parse_miff(data):
                     # another image is here
                     assert rest[lenimgdata:][:14].lower() == b"id=imagemagick"
                     results.extend(parse_miff(rest[lenimgdata:]))
-        case "PseudoClass":
+    #    case "PseudoClass":
+    elif hdata["class"] == "PseudoClass":
             assert "colors" in hdata
             if hdata["matte"]:
                 numchannels = 2
@@ -1694,6 +1719,7 @@ def parse_miff(data):
                 )
                 results.extend(parse_miff(rest[lenpal + lenimgdata :]))
     return results
+# fmt: on
 
 
 def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
@@ -1878,7 +1904,6 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                         iccp,
                     )
                 ]
-
 
     if imgformat == ImageFormat.MIFF:
         return parse_miff(rawdata)
@@ -2517,8 +2542,8 @@ def convert(*images, **kwargs):
                 rawdata = f.read()
                 f.close()
 
-        #md5 = hashlib.md5(rawdata).hexdigest()
-        #with open("./testdata/" + md5, "wb") as f:
+        # md5 = hashlib.md5(rawdata).hexdigest()
+        # with open("./testdata/" + md5, "wb") as f:
         #    f.write(rawdata)
 
         for (
