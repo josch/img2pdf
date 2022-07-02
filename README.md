@@ -146,6 +146,10 @@ The package can also be used as a library:
 	with open("name.pdf","wb") as f1, open("test.jpg") as f2:
 		f1.write(img2pdf.convert(f2))
 
+	# opening using pathlib
+	with open("name.pdf","wb") as f:
+		f.write(img2pdf.convert(pathlib.Path('test.jpg')))
+
 	# using in-memory image data
 	with open("name.pdf","wb") as f:
 		f.write(img2pdf.convert("\x89PNG...")
@@ -187,6 +191,11 @@ The package can also be used as a library:
 	import glob
 	with open("name.pdf","wb") as f:
 		f.write(img2pdf.convert(glob.glob("/path/to/*.jpg")))
+
+	# convert all files matching a glob using pathlib.Path
+	from pathlib import Path
+	with open("name.pdf","wb") as f:
+		f.write(img2pdf.convert(*Path("/path").glob("**/*.jpg")))
 
 	# ignore invalid rotation values in the input images
 	with open("name.pdf","wb") as f:

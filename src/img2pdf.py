@@ -2529,11 +2529,16 @@ def convert(*images, **kwargs):
     for img in images:
         # img is allowed to be a path, a binary string representing image data
         # or a file-like object (really anything that implements read())
-        try:
-            rawdata = img.read()
-        except AttributeError:
+        # or a pathlib.Path object (really anything that implements read_bytes())
+        rawdata = None
+        for fun in "read", "read_bytes":
+            try:
+                rawdata = getattr(img, fun)()
+            except AttributeError:
+                pass
+        if rawdata is None:
             if not isinstance(img, (str, bytes)):
-                raise TypeError("Neither implements read() nor is str or bytes")
+                raise TypeError("Neither read(), read_bytes() nor is str or bytes")
             # the thing doesn't have a read() function, so try if we can treat
             # it as a file name
             try:
