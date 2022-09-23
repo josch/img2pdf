@@ -2559,10 +2559,6 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
     assert identify[0]["image"].get(endian) in ["Undefined", "LSB",], str(
         identify
     )  # FIXME: should be LSB
-    if identify[0].get("version", "0") < "1.0":
-        assert identify[0]["image"].get("depth") == 12, str(identify)
-    else:
-        assert identify[0]["image"].get("depth") == 16, str(identify)
     assert identify[0]["image"].get("baseDepth") == 12, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2619,7 +2615,6 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
     assert identify[0]["image"].get(endian) in ["Undefined", "LSB",], str(
         identify
     )  # FIXME: should be LSB
-    assert identify[0]["image"].get("depth") == 16, str(identify)
     assert identify[0]["image"].get("baseDepth") == 14, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
