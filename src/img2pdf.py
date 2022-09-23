@@ -45,6 +45,7 @@ import struct
 import platform
 import hashlib
 from itertools import chain
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -2325,8 +2326,8 @@ def convert(*images, **kwargs):
         try:
             rawdata = img.read()
         except AttributeError:
-            if not isinstance(img, (str, bytes)):
-                raise TypeError("Neither implements read() nor is str or bytes")
+            if not isinstance(img, (str, bytes, Path)):
+                raise TypeError("Neither implements read() nor is str, bytes, or Path")
             # the thing doesn't have a read() function, so try if we can treat
             # it as a file name
             try:
