@@ -3766,7 +3766,7 @@ def gui():
     app.mainloop()
 
 
-def main(argv=sys.argv):
+def get_main_parser():
     rendered_papersizes = ""
     for k, v in sorted(papersizes.items()):
         rendered_papersizes += "    %-8s %s\n" % (papernames[k], v)
@@ -4329,8 +4329,11 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
         action="store_true",
         help="Instruct the PDF viewer to open the PDF in fullscreen mode",
     )
+    return parser
 
-    args = parser.parse_args(argv[1:])
+
+def main(argv=sys.argv):
+    args = get_main_parser().parse_args(argv[1:])
 
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
