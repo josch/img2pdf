@@ -1259,8 +1259,11 @@ class pdfdoc(object):
 
         # now write out the PDF
         if self.engine == Engine.pikepdf:
+            kwargs = {}
+            if pikepdf.__version__ >= "6.2.0":
+                kwargs["deterministic_id"] = True
             self.writer.save(
-                outputstream, min_version=self.output_version, linearize=True
+                outputstream, min_version=self.output_version, linearize=True, **kwargs
             )
         elif self.engine == Engine.pdfrw:
             self.writer.trailer.Info = self.writer.docinfo
