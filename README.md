@@ -118,7 +118,7 @@ You can then test the converter using:
 	$ ve/bin/img2pdf -o test.pdf src/tests/test.jpg
 
 If you don't want to setup Python on Windows, then head to the
-[releases](/josch/img2pdf/releases) section and download the latest
+[releases](https://gitlab.mister-muffin.de/josch/img2pdf/releases) section and download the latest
 `img2pdf.exe`.
 
 GUI
