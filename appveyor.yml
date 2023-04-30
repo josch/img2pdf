@@ -26,7 +26,8 @@ build: off
 
 after_test:
   - "%PYTHON%\\python.exe setup.py bdist_wheel"
-  - "%PYTHON%\\python.exe -m PyInstaller --clean --onefile --noconsole src/img2pdf.py"
+  - "%PYTHON%\\python.exe -m PyInstaller --clean --onefile --console --nowindowed --name img2pdf src/img2pdf.py"
+  #- "%PYTHON%\\python.exe -m PyInstaller --clean --onefile --noconsole --windowed --name img2pdf_windowed src/img2pdf.py"
 
 artifacts:
   - path: dist\*
