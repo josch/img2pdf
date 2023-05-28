@@ -2459,7 +2459,6 @@ def find_scale(pagewidth, pageheight):
 # as a binary string representing the image content or as filenames to the
 # images.
 def convert(*images, **kwargs):
-
     _default_kwargs = dict(
         engine=None,
         title=None,
@@ -4246,7 +4245,11 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
     elif len(args.images) == 0 and len(args.from_file) == 0:
         # if no positional arguments were supplied, read a single image from
         # standard input
-        logger.info("reading image from standard input")
+        print(
+            "Reading image from standard input...\n"
+            "Re-run with -h or --help for usage information.",
+            file=sys.stderr
+        )
         try:
             images = [sys.stdin.buffer.read()]
         except KeyboardInterrupt:
