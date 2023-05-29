@@ -445,7 +445,7 @@ class temp_attr:
         if hasattr(self.obj, self.field):
             self.exists = True
             self.old_value = getattr(self.obj, self.field)
-        print(f"setting {self.obj}.{self.field} = {self.value}")
+        logger.debug(f"setting {self.obj}.{self.field} = {self.value}")
         setattr(self.obj, self.field, self.value)
 
     def __exit__(self, exctype, excinst, exctb):
