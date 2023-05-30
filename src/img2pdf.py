@@ -1434,7 +1434,7 @@ def get_imgmetadata(
         iccp = imgdata.info.get("icc_profile")
     # GIMP saves bilevel tiff images with an RGB ICC profile which
     # is useless and produces an error in Adobe Acrobat -- ignore it
-    if color == Colorspace["1"] and imgformat == ImageFormat.TIFF:
+    if iccp is not None and color == Colorspace["1"] and imgformat == ImageFormat.TIFF:
         with io.BytesIO(imgdata.info.get("icc_profile")) as f:
             prf = ImageCms.ImageCmsProfile(f)
         if (
