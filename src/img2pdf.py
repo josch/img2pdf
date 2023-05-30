@@ -22,7 +22,7 @@ import sys
 import os
 import zlib
 import argparse
-from PIL import Image, TiffImagePlugin, GifImagePlugin
+from PIL import Image, TiffImagePlugin, GifImagePlugin, ImageCms
 
 if hasattr(GifImagePlugin, "LoadingStrategy"):
     # Pillow 9.0.0 started emitting all frames but the first as RGB instead of
@@ -46,6 +46,7 @@ import platform
 import hashlib
 from itertools import chain
 import re
+import io
 
 logger = logging.getLogger(__name__)
 
@@ -1431,6 +1432,21 @@ def get_imgmetadata(
     iccp = None
     if "icc_profile" in imgdata.info:
         iccp = imgdata.info.get("icc_profile")
+    # GIMP saves bilevel tiff images with an RGB ICC profile which
+    # is useless and produces an error in Adobe Acrobat -- ignore it
+    if color == Colorspace["1"] and imgformat == ImageFormat.TIFF:
+        with io.BytesIO(imgdata.info.get("icc_profile")) as f:
+            prf = ImageCms.ImageCmsProfile(f)
+        if (
+            prf.profile.model == "sRGB"
+            and prf.profile.manufacturer == "GIMP"
+            and prf.profile.profile_description == "GIMP built-in sRGB"
+        ):
+            logger.warning(
+                "Ignoring RGB ICC profile for bilevel TIFF produced by GIMP."
+            )
+            logger.warning("https://gitlab.gnome.org/GNOME/gimp/-/issues/9518")
+            iccp = None
 
     logger.debug("width x height = %dpx x %dpx", imgwidthpx, imgheightpx)
 
@@ -4248,7 +4264,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
         print(
             "Reading image from standard input...\n"
             "Re-run with -h or --help for usage information.",
-            file=sys.stderr
+            file=sys.stderr,
         )
         try:
             images = [sys.stdin.buffer.read()]
