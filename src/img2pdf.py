@@ -3727,7 +3727,9 @@ Paper sizes:
   the value in the second column has the same effect as giving the short hand
   in the first column. Appending ^T (a caret/circumflex followed by the letter
   T) turns the paper size from portrait into landscape. The postfix thus
-  symbolizes the transpose. The values are case insensitive.
+  symbolizes the transpose. Note that on Windows cmd.exe the caret symbol is
+  the escape character, so you need to put quotes around the option value.
+  The values are case insensitive.
 
 %s
 
@@ -3794,7 +3796,7 @@ Examples:
   while preserving its aspect ratio and a print border of 2 cm on the top and
   bottom and 2.5 cm on the left and right hand side.
 
-    $ img2pdf --output out.pdf --pagesize A4^T --border 2cm:2.5cm *.jpg
+    $ img2pdf --output out.pdf --pagesize "A4^T" --border 2cm:2.5cm *.jpg
 
   On each A4 page, fit images into a 10 cm times 15 cm rectangle but keep the
   original image size if the image is smaller than that.
