@@ -4276,9 +4276,10 @@ def gif_transparent_pdf(tmp_path_factory, gif_transparent_img, request):
             == b"q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ"
         )
         assert p.pages[0].Resources.XObject.Im0.BitsPerComponent == 8
-        assert p.pages[0].Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace[0] == "/Indexed"
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace[1] == "/DeviceRGB"
         assert p.pages[0].Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
-        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Colors == 3
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Colors == 1
         assert p.pages[0].Resources.XObject.Im0.DecodeParms.Predictor == 15
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60

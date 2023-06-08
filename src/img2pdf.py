@@ -2101,7 +2101,16 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                 )
             )
         else:
-            if (
+            if color in [Colorspace.P, Colorspace.PA] and iccp is not None:
+                # PDF does not support palette images with icc profile
+                if color == Colorspace.P:
+                    newcolor = Colorspace.RGB
+                    newimg = newimg.convert(mode="RGB")
+                elif color == Colorspace.PA:
+                    newcolor = Colorspace.RGBA
+                    newimg = newimg.convert(mode="RGBA")
+                smaskidat = None
+            elif (
                 color == Colorspace.RGBA
                 or color == Colorspace.LA
                 or color == Colorspace.PA
@@ -2115,6 +2124,11 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     newcolor = color
                     l, a = newimg.split()
                     newimg = l
+                elif color == Colorspace.PA or (
+                    color == Colorspace.P and "transparency" in newimg.info
+                ):
+                    newcolor = color
+                    a = newimg.convert(mode="RGBA").split()[-1]
                 else:
                     newcolor = Colorspace.RGBA
                     r, g, b, a = newimg.convert(mode="RGBA").split()
@@ -2125,15 +2139,6 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
                     "Image contains an alpha channel. Computing a separate "
                     "soft mask (/SMask) image to store transparency in PDF."
                 )
-            elif color in [Colorspace.P, Colorspace.PA] and iccp is not None:
-                # PDF does not support palette images with icc profile
-                if color == Colorspace.P:
-                    newcolor = Colorspace.RGB
-                    newimg = newimg.convert(mode="RGB")
-                elif color == Colorspace.PA:
-                    newcolor = Colorspace.RGBA
-                    newimg = newimg.convert(mode="RGBA")
-                smaskidat = None
             else:
                 newcolor = color
                 smaskidat = None
