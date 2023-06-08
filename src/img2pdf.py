@@ -1432,8 +1432,10 @@ def get_imgmetadata(
     iccp = None
     if "icc_profile" in imgdata.info:
         iccp = imgdata.info.get("icc_profile")
-    # GIMP saves bilevel tiff images with an RGB ICC profile which
-    # is useless and produces an error in Adobe Acrobat -- ignore it
+    # GIMP saves bilevel tiff images with an RGB ICC profile which is useless
+    # and produces an error in Adobe Acrobat, so we ignore it with a warning.
+    # imagemagick also used to (wrongly) include an RGB ICC profile for bilevel
+    # images: https://github.com/ImageMagick/ImageMagick/issues/2070
     if iccp is not None and color == Colorspace["1"] and imgformat == ImageFormat.TIFF:
         with io.BytesIO(iccp) as f:
             prf = ImageCms.ImageCmsProfile(f)
@@ -1442,10 +1444,8 @@ def get_imgmetadata(
             and prf.profile.manufacturer == "GIMP"
             and prf.profile.profile_description == "GIMP built-in sRGB"
         ):
-            logger.warning(
-                "Ignoring RGB ICC profile in bilevel TIFF produced by GIMP."
-            )
-            logger.warning("https://gitlab.gnome.org/GNOME/gimp/-/issues/9518")
+            logger.warning("Ignoring RGB ICC profile in bilevel TIFF produced by GIMP.")
+            logger.warning("https://gitlab.gnome.org/GNOME/gimp/-/issues/3438")
             iccp = None
 
     logger.debug("width x height = %dpx x %dpx", imgwidthpx, imgheightpx)
