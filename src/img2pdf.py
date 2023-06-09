@@ -1750,7 +1750,9 @@ def parse_miff(data):
 # fmt: on
 
 
-def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
+def read_images(
+    rawdata, colorspace, first_frame_only=False, rot=None, include_thumbnails=False
+):
     im = BytesIO(rawdata)
     im.seek(0)
     imgdata = None
@@ -1836,6 +1838,77 @@ def read_images(rawdata, colorspace, first_frame_only=False, rot=None):
     if imgformat == ImageFormat.MPO:
         result = []
         img_page_count = 0
+        assert len(imgdata._MpoImageFile__mpoffsets) == len(imgdata.mpinfo[0xB002])
+        num_frames = len(imgdata.mpinfo[0xB002])
+        # An MPO file can be a main image together with one or more thumbnails
+        # if that is the case, then we only include all frames if the
+        # --include-thumbnails option is given. If it is not, such an MPO file
+        # will be embedded as is, so including its thumbnails but showing up
+        # as a single image page in the resulting PDF.
+        num_main_frames = 0
+        num_thumbnail_frames = 0
+        for i, mpent in enumerate(imgdata.mpinfo[0xB002]):
+            # check only the first frame for being the main image
+            if (
+                i == 0
+                and mpent["Attribute"]["DependentParentImageFlag"]
+                and not mpent["Attribute"]["DependentChildImageFlag"]
+                and mpent["Attribute"]["RepresentativeImageFlag"]
+                and mpent["Attribute"]["MPType"] == "Baseline MP Primary Image"
+            ):
+                num_main_frames += 1
+            elif (
+                not mpent["Attribute"]["DependentParentImageFlag"]
+                and mpent["Attribute"]["DependentChildImageFlag"]
+                and not mpent["Attribute"]["RepresentativeImageFlag"]
+                and mpent["Attribute"]["MPType"]
+                in [
+                    "Large Thumbnail (VGA Equivalent)",
+                    "Large Thumbnail (Full HD Equivalent)",
+                ]
+            ):
+                num_thumbnail_frames += 1
+        logger.debug(f"number of frames: {num_frames}")
+        logger.debug(f"number of main frames: {num_main_frames}")
+        logger.debug(f"number of thumbnail frames: {num_thumbnail_frames}")
+        # this MPO file is a main image plus zero or more thumbnails
+        # embed as-is unless the --include-thumbnails option was given
+        if num_frames == 1 or (
+            not include_thumbnails
+            and num_main_frames == 1
+            and num_thumbnail_frames + 1 == num_frames
+        ):
+            color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
+                imgdata, imgformat, default_dpi, colorspace, rawdata, rot
+            )
+            if color == Colorspace["1"]:
+                raise JpegColorspaceError("jpeg can't be monochrome")
+            if color == Colorspace["P"]:
+                raise JpegColorspaceError("jpeg can't have a color palette")
+            if color == Colorspace["RGBA"]:
+                raise JpegColorspaceError("jpeg can't have an alpha channel")
+            logger.debug("read_images() embeds an MPO verbatim")
+            cleanup()
+            return [
+                (
+                    color,
+                    ndpi,
+                    ImageFormat.JPEG,
+                    rawdata,
+                    None,
+                    imgwidthpx,
+                    imgheightpx,
+                    [],
+                    False,
+                    8,
+                    rotation,
+                    iccp,
+                )
+            ]
+        # If the control flow reaches here, the MPO has more than a single
+        # frame but was not detected to be a main image followed by multiple
+        # thumbnails. We thus treat this MPO as we do other multi-frame images
+        # and include all its frames as individual pages.
         for offset, mpent in zip(
             imgdata._MpoImageFile__mpoffsets, imgdata.mpinfo[0xB002]
         ):
@@ -2509,6 +2582,7 @@ def convert(*images, **kwargs):
         artborder=None,
         pdfa=None,
         rotation=None,
+        include_thumbnails=False,
     )
     for kwname, default in _default_kwargs.items():
         if kwname not in kwargs:
@@ -2601,6 +2675,7 @@ def convert(*images, **kwargs):
             kwargs["colorspace"],
             kwargs["first_frame_only"],
             kwargs["rotation"],
+            kwargs["include_thumbnails"],
         ):
             pagewidth, pageheight, imgwidthpdf, imgheightpdf = kwargs["layout_fun"](
                 imgwidthpx, imgheightpx, ndpi
@@ -3937,6 +4012,17 @@ RGB.""",
     )
 
     outargs.add_argument(
+        "--include-thumbnails",
+        action="store_true",
+        help="Some multi-frame formats like MPO carry a main image and "
+        "one or more scaled-down copies of the main image (thumbnails). "
+        "In such a case, img2pdf will only include the main image and "
+        "not create additional pages for each of the thumbnails. If this "
+        "option is set, img2pdf will instead create one page per frame and "
+        "thus store each thumbnail on its own page.",
+    )
+
+    outargs.add_argument(
         "--pillow-limit-break",
         action="store_true",
         help="img2pdf uses the Python Imaging Library Pillow to read input "
@@ -4333,6 +4419,7 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
             artborder=args.art_border,
             pdfa=args.pdfa,
             rotation=args.rotation,
+            include_thumbnails=args.include_thumbnails,
         )
     except Exception as e:
         logger.error("error: " + str(e))
