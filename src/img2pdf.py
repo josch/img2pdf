@@ -3766,6 +3766,17 @@ def gui():
     app.mainloop()
 
 
+def get_default_icc_profile():
+    for profile in [
+        "/usr/share/color/icc/sRGB.icc",
+        "/usr/share/color/icc/OpenICC/sRGB.icc",
+        "/usr/share/color/icc/colord/sRGB.icc",
+    ]:
+        if os.path.exists(profile):
+            return profile
+    return "/usr/share/color/icc/sRGB.icc"
+
+
 def get_main_parser():
     rendered_papersizes = ""
     for k, v in sorted(papersizes.items()):
@@ -4036,10 +4047,13 @@ RGB.""",
     outargs.add_argument(
         "--pdfa",
         nargs="?",
-        const="/usr/share/color/icc/sRGB.icc",
+        const=get_default_icc_profile(),
         default=None,
         help="Output a PDF/A-1b compliant document. By default, this will "
-        "embed /usr/share/color/icc/sRGB.icc as the color profile.",
+        "embed either /usr/share/color/icc/sRGB.icc, "
+        "/usr/share/color/icc/OpenICC/sRGB.icc or "
+        "/usr/share/color/icc/colord/sRGB.icc as the color profile, whichever "
+        "is found to exist first.",
     )
 
     sizeargs = parser.add_argument_group(
