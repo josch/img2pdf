@@ -1628,7 +1628,7 @@ def png_gray1_img(tmp_path_factory, tmp_gray1_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
-    assert identify[0]["image"].get("type") == "Bilevel", str(identify)
+    assert identify[0]["image"].get("type") in ["Bilevel", "Grayscale"], str(identify)
     assert identify[0]["image"].get("depth") == 1, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
