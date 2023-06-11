@@ -19,6 +19,8 @@ from packaging.version import parse as parse_version
 import warnings
 import json
 import pathlib
+import itertools
+import xml.etree.ElementTree as ET
 
 img2pdfprog = os.getenv("img2pdfprog", default="src/img2pdf.py")
 
@@ -36,6 +38,14 @@ for glob in ICC_PROFILE_PATHS:
         if path.is_file():
             ICC_PROFILE = path
             break
+
+HAVE_FAKETIME = True
+try:
+    ver = subprocess.check_output(["faketime", "--version"])
+    if b"faketime: Version " not in ver:
+        HAVE_FAKETIME = False
+except FileNotFoundError:
+    HAVE_FAKETIME = False
 
 HAVE_MUTOOL = True
 try:
@@ -128,6 +138,25 @@ psnr_re = re.compile(rb"((?:inf|(?:0|[1-9][0-9]*)(?:\.[0-9]+)?))(?: \([0-9.]+\))
 ###############################################################################
 #                               HELPER FUNCTIONS                              #
 ###############################################################################
+
+
+# Interpret a datetime string in a given timezone and format it according to a
+# given format string in in UTC.
+# We avoid using the Python datetime module for this job because doing so would
+# just replicate the code we want to test for correctness.
+def tz2utcstrftime(string, fmt, timezone):
+    return (
+        subprocess.check_output(
+            [
+                "date",
+                "--utc",
+                f'--date=TZ="{timezone}" {string}',
+                f"+{fmt}",
+            ]
+        )
+        .decode("utf8")
+        .removesuffix("\n")
+    )
 
 
 def find_closest_palette_color(color, palette):
@@ -6911,6 +6940,96 @@ def general_input(request):
         os.path.join(os.path.dirname(__file__), "tests", "input", request.param)
     )
     return request.param
+
+
+@pytest.mark.skipif(not HAVE_FAKETIME, reason="requires faketime")
+@pytest.mark.parametrize(
+    "engine,testdata,timezone,pdfa",
+    itertools.product(
+        ["internal", "pikepdf"],
+        ["2021-02-05 17:49:00"],
+        ["Europe/Berlin", "GMT+12"],
+        [True, False],
+    ),
+)
+def test_faketime(tmp_path_factory, jpg_img, engine, testdata, timezone, pdfa):
+    expected = tz2utcstrftime(testdata, "D:%Y%m%d%H%M%SZ", timezone)
+    out_pdf = tmp_path_factory.mktemp("faketime") / "out.pdf"
+    subprocess.check_call(
+        ["env", f"TZ={timezone}", "faketime", "-f", testdata, img2pdfprog]
+        + (["--pdfa"] if pdfa else [])
+        + [
+            "--producer=",
+            "--engine=" + engine,
+            "--output=" + str(out_pdf),
+            str(jpg_img),
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert p.docinfo.CreationDate == expected
+        assert p.docinfo.ModDate == expected
+        if pdfa:
+            assert p.Root.Metadata.Subtype == "/XML"
+            assert p.Root.Metadata.Type == "/Metadata"
+            expected = tz2utcstrftime(testdata, "%Y-%m-%dT%H:%M:%SZ", timezone)
+            root = ET.fromstring(p.Root.Metadata.read_bytes())
+            for k in ["ModifyDate", "CreateDate"]:
+                assert (
+                    root.find(
+                        f".//xmp:{k}", {"xmp": "http://ns.adobe.com/xap/1.0/"}
+                    ).text
+                    == expected
+                )
+    out_pdf.unlink()
+
+
+@pytest.mark.parametrize(
+    "engine,testdata,timezone,pdfa",
+    itertools.product(
+        ["internal", "pikepdf"],
+        [
+            "2021-02-05 17:49:00",
+            "2021-02-05T17:49:00",
+            "Fri, 05 Feb 2021 17:49:00 +0100",
+            "last year 12:00",
+        ],
+        ["Europe/Berlin", "GMT+12"],
+        [True, False],
+    ),
+)
+def test_date(tmp_path_factory, jpg_img, engine, testdata, timezone, pdfa):
+    # we use the date utility to convert the timestamp from the local
+    # timezone into UTC with the format used by PDF
+    expected = tz2utcstrftime(testdata, "D:%Y%m%d%H%M%SZ", timezone)
+    out_pdf = tmp_path_factory.mktemp("faketime") / "out.pdf"
+    subprocess.check_call(
+        ["env", f"TZ={timezone}", img2pdfprog]
+        + (["--pdfa"] if pdfa else [])
+        + [
+            f"--moddate={testdata}",
+            f"--creationdate={testdata}",
+            "--producer=",
+            "--engine=" + engine,
+            "--output=" + str(out_pdf),
+            str(jpg_img),
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert p.docinfo.CreationDate == expected
+        assert p.docinfo.ModDate == expected
+        if pdfa:
+            assert p.Root.Metadata.Subtype == "/XML"
+            assert p.Root.Metadata.Type == "/Metadata"
+            expected = tz2utcstrftime(testdata, "%Y-%m-%dT%H:%M:%SZ", timezone)
+            root = ET.fromstring(p.Root.Metadata.read_bytes())
+            for k in ["ModifyDate", "CreateDate"]:
+                assert (
+                    root.find(
+                        f".//xmp:{k}", {"xmp": "http://ns.adobe.com/xap/1.0/"}
+                    ).text
+                    == expected
+                )
+    out_pdf.unlink()
 
 
 @pytest.mark.parametrize("engine", ["internal", "pikepdf"])
