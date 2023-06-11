@@ -3051,7 +3051,7 @@ def valid_date(string):
     else:
         try:
             return parser.parse(string)
-        except TypeError:
+        except:
             pass
     # as a last resort, try the local date utility
     try:
@@ -3064,7 +3064,7 @@ def valid_date(string):
         except subprocess.CalledProcessError:
             pass
         else:
-            return datetime.utcfromtimestamp(int(utime))
+            return datetime.fromtimestamp(int(utime))
     raise argparse.ArgumentTypeError("cannot parse date: %s" % string)
 
 
