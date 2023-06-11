@@ -36,7 +36,7 @@ if hasattr(GifImagePlugin, "LoadingStrategy"):
 
 # TiffImagePlugin.DEBUG = True
 from PIL.ExifTags import TAGS
-from datetime import datetime
+from datetime import datetime, timezone
 from jp2 import parsejp2
 from enum import Enum
 from io import BytesIO
@@ -722,7 +722,7 @@ class pdfdoc(object):
             self.writer.docinfo = PdfDict(indirect=True)
 
         def datetime_to_pdfdate(dt):
-            return dt.strftime("%Y%m%d%H%M%SZ")
+            return dt.astimezone(tz=timezone.utc).strftime("%Y%m%d%H%M%SZ")
 
         for k in ["Title", "Author", "Creator", "Producer", "Subject"]:
             v = locals()[k.lower()]
@@ -732,7 +732,7 @@ class pdfdoc(object):
                 v = PdfString.encode(v)
             self.writer.docinfo[getattr(PdfName, k)] = v
 
-        now = datetime.now()
+        now = datetime.now().astimezone()
         for k in ["CreationDate", "ModDate"]:
             v = locals()[k.lower()]
             if v is None and nodate:
@@ -752,7 +752,7 @@ class pdfdoc(object):
                 )
 
         def datetime_to_xmpdate(dt):
-            return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            return dt.astimezone(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         self.xmp = b"""<?xpacket begin='\xef\xbb\xbf' id='W5M0MpCehiHzreSzNTczkc9d'?>
 <x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='XMP toolkit 2.9.1-13, framework 1.6'>
