@@ -24,8 +24,6 @@ import xml.etree.ElementTree as ET
 
 img2pdfprog = os.getenv("img2pdfprog", default="src/img2pdf.py")
 
-BYTEORDER = "LSB" if sys.byteorder == "little" else "MSB"
-
 ICC_PROFILE = None
 ICC_PROFILE_PATHS = (
     # Debian
@@ -2361,13 +2359,6 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("baseDepth") == 32, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
@@ -2382,10 +2373,6 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
@@ -2426,13 +2413,6 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "CMYK", str(identify)
     assert identify[0]["image"].get("type") == "ColorSeparation", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2442,10 +2422,6 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
@@ -2489,13 +2465,6 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "CMYK", str(identify)
     assert identify[0]["image"].get("type") == "ColorSeparation", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 16, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2505,10 +2474,6 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
@@ -2542,13 +2507,6 @@ def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2558,10 +2516,6 @@ def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
@@ -2602,13 +2556,6 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("baseDepth") == 12, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2618,10 +2565,6 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
@@ -2662,13 +2605,6 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("baseDepth") == 14, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2678,10 +2614,6 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
@@ -2722,13 +2654,6 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 16, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2738,10 +2663,6 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
@@ -2783,13 +2704,6 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColorAlpha", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2799,10 +2713,6 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unassociated"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
@@ -2844,13 +2754,6 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColorAlpha", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 16, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2860,10 +2763,6 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unassociated"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
@@ -2904,13 +2803,6 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
     assert identify[0]["image"].get("type") == "Bilevel", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 1, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2920,10 +2812,6 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
@@ -2965,13 +2853,6 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
     assert identify[0]["image"].get("type") == "Grayscale", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 2, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -2981,10 +2862,6 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
@@ -3026,13 +2903,6 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
     assert identify[0]["image"].get("type") == "Grayscale", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 4, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -3042,10 +2912,6 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
@@ -3087,13 +2953,6 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
     assert identify[0]["image"].get("type") == "Grayscale", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -3103,10 +2962,6 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
@@ -3148,13 +3003,6 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
     assert identify[0]["image"].get("type") == "Grayscale", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 16, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -3164,10 +3012,6 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
@@ -3211,13 +3055,6 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -3227,10 +3064,6 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
@@ -3255,13 +3088,6 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -3271,10 +3097,6 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
@@ -3308,13 +3130,6 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "Palette", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("baseDepth") == 1, str(identify)
     assert identify[0]["image"].get("colormapEntries") == 2, str(identify)
@@ -3326,10 +3141,6 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
@@ -3362,13 +3173,6 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "Palette", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("baseDepth") == 2, str(identify)
     assert identify[0]["image"].get("colormapEntries") == 4, str(identify)
@@ -3380,10 +3184,6 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
@@ -3416,13 +3216,6 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "Palette", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("baseDepth") == 4, str(identify)
     assert identify[0]["image"].get("colormapEntries") == 16, str(identify)
@@ -3434,10 +3227,6 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
@@ -3470,13 +3259,6 @@ def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "Palette", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("colormapEntries") == 256, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
@@ -3487,10 +3269,6 @@ def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
     }, str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:endian")
-        == BYTEORDER.lower()
     ), str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
@@ -3541,9 +3319,7 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
     assert identify[0]["image"].get(endian) in [
         "Undefined",
         "LSB",
-    ], str(
-        identify
-    )  # FIXME: should be LSB
+    ], str(identify)
     assert identify[0]["image"].get("depth") == 1, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -3794,9 +3570,7 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
     assert identify[0]["image"].get(endian) in [
         "Undefined",
         "LSB",
-    ], str(
-        identify
-    )  # FIXME: should be LSB
+    ], str(identify)
     assert identify[0]["image"].get("depth") == 1, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -3887,9 +3661,7 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
     assert identify[0]["image"].get(endian) in [
         "Undefined",
         "LSB",
-    ], str(
-        identify
-    )  # FIXME: should be LSB
+    ], str(identify)
     assert identify[0]["image"].get("depth") == 1, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -3974,9 +3746,7 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     assert identify[0]["image"].get(endian) in [
         "Undefined",
         "LSB",
-    ], str(
-        identify
-    )  # FIXME: should be LSB
+    ], str(identify)
     assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
     assert identify[0]["image"].get("depth") == 1, str(identify)
     assert identify[0]["image"].get("compression") == "Group4", str(identify)
@@ -4042,13 +3812,6 @@ def miff_cmyk8_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "CMYK", str(identify)
     assert identify[0]["image"].get("type") == "ColorSeparation", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
@@ -4093,13 +3856,6 @@ def miff_cmyk16_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "CMYK", str(identify)
     assert identify[0]["image"].get("type") == "ColorSeparation", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 16, str(identify)
     assert identify[0]["image"].get("baseDepth") == 16, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
@@ -4135,13 +3891,6 @@ def miff_rgb8_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
-    endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
-    assert identify[0]["image"].get(endian) in [
-        "Undefined",
-        BYTEORDER,
-    ], str(
-        identify
-    )  # FIXME: should be LSB
     assert identify[0]["image"].get("depth") == 8, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
