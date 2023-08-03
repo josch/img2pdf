@@ -1322,6 +1322,10 @@ def get_imgmetadata(
             if depth > 8:
                 logger.warning("Image with transparency and a bit depth of %d." % depth)
                 logger.warning("This is unsupported due to PIL limitations.")
+                logger.warning(
+                    "If you accept a lossy conversion, you can manually convert "
+                    "your images to 8 bit using `convert -depth 8` from imagemagick"
+                )
                 raise AlphaChannelError(
                     "Refusing to work with multiple >8bit channels."
                 )
