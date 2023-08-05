@@ -361,6 +361,8 @@ def compare(im1, im2, exact, icc, cmyk):
                 + [
                     "-metric",
                     "AE",
+                    "-alpha",
+                    "off",
                     im1,
                     im2,
                     "null:",
@@ -1205,6 +1207,74 @@ def jpg_2000_img(tmp_path_factory, tmp_normal_png):
     assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
     assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "JPEG2000", str(identify)
+    yield in_img
+    in_img.unlink()
+
+
+@pytest.fixture(scope="session")
+def jpg_2000_rgba8_img(tmp_path_factory, tmp_alpha_png):
+    in_img = tmp_path_factory.mktemp("jpg_2000_rgba8") / "in.jp2"
+    subprocess.check_call(CONVERT + [str(tmp_alpha_png), "-depth", "8", str(in_img)])
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "JP2", str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/jp2", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColorAlpha", str(identify)
+    assert identify[0]["image"].get("depth") == 8, str(identify)
+    assert identify[0]["image"].get("pageGeometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("compression") == "JPEG2000", str(identify)
+    yield in_img
+    in_img.unlink()
+
+
+@pytest.fixture(scope="session")
+def jpg_2000_rgba16_img(tmp_path_factory, tmp_alpha_png):
+    in_img = tmp_path_factory.mktemp("jpg_2000_rgba16") / "in.jp2"
+    subprocess.check_call(CONVERT + [str(tmp_alpha_png), str(in_img)])
+    identify = json.loads(subprocess.check_output(CONVERT + [str(in_img), "json:"]))
+    assert len(identify) == 1
+    # somewhere between imagemagick 6.9.7.4 and 6.9.9.34, the json output was
+    # put into an array, here we cater for the older version containing just
+    # the bare dictionary
+    if "image" in identify:
+        identify = [identify]
+    assert "image" in identify[0]
+    assert identify[0]["image"].get("format") == "JP2", str(identify)
+    assert identify[0]["image"].get("mimeType") == "image/jp2", str(identify)
+    assert identify[0]["image"].get("geometry") == {
+        "width": 60,
+        "height": 60,
+        "x": 0,
+        "y": 0,
+    }, str(identify)
+    assert identify[0]["image"].get("colorspace") == "sRGB", str(identify)
+    assert identify[0]["image"].get("type") == "TrueColorAlpha", str(identify)
+    assert identify[0]["image"].get("depth") == 16, str(identify)
     assert identify[0]["image"].get("pageGeometry") == {
         "width": 60,
         "height": 60,
@@ -4069,6 +4139,60 @@ def jpg_2000_pdf(tmp_path_factory, jpg_2000_img, request):
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
+def jpg_2000_rgba8_pdf(tmp_path_factory, jpg_2000_rgba8_img, request):
+    out_pdf = tmp_path_factory.mktemp("jpg_2000_rgba8_pdf") / "out.pdf"
+    subprocess.check_call(
+        [
+            img2pdfprog,
+            "--producer=",
+            "--nodate",
+            "--engine=" + request.param,
+            "--output=" + str(out_pdf),
+            jpg_2000_rgba8_img,
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert (
+            p.pages[0].Contents.read_bytes()
+            == b"q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ"
+        )
+        assert p.pages[0].Resources.XObject.Im0.BitsPerComponent == 8
+        assert not hasattr(p.pages[0].Resources.XObject.Im0, "ColorSpace")
+        assert p.pages[0].Resources.XObject.Im0.Filter == "/JPXDecode"
+        assert p.pages[0].Resources.XObject.Im0.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.Width == 60
+    yield out_pdf
+    out_pdf.unlink()
+
+
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
+def jpg_2000_rgba16_pdf(tmp_path_factory, jpg_2000_rgba16_img, request):
+    out_pdf = tmp_path_factory.mktemp("jpg_2000_rgba16_pdf") / "out.pdf"
+    subprocess.check_call(
+        [
+            img2pdfprog,
+            "--producer=",
+            "--nodate",
+            "--engine=" + request.param,
+            "--output=" + str(out_pdf),
+            jpg_2000_rgba16_img,
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert (
+            p.pages[0].Contents.read_bytes()
+            == b"q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ"
+        )
+        assert p.pages[0].Resources.XObject.Im0.BitsPerComponent == 16
+        assert not hasattr(p.pages[0].Resources.XObject.Im0, "ColorSpace")
+        assert p.pages[0].Resources.XObject.Im0.Filter == "/JPXDecode"
+        assert p.pages[0].Resources.XObject.Im0.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.Width == 60
+    yield out_pdf
+    out_pdf.unlink()
+
+
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def png_rgb8_pdf(tmp_path_factory, png_rgb8_img, request):
     out_pdf = tmp_path_factory.mktemp("png_rgb8_pdf") / "out.pdf"
     subprocess.check_call(
@@ -5459,6 +5583,39 @@ def test_jpg_2000(tmp_path_factory, jpg_2000_img, jpg_2000_pdf):
     compare_poppler(tmpdir, jpg_2000_img, jpg_2000_pdf)
     compare_mupdf(tmpdir, jpg_2000_img, jpg_2000_pdf)
     compare_pdfimages_jp2(tmpdir, jpg_2000_img, jpg_2000_pdf)
+
+
+@pytest.mark.skipif(
+    sys.platform in ["win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
+@pytest.mark.skipif(
+    not HAVE_JP2, reason="requires imagemagick with support for jpeg2000"
+)
+def test_jpg_2000_rgba8(tmp_path_factory, jpg_2000_rgba8_img, jpg_2000_rgba8_pdf):
+    tmpdir = tmp_path_factory.mktemp("jpg_2000_rgba8")
+    compare_ghostscript(tmpdir, jpg_2000_rgba8_img, jpg_2000_rgba8_pdf)
+    compare_poppler(tmpdir, jpg_2000_rgba8_img, jpg_2000_rgba8_pdf)
+    # compare_mupdf(tmpdir, jpg_2000_rgba8_img, jpg_2000_rgba8_pdf)
+    compare_pdfimages_jp2(tmpdir, jpg_2000_rgba8_img, jpg_2000_rgba8_pdf)
+
+
+@pytest.mark.skipif(
+    sys.platform in ["win32"],
+    reason="test utilities not available on Windows and MacOS",
+)
+@pytest.mark.skipif(
+    not HAVE_JP2, reason="requires imagemagick with support for jpeg2000"
+)
+def test_jpg_2000_rgba16(tmp_path_factory, jpg_2000_rgba16_img, jpg_2000_rgba16_pdf):
+    tmpdir = tmp_path_factory.mktemp("jpg_2000_rgba16")
+    compare_ghostscript(
+        tmpdir, jpg_2000_rgba16_img, jpg_2000_rgba16_pdf, gsdevice="tiff48nc"
+    )
+    # poppler outputs 8-bit RGB so the comparison will not be exact
+    # compare_poppler(tmpdir, jpg_2000_rgba16_img, jpg_2000_rgba16_pdf, exact=False)
+    # compare_mupdf(tmpdir, jpg_2000_rgba16_img, jpg_2000_rgba16_pdf)
+    compare_pdfimages_jp2(tmpdir, jpg_2000_rgba16_img, jpg_2000_rgba16_pdf)
 
 
 @pytest.mark.skipif(

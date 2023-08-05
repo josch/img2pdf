@@ -37,9 +37,8 @@ def getBox(data, byteStart, noBytes):
 
 
 def parse_ihdr(data):
-    height = struct.unpack(">I", data[0:4])[0]
-    width = struct.unpack(">I", data[4:8])[0]
-    return width, height
+    height, width, channels, bpp = struct.unpack(">IIHB", data[:11])
+    return width, height, channels, bpp+1
 
 
 def parse_colr(data):
@@ -85,13 +84,13 @@ def parse_jp2h(data):
     while byteStart < noBytes and boxLengthValue != 0:
         boxLengthValue, boxType, byteEnd, boxContents = getBox(data, byteStart, noBytes)
         if boxType == b"ihdr":
-            width, height = parse_ihdr(boxContents)
+            width, height, channels, bpp = parse_ihdr(boxContents)
         elif boxType == b"colr":
             colorspace = parse_colr(boxContents)
         elif boxType == b"res ":
             hdpi, vdpi = parse_res(boxContents)
         byteStart = byteEnd
-    return (width, height, colorspace, hdpi, vdpi)
+    return (width, height, colorspace, hdpi, vdpi, channels, bpp)
 
 
 def parsejp2(data):
@@ -102,7 +101,7 @@ def parsejp2(data):
     while byteStart < noBytes and boxLengthValue != 0:
         boxLengthValue, boxType, byteEnd, boxContents = getBox(data, byteStart, noBytes)
         if boxType == b"jp2h":
-            width, height, colorspace, hdpi, vdpi = parse_jp2h(boxContents)
+            width, height, colorspace, hdpi, vdpi, channels, bpp = parse_jp2h(boxContents)
             break
         byteStart = byteEnd
     if not width:
@@ -112,7 +111,7 @@ def parsejp2(data):
     if not colorspace:
         raise Exception("no colorspace in jp2 header")
     # retrieving the dpi is optional so we do not error out if not present
-    return (width, height, colorspace, hdpi, vdpi)
+    return (width, height, colorspace, hdpi, vdpi, channels, bpp)
 
 
 if __name__ == "__main__":

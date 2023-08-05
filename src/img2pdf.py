@@ -827,8 +827,10 @@ class pdfdoc(object):
         artborder=None,
         iccp=None,
     ):
-        assert (color != Colorspace.RGBA and color != Colorspace.LA) or (
-            imgformat == ImageFormat.PNG and smaskdata is not None
+        assert (
+            color not in [Colorspace.RGBA, Colorspace.LA]
+            or (imgformat == ImageFormat.PNG and smaskdata is not None)
+            or imgformat == ImageFormat.JPEG2000
         )
 
         if self.engine == Engine.pikepdf:
@@ -852,7 +854,13 @@ class pdfdoc(object):
         if color == Colorspace["1"] or color == Colorspace.L or color == Colorspace.LA:
             colorspace = PdfName.DeviceGray
         elif color == Colorspace.RGB or color == Colorspace.RGBA:
-            colorspace = PdfName.DeviceRGB
+            if color == Colorspace.RGBA and imgformat == ImageFormat.JPEG2000:
+                # there is no DeviceRGBA and for JPXDecode it is okay to have
+                # no colorspace as the pdf reader is supposed to get this info
+                # from the jpeg2000 payload itself
+                colorspace = None
+            else:
+                colorspace = PdfName.DeviceRGB
         elif color == Colorspace.CMYK or color == Colorspace["CMYK;I"]:
             colorspace = PdfName.DeviceCMYK
         elif color == Colorspace.P:
@@ -923,7 +931,8 @@ class pdfdoc(object):
         image[PdfName.Filter] = ofilter
         image[PdfName.Width] = imgwidthpx
         image[PdfName.Height] = imgheightpx
-        image[PdfName.ColorSpace] = colorspace
+        if colorspace is not None:
+            image[PdfName.ColorSpace] = colorspace
         image[PdfName.BitsPerComponent] = depth
 
         smask = None
@@ -1292,7 +1301,7 @@ def get_imgmetadata(
     if imgformat == ImageFormat.JPEG2000 and rawdata is not None and imgdata is None:
         # this codepath gets called if the PIL installation is not able to
         # handle JPEG2000 files
-        imgwidthpx, imgheightpx, ics, hdpi, vdpi = parsejp2(rawdata)
+        imgwidthpx, imgheightpx, ics, hdpi, vdpi, channels, bpp = parsejp2(rawdata)
 
         if hdpi is None:
             hdpi = default_dpi
@@ -1312,7 +1321,7 @@ def get_imgmetadata(
         ics = imgdata.mode
 
     # GIF and PNG files with transparency are supported
-    if (imgformat == ImageFormat.PNG or imgformat == ImageFormat.GIF) and (
+    if imgformat in [ImageFormat.PNG, ImageFormat.GIF, ImageFormat.JPEG2000] and (
         ics in ["RGBA", "LA"] or "transparency" in imgdata.info
     ):
         # Must check the IHDR chunk for the bit depth, because PIL would lossily
@@ -1828,10 +1837,13 @@ def read_images(
             raise JpegColorspaceError("jpeg can't be monochrome")
         if color == Colorspace["P"]:
             raise JpegColorspaceError("jpeg can't have a color palette")
-        if color == Colorspace["RGBA"]:
+        if color == Colorspace["RGBA"] and imgformat != ImageFormat.JPEG2000:
             raise JpegColorspaceError("jpeg can't have an alpha channel")
         logger.debug("read_images() embeds a JPEG")
         cleanup()
+        depth = 8
+        if imgformat == ImageFormat.JPEG2000:
+            _, _, _, _, _, _, depth = parsejp2(rawdata)
         return [
             (
                 color,
@@ -1843,7 +1855,7 @@ def read_images(
                 imgheightpx,
                 [],
                 False,
-                8,
+                depth,
                 rotation,
                 iccp,
             )
