@@ -3873,7 +3873,7 @@ def miff_cmyk8_img(tmp_path_factory, tmp_normal_png):
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "MIFF", str(identify)
     assert identify[0]["image"].get("class") == "DirectClass"
-    assert identify[0]["image"].get("baseType") == "ColorSeparation"
+    assert identify[0]["image"].get("type") == "ColorSeparation"
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
         "height": 60,
@@ -3917,7 +3917,7 @@ def miff_cmyk16_img(tmp_path_factory, tmp_normal_png):
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "MIFF", str(identify)
     assert identify[0]["image"].get("class") == "DirectClass"
-    assert identify[0]["image"].get("baseType") == "ColorSeparation"
+    assert identify[0]["image"].get("type") == "ColorSeparation"
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
         "height": 60,
@@ -3952,7 +3952,7 @@ def miff_rgb8_img(tmp_path_factory, tmp_normal_png):
     assert "image" in identify[0]
     assert identify[0]["image"].get("format") == "MIFF", str(identify)
     assert identify[0]["image"].get("class") == "DirectClass"
-    assert identify[0]["image"].get("baseType") == "TrueColor"
+    assert identify[0]["image"].get("type") == "TrueColor"
     assert identify[0]["image"].get("geometry") == {
         "width": 60,
         "height": 60,
