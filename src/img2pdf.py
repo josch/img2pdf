@@ -1696,7 +1696,7 @@ def parse_miff(data):
             elif hdata["colorspace"] == "Gray":
                     numchannels = 1
                     colorspace = Colorspace.L
-            if hdata["matte"]:
+            if hdata.get("matte"):
                 numchannels += 1
             if hdata.get("profile"):
                 # there is no key encoding the length of icc or exif data
@@ -1746,7 +1746,7 @@ def parse_miff(data):
     #    case "PseudoClass":
     elif hdata["class"] == "PseudoClass":
             assert "colors" in hdata
-            if hdata["matte"]:
+            if hdata.get("matte"):
                 numchannels = 2
             else:
                 numchannels = 1
