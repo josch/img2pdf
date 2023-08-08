@@ -38,7 +38,7 @@ def getBox(data, byteStart, noBytes):
 
 def parse_ihdr(data):
     height, width, channels, bpp = struct.unpack(">IIHB", data[:11])
-    return width, height, channels, bpp+1
+    return width, height, channels, bpp + 1
 
 
 def parse_colr(data):
@@ -58,8 +58,8 @@ def parse_colr(data):
 
 def parse_resc(data):
     hnum, hden, vnum, vden, hexp, vexp = struct.unpack(">HHHHBB", data)
-    hdpi = ((hnum / hden) * (10 ** hexp) * 100) / 2.54
-    vdpi = ((vnum / vden) * (10 ** vexp) * 100) / 2.54
+    hdpi = ((hnum / hden) * (10**hexp) * 100) / 2.54
+    vdpi = ((vnum / vden) * (10**vexp) * 100) / 2.54
     return hdpi, vdpi
 
 
@@ -101,7 +101,9 @@ def parsejp2(data):
     while byteStart < noBytes and boxLengthValue != 0:
         boxLengthValue, boxType, byteEnd, boxContents = getBox(data, byteStart, noBytes)
         if boxType == b"jp2h":
-            width, height, colorspace, hdpi, vdpi, channels, bpp = parse_jp2h(boxContents)
+            width, height, colorspace, hdpi, vdpi, channels, bpp = parse_jp2h(
+                boxContents
+            )
             break
         byteStart = byteEnd
     if not width:
@@ -114,10 +116,38 @@ def parsejp2(data):
     return (width, height, colorspace, hdpi, vdpi, channels, bpp)
 
 
+def parsej2k(data):
+    lsiz, rsiz, xsiz, ysiz, xosiz, yosiz, _, _, _, _, csiz = struct.unpack(
+        ">HHIIIIIIIIH", data[4:42]
+    )
+    ssiz = [None] * csiz
+    xrsiz = [None] * csiz
+    yrsiz = [None] * csiz
+    for i in range(csiz):
+        ssiz[i], xrsiz[i], yrsiz[i] = struct.unpack(
+            "BBB", data[42 + 3 * i : 42 + 3 * (i + 1)]
+        )
+    assert ssiz == [7, 7, 7]
+    return xsiz - xosiz, ysiz - yosiz, None, None, None, csiz, 8
+
+
+def parse(data):
+    if data[:4] == b"\xff\x4f\xff\x51":
+        return parsej2k(data)
+    else:
+        return parsejp2(data)
+
+
 if __name__ == "__main__":
     import sys
 
-    width, height, colorspace = parsejp2(open(sys.argv[1]).read())
-    sys.stdout.write("width = %d" % width)
-    sys.stdout.write("height = %d" % height)
-    sys.stdout.write("colorspace = %s" % colorspace)
+    width, height, colorspace, hdpi, vdpi, channels, bpp = parse(
+        open(sys.argv[1], "rb").read()
+    )
+    print("width = %d" % width)
+    print("height = %d" % height)
+    print("colorspace = %s" % colorspace)
+    print("hdpi = %s" % hdpi)
+    print("vdpi = %s" % vdpi)
+    print("channels = %s" % channels)
+    print("bpp = %s" % bpp)

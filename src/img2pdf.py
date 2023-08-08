@@ -37,7 +37,7 @@ if hasattr(GifImagePlugin, "LoadingStrategy"):
 # TiffImagePlugin.DEBUG = True
 from PIL.ExifTags import TAGS
 from datetime import datetime, timezone
-from jp2 import parsejp2
+import jp2
 from enum import Enum
 from io import BytesIO
 import logging
@@ -1301,7 +1301,7 @@ def get_imgmetadata(
     if imgformat == ImageFormat.JPEG2000 and rawdata is not None and imgdata is None:
         # this codepath gets called if the PIL installation is not able to
         # handle JPEG2000 files
-        imgwidthpx, imgheightpx, ics, hdpi, vdpi, channels, bpp = parsejp2(rawdata)
+        imgwidthpx, imgheightpx, ics, hdpi, vdpi, channels, bpp = jp2.parse(rawdata)
 
         if hdpi is None:
             hdpi = default_dpi
@@ -1843,7 +1843,7 @@ def read_images(
         cleanup()
         depth = 8
         if imgformat == ImageFormat.JPEG2000:
-            _, _, _, _, _, _, depth = parsejp2(rawdata)
+            *_, depth = jp2.parse(rawdata)
         return [
             (
                 color,
@@ -2241,7 +2241,7 @@ def read_images(
                     r, g, b, a = newimg.convert(mode="RGBA").split()
                     newimg = Image.merge("RGB", (r, g, b))
 
-                smaskidat, _, _ = to_png_data(a)
+                smaskidat, *_ = to_png_data(a)
                 logger.warning(
                     "Image contains an alpha channel. Computing a separate "
                     "soft mask (/SMask) image to store transparency in PDF."
