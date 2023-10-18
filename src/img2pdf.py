@@ -1481,21 +1481,17 @@ def get_imgmetadata(
     # SmartAlbums old version (found 2.2.6) exports JPG with only 1 compone
     # with an RGB ICC profile which is useless.
     # This produces an error in Adobe Acrobat, so we ignore it with a warning.
+    # Update: Found another case, the JPG is created by Adobe PhotoShop, so we
+    # don't check software anymore.
     if iccp is not None and (
         (color == Colorspace["L"] and imgformat == ImageFormat.JPEG)
     ):
-        exifsoft = None
-        if hasattr(imgdata, "_getexif") and imgdata._getexif() is not None:
-            for tag, value in imgdata._getexif().items():
-                if TAGS.get(tag, tag) == "Software":
-                    exifsoft = value
         with io.BytesIO(iccp) as f:
             prf = ImageCms.ImageCmsProfile(f)
-        if (prf.profile.model and "sRGB" in prf.profile.model) and (
-            exifsoft and "SmartAlbums" in exifsoft
-        ):
+
+        if prf.profile.xcolor_space not in ('GRAY'):
             logger.warning(
-                "Ignoring RGB ICC profile in Grayscale JPG created by SmartAlbums"
+                "Ignoring non-GRAY ICC profile in Grayscale JPG"
             )
             iccp = None
 
