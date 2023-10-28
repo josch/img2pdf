@@ -2,6 +2,16 @@
 CHANGES
 =======
 
+0.5.0 (2023-10-28)
+------------------
+
+ - support MIFF for 16 bit CMYK input
+ - accept pathlib.Path objects as input
+ - don't store RGB ICC profiles from bilevel or grayscale TIFF, PNG and JPEG
+ - thumbnails are no longer included by default and --include-thumbnails has to
+   be used if you want them
+ - support for pikepdf (>= 6.2.0)
+
 0.4.4 (2022-04-07)
 ------------------
 
