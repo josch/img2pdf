@@ -1489,10 +1489,8 @@ def get_imgmetadata(
         with io.BytesIO(iccp) as f:
             prf = ImageCms.ImageCmsProfile(f)
 
-        if prf.profile.xcolor_space not in ('GRAY'):
-            logger.warning(
-                "Ignoring non-GRAY ICC profile in Grayscale JPG"
-            )
+        if prf.profile.xcolor_space not in ("GRAY"):
+            logger.warning("Ignoring non-GRAY ICC profile in Grayscale JPG")
             iccp = None
 
     logger.debug("width x height = %dpx x %dpx", imgwidthpx, imgheightpx)
@@ -4094,17 +4092,20 @@ RGB.""",
         % Image.MAX_IMAGE_PIXELS,
     )
 
-    outargs.add_argument(
-        "--pdfa",
-        nargs="?",
-        const=get_default_icc_profile(),
-        default=None,
-        help="Output a PDF/A-1b compliant document. By default, this will "
-        "embed either /usr/share/color/icc/sRGB.icc, "
-        "/usr/share/color/icc/OpenICC/sRGB.icc or "
-        "/usr/share/color/icc/colord/sRGB.icc as the color profile, whichever "
-        "is found to exist first.",
-    )
+    if sys.platform == "win32":
+        pass
+    else:
+        outargs.add_argument(
+            "--pdfa",
+            nargs="?",
+            const=get_default_icc_profile(),
+            default=None,
+            help="Output a PDF/A-1b compliant document. By default, this will "
+            "embed either /usr/share/color/icc/sRGB.icc, "
+            "/usr/share/color/icc/OpenICC/sRGB.icc or "
+            "/usr/share/color/icc/colord/sRGB.icc as the color profile, whichever "
+            "is found to exist first.",
+        )
 
     sizeargs = parser.add_argument_group(
         title="Image and page size and layout arguments",
