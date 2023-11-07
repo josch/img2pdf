@@ -3814,14 +3814,31 @@ def gui():
     app.mainloop()
 
 
+def file_is_icc(fname):
+    with open(fname, "rb") as f:
+        data = f.read(40)
+    if len(data) < 40:
+        return False
+    return data[36:] == b"acsp"
+
+
+def validate_icc(fname):
+    if not file_is_icc(fname):
+        raise argparse.ArgumentTypeError('"%s" is not an ICC profile' % fname)
+    return fname
+
+
 def get_default_icc_profile():
     for profile in [
         "/usr/share/color/icc/sRGB.icc",
         "/usr/share/color/icc/OpenICC/sRGB.icc",
         "/usr/share/color/icc/colord/sRGB.icc",
     ]:
-        if os.path.exists(profile):
-            return profile
+        if not os.path.exists(profile):
+            continue
+        if not file_is_icc(profile):
+            continue
+        return profile
     return "/usr/share/color/icc/sRGB.icc"
 
 
@@ -4093,13 +4110,22 @@ RGB.""",
     )
 
     if sys.platform == "win32":
-        pass
+        # on Windows, there are no default paths to search for an ICC profile
+        # so make the argument required instead of optional
+        outargs.add_argument(
+            "--pdfa",
+            type=validate_icc,
+            help="Output a PDF/A-1b compliant document. The argument to this "
+            "option is the path to the ICC profile that will be embedded into "
+            "the resulting PDF.",
+        )
     else:
         outargs.add_argument(
             "--pdfa",
             nargs="?",
             const=get_default_icc_profile(),
             default=None,
+            type=validate_icc,
             help="Output a PDF/A-1b compliant document. By default, this will "
             "embed either /usr/share/color/icc/sRGB.icc, "
             "/usr/share/color/icc/OpenICC/sRGB.icc or "
