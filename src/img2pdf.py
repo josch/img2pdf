@@ -1311,7 +1311,19 @@ def get_imgmetadata(
     else:
         imgwidthpx, imgheightpx = imgdata.size
 
-        ndpi = imgdata.info.get("dpi", (default_dpi, default_dpi))
+        ndpi = imgdata.info.get("dpi")
+        if ndpi is None:
+            # the PNG plugin of PIL adds the undocumented "aspect" field instead of
+            # the "dpi" field if the PNG pHYs chunk unit is not set to meters
+            if imgformat == ImageFormat.PNG and imgdata.info.get("aspect") is not None:
+                aspect = imgdata.info["aspect"]
+                # make sure not to go below the default dpi
+                if aspect[0] > aspect[1]:
+                    ndpi = (default_dpi * aspect[0] / aspect[1], default_dpi)
+                else:
+                    ndpi = (default_dpi, default_dpi * aspect[1] / aspect[0])
+            else:
+                ndpi = (default_dpi, default_dpi)
         # In python3, the returned dpi value for some tiff images will
         # not be an integer but a float. To make the behaviour of
         # img2pdf the same between python2 and python3, we convert that
