@@ -2,6 +2,12 @@
 CHANGES
 =======
 
+0.5.1 (2023-11-26)
+------------------
+
+ - no default ICC profile location for PDF/A-1b on Windows
+ - workaround for PNG input without dpi units but non-square dpi aspect ratio
+
 0.5.0 (2023-10-28)
 ------------------
 
