@@ -1935,12 +1935,7 @@ def read_images(
             )
     else:
         logger.debug("PIL format = %s", imgdata.format)
-        imgformat = None
-        for f in ImageFormat:
-            if f.name == imgdata.format:
-                imgformat = f
-        if imgformat is None:
-            imgformat = ImageFormat.other
+        imgformat = getattr(ImageFormat, imgdata.format, ImageFormat.other)
 
     def cleanup():
         if imgdata is not None:
