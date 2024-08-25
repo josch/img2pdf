@@ -1304,6 +1304,47 @@ class pdfdoc(object):
             raise ValueError("unknown engine: %s" % self.engine)
 
 
+def pil_get_dpi(imgdata, imgformat, default_dpi):
+
+    ndpi = imgdata.info.get("dpi")
+    if ndpi is None:
+        # the PNG plugin of PIL adds the undocumented "aspect" field instead of
+        # the "dpi" field if the PNG pHYs chunk unit is not set to meters
+        if imgformat == ImageFormat.PNG and imgdata.info.get("aspect") is not None:
+            aspect = imgdata.info["aspect"]
+            # make sure not to go below the default dpi
+            if aspect[0] > aspect[1]:
+                ndpi = (default_dpi * aspect[0] / aspect[1], default_dpi)
+            else:
+                ndpi = (default_dpi, default_dpi * aspect[1] / aspect[0])
+        else:
+            ndpi = (default_dpi, default_dpi)
+
+    # In python3, the returned dpi value for some tiff images will
+    # not be an integer but a float. To make the behaviour of
+    # img2pdf the same between python2 and python3, we convert that
+    # float into an integer by rounding.
+    # Search online for the 72.009 dpi problem for more info.
+    ndpi = (int(round(ndpi[0])), int(round(ndpi[1])))
+
+    # Since commit 07a96209597c5e8dfe785c757d7051ce67a980fb or release 4.1.0
+    # Pillow retrieves the DPI from EXIF if it cannot find the DPI in the JPEG
+    # header. In that case it can happen that the horizontal and vertical DPI
+    # are set to zero.
+    if ndpi == (0, 0):
+        ndpi = (default_dpi, default_dpi)
+
+    # PIL defaults to a dpi of 1 if a TIFF image does not specify the dpi.
+    # In that case, we want to use a different default.
+    if ndpi == (1, 1) and imgformat == ImageFormat.TIFF:
+        ndpi = (
+            imgdata.tag_v2.get(TiffImagePlugin.X_RESOLUTION, default_dpi),
+            imgdata.tag_v2.get(TiffImagePlugin.Y_RESOLUTION, default_dpi),
+        )
+
+    return ndpi
+
+
 def get_imgmetadata(
     imgdata, imgformat, default_dpi, colorspace, rawdata=None, rotreq=None
 ):
@@ -1338,27 +1379,10 @@ def get_imgmetadata(
         ics = "1"
     else:
         imgwidthpx, imgheightpx = imgdata.size
-
-        ndpi = imgdata.info.get("dpi")
-        if ndpi is None:
-            # the PNG plugin of PIL adds the undocumented "aspect" field instead of
-            # the "dpi" field if the PNG pHYs chunk unit is not set to meters
-            if imgformat == ImageFormat.PNG and imgdata.info.get("aspect") is not None:
-                aspect = imgdata.info["aspect"]
-                # make sure not to go below the default dpi
-                if aspect[0] > aspect[1]:
-                    ndpi = (default_dpi * aspect[0] / aspect[1], default_dpi)
-                else:
-                    ndpi = (default_dpi, default_dpi * aspect[1] / aspect[0])
-            else:
-                ndpi = (default_dpi, default_dpi)
-        # In python3, the returned dpi value for some tiff images will
-        # not be an integer but a float. To make the behaviour of
-        # img2pdf the same between python2 and python3, we convert that
-        # float into an integer by rounding.
-        # Search online for the 72.009 dpi problem for more info.
-        ndpi = (int(round(ndpi[0])), int(round(ndpi[1])))
+        ndpi = pil_get_dpi(imgdata, imgformat, default_dpi)
         ics = imgdata.mode
+
+    logger.debug("input dpi = %d x %d", *ndpi)
 
     # GIF and PNG files with transparency are supported
     if imgformat in [ImageFormat.PNG, ImageFormat.GIF, ImageFormat.JPEG2000] and (
@@ -1380,23 +1404,6 @@ def get_imgmetadata(
                 )
     elif ics in ["LA", "PA", "RGBA"] or (imgdata is not None and "transparency" in imgdata.info):
         raise AlphaChannelError("This function must not be called on images with alpha")
-
-    # Since commit 07a96209597c5e8dfe785c757d7051ce67a980fb or release 4.1.0
-    # Pillow retrieves the DPI from EXIF if it cannot find the DPI in the JPEG
-    # header. In that case it can happen that the horizontal and vertical DPI
-    # are set to zero.
-    if ndpi == (0, 0):
-        ndpi = (default_dpi, default_dpi)
-
-    # PIL defaults to a dpi of 1 if a TIFF image does not specify the dpi.
-    # In that case, we want to use a different default.
-    if ndpi == (1, 1) and imgformat == ImageFormat.TIFF:
-        ndpi = (
-            imgdata.tag_v2.get(TiffImagePlugin.X_RESOLUTION, default_dpi),
-            imgdata.tag_v2.get(TiffImagePlugin.Y_RESOLUTION, default_dpi),
-        )
-
-    logger.debug("input dpi = %d x %d", *ndpi)
 
     rotation = 0
     if rotreq in (None, Rotation.auto, Rotation.ifvalid):
