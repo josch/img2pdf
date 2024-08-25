@@ -22,7 +22,7 @@ import sys
 import os
 import zlib
 import argparse
-from PIL import Image, TiffImagePlugin, GifImagePlugin, ImageCms
+from PIL import Image, TiffImagePlugin, GifImagePlugin, ImageCms, ExifTags
 
 if hasattr(GifImagePlugin, "LoadingStrategy"):
     # Pillow 9.0.0 started emitting all frames but the first as RGB instead of
@@ -1284,6 +1284,7 @@ class pdfdoc(object):
             )
         elif self.engine == Engine.pdfrw:
             from pdfrw import PdfName, PdfArray
+
             self.writer.trailer.Info = self.writer.docinfo
             # setting the version attribute of the pdfrw PdfWriter object will
             # influence the behaviour of the write() function
@@ -1399,7 +1400,44 @@ def get_imgmetadata(
 
     rotation = 0
     if rotreq in (None, Rotation.auto, Rotation.ifvalid):
-        if hasattr(imgdata, "_getexif") and imgdata._getexif() is not None:
+        if hasattr(imgdata, "getexif") and imgdata.getexif() is not None:
+            exif_dict = imgdata.getexif()
+            o_key = ExifTags.Base.Orientation.value  # 274 rsp. 0x112
+            if exif_dict and o_key in exif_dict:
+                # Detailed information on EXIF rotation tags:
+                # http://impulseadventure.com/photo/exif-orientation.html
+                value = exif_dict[o_key]
+                if value == 1:
+                    rotation = 0
+                elif value == 6:
+                    rotation = 90
+                elif value == 3:
+                    rotation = 180
+                elif value == 8:
+                    rotation = 270
+                elif value in (2, 4, 5, 7):
+                    if rotreq == Rotation.ifvalid:
+                        logger.warning(
+                            "Unsupported flipped rotation mode (%d): use "
+                            "--rotation=ifvalid or "
+                            "rotation=img2pdf.Rotation.ifvalid to ignore",
+                            value,
+                        )
+                    else:
+                        raise ExifOrientationError(
+                            "Unsupported flipped rotation mode (%d): use "
+                            "--rotation=ifvalid or "
+                            "rotation=img2pdf.Rotation.ifvalid to ignore" % value
+                        )
+                else:
+                    if rotreq == Rotation.ifvalid:
+                        logger.warning("Invalid rotation (%d)", value)
+                    else:
+                        raise ExifOrientationError(
+                            "Invalid rotation (%d): use --rotation=ifvalid "
+                            "or rotation=img2pdf.Rotation.ifvalid to ignore" % value
+                        )
+        elif hasattr(imgdata, "_getexif") and imgdata._getexif() is not None:
             for tag, value in imgdata._getexif().items():
                 if TAGS.get(tag, tag) == "Orientation":
                     # Detailed information on EXIF rotation tags:
@@ -1434,6 +1472,7 @@ def get_imgmetadata(
                                 "Invalid rotation (%d): use --rotation=ifvalid "
                                 "or rotation=img2pdf.Rotation.ifvalid to ignore" % value
                             )
+
     elif rotreq in (Rotation.none, Rotation["0"]):
         rotation = 0
     elif rotreq == Rotation["90"]:
@@ -1650,6 +1689,7 @@ miff_re = re.compile(
     )+""",
     re.VERBOSE,
 )
+
 
 # https://imagemagick.org/script/miff.php
 # turn off black formatting until python 3.10 is available on more platforms
