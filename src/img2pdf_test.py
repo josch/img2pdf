@@ -7178,6 +7178,16 @@ def test_general(general_input, engine):
         pass
 
 
+def test_return_engine_doc(tmp_path_factory):
+    inputf = os.path.join(os.path.dirname(__file__), "tests", "input", "normal.jpg")
+    outputf = tmp_path_factory.mktemp("return_engine_doc") / "normal.jpg.pdf"
+    pdf_wrapper = img2pdf.convert_to_docobject(inputf, engine=img2pdf.Engine.pikepdf)
+    pdf = pdf_wrapper.writer
+    assert isinstance(pdf, pikepdf.Pdf)
+    pdf.save(outputf, min_version=pdf_wrapper.output_version, linearize=True)
+    assert os.path.isfile(outputf)
+
+
 def main():
     normal16 = alpha_value()[:, :, 0:3]
     pathlib.Path("test.icc").write_bytes(icc_profile())

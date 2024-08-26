@@ -1080,7 +1080,7 @@ class pdfdoc(object):
         self.tostream(stream)
         return stream.getvalue()
 
-    def tostream(self, outputstream):
+    def finalize(self):
         if self.engine == Engine.pikepdf:
             PdfArray = pikepdf.Array
             PdfDict = pikepdf.Dictionary
@@ -1272,7 +1272,9 @@ class pdfdoc(object):
                 self.writer.addobj(metadata)
                 self.writer.addobj(iccstream)
 
-        # now write out the PDF
+    def tostream(self, outputstream):
+        # write out the PDF
+        # this assumes that finalize() has been invoked beforehand by the caller
         if self.engine == Engine.pikepdf:
             kwargs = {}
             if pikepdf.__version__ >= "6.2.0":
@@ -1281,6 +1283,7 @@ class pdfdoc(object):
                 outputstream, min_version=self.output_version, linearize=True, **kwargs
             )
         elif self.engine == Engine.pdfrw:
+            from pdfrw import PdfName, PdfArray
             self.writer.trailer.Info = self.writer.docinfo
             # setting the version attribute of the pdfrw PdfWriter object will
             # influence the behaviour of the write() function
@@ -2687,14 +2690,11 @@ def find_scale(pagewidth, pageheight):
     return 10 ** ceil(log10(oversized))
 
 
-# given one or more input image, depending on outputstream, either return a
-# string containing the whole PDF if outputstream is None or write the PDF
-# data to the given file-like object and return None
-#
-# Input images can be given as file like objects (they must implement read()),
-# as a binary string representing the image content or as filenames to the
-# images.
-def convert(*images, **kwargs):
+# Convert the image(s) to a `pdfdoc` object.
+# The `.writer` attribute holds the underlying engine document handle, and
+# `.output_version` the minimum version the caller should use when saving.
+# The main convert() wraps this implementation function.
+def convert_to_docobject(*images, **kwargs):
     _default_kwargs = dict(
         engine=None,
         title=None,
@@ -2715,7 +2715,6 @@ def convert(*images, **kwargs):
         viewer_fit_window=False,
         viewer_center_window=False,
         viewer_fullscreen=False,
-        outputstream=None,
         first_frame_only=False,
         allow_oversized=True,
         cropborder=None,
@@ -2878,10 +2877,22 @@ def convert(*images, **kwargs):
                 iccp,
             )
 
-    if kwargs["outputstream"]:
-        pdf.tostream(kwargs["outputstream"])
-        return
+    pdf.finalize()
+    return pdf
 
+
+# given one or more input image, depending on outputstream, either return a
+# string containing the whole PDF if outputstream is None or write the PDF
+# data to the given file-like object and return None
+#
+# Input images can be given as file like objects (they must implement read()),
+# as a binary string representing the image content or as filenames to the
+# images.
+def convert(*images, outputstream=None, **kwargs):
+    pdf = convert_to_docobject(*images, **kwargs)
+    if outputstream:
+        pdf.tostream(outputstream)
+        return
     return pdf.tostring()
 
 
