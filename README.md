@@ -65,6 +65,12 @@ The detailed documentation can be accessed by running:
 
 	$ img2pdf --help
 
+With no command line arguments supplied, img2pdf will read a single image from
+standard input and write the resulting PDF to standard output. Here is an
+example for how to scan directly to PDF using scanimage(1) from SANE:
+
+	$ scanimage --mode=Color --resolution=300 | pnmtojpeg -quality 90 | img2pdf > scan.pdf
+
 Bugs
 ----
 
