@@ -3959,6 +3959,10 @@ Examples:
 
     $ img2pdf --output out.pdf page1.jpg page2.jpg
 
+  Use a custom dpi value for the input images:
+
+    $ img2pdf --output out.pdf --imgsize 300dpi page1.jpg page2.jpg
+
   Convert a directory of JPEG images into a PDF with printable A4 pages in
   landscape mode. On each page, the photo takes the maximum amount of space
   while preserving its aspect ratio and a print border of 2 cm on the top and
