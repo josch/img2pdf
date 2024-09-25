@@ -7009,7 +7009,12 @@ def test_general(general_input, engine):
     assert x.Root.Type == "/Catalog"
     assert sorted(x.Root.Pages.keys()) == ["/Count", "/Kids", "/Type"]
     assert x.Root.Pages.Type == "/Pages"
-    orig_img = Image.open(f)
+    if f.endswith(".jb2"):
+        # PIL doens't support .jb2, so we load the original .png, which
+        # was converted to the .jb2 using `jbig2enc`.
+        orig_img = Image.open(f.replace(".jb2", ".png"))
+    else:
+        orig_img = Image.open(f)
     for pagenum in range(len(x.Root.Pages.Kids)):
         # retrieve the original image frame that this page was
         # generated from
@@ -7017,6 +7022,8 @@ def test_general(general_input, engine):
         cur_page = x.Root.Pages.Kids[pagenum]
 
         ndpi = orig_img.info.get("dpi", (96.0, 96.0))
+        if ndpi[0] <= 0.001 or ndpi[1] <= 0.001:
+            ndpi = (96.0, 96.0)
         # In python3, the returned dpi value for some tiff images will
         # not be an integer but a float. To make the behaviour of
         # img2pdf the same between python2 and python3, we convert that
@@ -7066,6 +7073,7 @@ def test_general(general_input, engine):
             "/JPXDecode",
             "/FlateDecode",
             pikepdf.Array([pikepdf.Name.CCITTFaxDecode]),
+            "/JBIG2Decode",
         ]
 
         # test if the image has correct size
@@ -7075,6 +7083,8 @@ def test_general(general_input, engine):
         # verbatim into the PDF
         if imgprops.Filter in ["/DCTDecode", "/JPXDecode"]:
             assert cur_page.Resources.XObject.Im0.read_raw_bytes() == orig_imgdata
+        elif imgprops.Filter == "/JBIG2Decode":
+            assert cur_page.Resources.XObject.Im0.read_raw_bytes() == orig_imgdata[13:] # Strip file header
         elif imgprops.Filter == pikepdf.Array([pikepdf.Name.CCITTFaxDecode]):
             tiff_header = tiff_header_for_ccitt(
                 int(imgprops.Width), int(imgprops.Height), int(imgprops.Length), 4

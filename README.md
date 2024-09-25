@@ -27,18 +27,20 @@ software, because the raw pixel data never has to be loaded into memory.
 The following table shows how img2pdf handles different input depending on the
 input file format and image color space.
 
-| Format                                | Colorspace                     | Result        |
-| ------------------------------------- | ------------------------------ | ------------- |
-| JPEG                                  | any                            | direct        |
-| JPEG2000                              | any                            | direct        |
-| PNG (non-interlaced, no transparency) | any                            | direct        |
-| TIFF (CCITT Group 4)                  | monochrome                     | direct        |
-| any                                   | any except CMYK and monochrome | PNG Paeth     |
-| any                                   | monochrome                     | CCITT Group 4 |
-| any                                   | CMYK                           | flate         |
+| Format                                | Colorspace                           | Result        |
+| ------------------------------------- | ------------------------------------ | ------------- |
+| JPEG                                  | any                                  | direct        |
+| JPEG2000                              | any                                  | direct        |
+| PNG (non-interlaced, no transparency) | any                                  | direct        |
+| TIFF (CCITT Group 4)                  | 1-bit monochrome                     | direct        |
+| JBIG2 (single-page generic coding)    | 1-bit monochrome                     | direct        |
+| any                                   | any except CMYK and 1-bit monochrome | PNG Paeth     |
+| any                                   | 1-bit monochrome                     | CCITT Group 4 |
+| any                                   | CMYK                                 | flate         |
 
-For JPEG, JPEG2000, non-interlaced PNG and TIFF images with CCITT Group 4
-encoded data, img2pdf directly embeds the image data into the PDF without
+For JPEG, JPEG2000, non-interlaced PNG, TIFF images with CCITT Group 4
+encoded data, and JBIG2 with single-page generic coding (e.g. using `jbig2enc`),
+img2pdf directly embeds the image data into the PDF without
 re-encoding it. It thus treats the PDF format merely as a container format for
 the image data. In these cases, img2pdf only increases the filesize by the size
 of the PDF container (typically around 500 to 700 bytes). Since data is only
@@ -47,7 +49,7 @@ solutions for these input formats.
 
 For all other input types, img2pdf first has to transform the pixel data to
 make it compatible with PDF. In most cases, the PNG Paeth filter is applied to
-the pixel data. For monochrome input, CCITT Group 4 is used instead. Only for
+the pixel data. For 1-bit monochrome input, CCITT Group 4 is used instead. Only for
 CMYK input no filter is applied before finally applying flate compression.
 
 Usage
