@@ -7084,7 +7084,7 @@ def test_general(general_input, engine):
         if imgprops.Filter in ["/DCTDecode", "/JPXDecode"]:
             assert cur_page.Resources.XObject.Im0.read_raw_bytes() == orig_imgdata
         elif imgprops.Filter == "/JBIG2Decode":
-            assert cur_page.Resources.XObject.Im0.read_raw_bytes() == orig_imgdata[13:] # Strip file header
+            assert cur_page.Resources.XObject.Im0.read_raw_bytes() == orig_imgdata[13:-22] # Strip file header and footer.
         elif imgprops.Filter == pikepdf.Array([pikepdf.Name.CCITTFaxDecode]):
             tiff_header = tiff_header_for_ccitt(
                 int(imgprops.Width), int(imgprops.Height), int(imgprops.Length), 4

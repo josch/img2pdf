@@ -1874,7 +1874,11 @@ def read_images(
             imgformat = ImageFormat.JBIG2
             if rawdata[:24] != b"\x97\x4a\x42\x32\x0d\x0a\x1a\x0a\x01\x00\x00\x00\x01\x00\x00\x00\x00\x30\x00\x01\x00\x00\x00\x13":
                 raise ImageOpenError(
-                    "Unsupported JBIG2 format; only single-page generic coding is supported (e.g. from `jbig2enc`)"
+                    "Unsupported JBIG2 format; only single-page generic coding is supported (e.g. from `jbig2enc`)."
+                )
+            if rawdata[-22:] != b"\x00\x00\x00\x021\x00\x01\x00\x00\x00\x00\x00\x00\x00\x033\x00\x01\x00\x00\x00\x00":
+                raise ImageOpenError(
+                    "Unsupported JBIG2 format; we expect end-of-page and end-of-file segments at the end (e.g. from `jbig2enc`)."
                 )
         elif rawdata[:14].lower() == b"id=imagemagick":
             # image is in MIFF format
@@ -2126,7 +2130,7 @@ def read_images(
         color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
             imgdata, imgformat, default_dpi, colorspace, rawdata, rot
         )
-        streamdata = rawdata[13:] # Strip file header
+        streamdata = rawdata[13:-22] # Strip file header and footer
         return [
             (
                 color,
