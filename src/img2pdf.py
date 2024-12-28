@@ -1313,9 +1313,18 @@ def get_imgmetadata(
 
         ndpi = imgdata.info.get("dpi")
         if ndpi is None:
+            # See: https://github.com/python-pillow/Pillow/issues/8632
+            if imgformat == ImageFormat.JPEG and imgdata.info.get("jfif_density") is not None:
+                jfif_density = imgdata.info.get("jfif_density")
+                jfif_unit = imgdata.info.get("jfif_unit", 0)
+                if jfif_unit == 1:
+                    ndpi = jfif_density
+                elif jfif_unit == 2:
+                    ndpi = (jfif_density[0] * 2.54, jfif_density[1] * 2.54)
+
             # the PNG plugin of PIL adds the undocumented "aspect" field instead of
             # the "dpi" field if the PNG pHYs chunk unit is not set to meters
-            if imgformat == ImageFormat.PNG and imgdata.info.get("aspect") is not None:
+            elif imgformat == ImageFormat.PNG and imgdata.info.get("aspect") is not None:
                 aspect = imgdata.info["aspect"]
                 # make sure not to go below the default dpi
                 if aspect[0] > aspect[1]:
