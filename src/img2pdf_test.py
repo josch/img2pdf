@@ -6427,11 +6427,9 @@ def test_tiff_ccitt_nometa2(
 )
 def test_miff_cmyk8(tmp_path_factory, miff_cmyk8_img, tiff_cmyk8_img, miff_cmyk8_pdf):
     tmpdir = tmp_path_factory.mktemp("miff_cmyk8")
-    compare_ghostscript(
-        tmpdir, tiff_cmyk8_img, miff_cmyk8_pdf, gsdevice="tiff32nc", exact=False
-    )
+    compare_ghostscript(tmpdir, tiff_cmyk8_img, miff_cmyk8_pdf, gsdevice="tiff32nc")
     # not testing with poppler as it cannot write CMYK images
-    compare_mupdf(tmpdir, tiff_cmyk8_img, miff_cmyk8_pdf, exact=False, cmyk=True)
+    compare_mupdf(tmpdir, tiff_cmyk8_img, miff_cmyk8_pdf, cmyk=True)
     compare_pdfimages_tiff(tmpdir, tiff_cmyk8_img, miff_cmyk8_pdf)
 
 
