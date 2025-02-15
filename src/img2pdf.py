@@ -1305,7 +1305,6 @@ class pdfdoc(object):
 
 
 def pil_get_dpi(imgdata, imgformat, default_dpi):
-
     ndpi = imgdata.info.get("dpi")
     if ndpi is None:
         # the PNG plugin of PIL adds the undocumented "aspect" field instead of
@@ -1359,7 +1358,7 @@ def get_imgmetadata(
             vdpi = default_dpi
         ndpi = (hdpi, vdpi)
     elif imgformat == ImageFormat.JBIG2:
-        imgwidthpx, imgheightpx, xres, yres = struct.unpack('>IIII', rawdata[24:40])
+        imgwidthpx, imgheightpx, xres, yres = struct.unpack(">IIII", rawdata[24:40])
         INCH_PER_METER = 39.370079
         if xres == 0:
             hdpi = default_dpi
@@ -1386,7 +1385,8 @@ def get_imgmetadata(
 
     # GIF and PNG files with transparency are supported
     if imgformat in [ImageFormat.PNG, ImageFormat.GIF, ImageFormat.JPEG2000] and (
-        ics in ["RGBA", "LA"] or (imgdata is not None and "transparency" in imgdata.info)
+        ics in ["RGBA", "LA"]
+        or (imgdata is not None and "transparency" in imgdata.info)
     ):
         # Must check the IHDR chunk for the bit depth, because PIL would lossily
         # convert 16-bit RGBA/LA images to 8-bit.
@@ -1402,7 +1402,9 @@ def get_imgmetadata(
                 raise AlphaChannelError(
                     "Refusing to work with multiple >8bit channels."
                 )
-    elif ics in ["LA", "PA", "RGBA"] or (imgdata is not None and "transparency" in imgdata.info):
+    elif ics in ["LA", "PA", "RGBA"] or (
+        imgdata is not None and "transparency" in imgdata.info
+    ):
         raise AlphaChannelError("This function must not be called on images with alpha")
 
     rotation = 0
@@ -1901,7 +1903,7 @@ def read_images(
             #
             # For this we assume that the first 13 bytes are the JBIG file header describing a document with one page,
             # followed by a "page information" segment describing the dimensions of that page.
-            # 
+            #
             # The following annotated `hexdump -C 042.jb2` shows the first 40 bytes that we inspect directly.
             # The first 24 bytes (until "||") have to match exactly, while the following 16 bytes are read by get_imgmetadata.
             #
@@ -1916,17 +1918,23 @@ def read_images(
             # 00 00 00 48 00 00 00 48
             # \_________/ \_________/
             #     xres       yres
-            # 
+            #
             # For more information on the data format, see:
             # * https://github.com/agl/jbig2enc/blob/ea05019/fcd14492.pdf
             # For more information about the generic coding, see:
             # * https://github.com/agl/jbig2enc/blob/ea05019/src/jbig2enc.cc#L898
             imgformat = ImageFormat.JBIG2
-            if rawdata[:24] != b"\x97\x4a\x42\x32\x0d\x0a\x1a\x0a\x01\x00\x00\x00\x01\x00\x00\x00\x00\x30\x00\x01\x00\x00\x00\x13":
+            if (
+                rawdata[:24]
+                != b"\x97\x4a\x42\x32\x0d\x0a\x1a\x0a\x01\x00\x00\x00\x01\x00\x00\x00\x00\x30\x00\x01\x00\x00\x00\x13"
+            ):
                 raise ImageOpenError(
                     "Unsupported JBIG2 format; only single-page generic coding is supported (e.g. from `jbig2enc`)."
                 )
-            if rawdata[-22:] != b"\x00\x00\x00\x021\x00\x01\x00\x00\x00\x00\x00\x00\x00\x033\x00\x01\x00\x00\x00\x00":
+            if (
+                rawdata[-22:]
+                != b"\x00\x00\x00\x021\x00\x01\x00\x00\x00\x00\x00\x00\x00\x033\x00\x01\x00\x00\x00\x00"
+            ):
                 raise ImageOpenError(
                     "Unsupported JBIG2 format; we expect end-of-page and end-of-file segments at the end (e.g. from `jbig2enc`)."
                 )
@@ -2175,7 +2183,7 @@ def read_images(
         color, ndpi, imgwidthpx, imgheightpx, rotation, iccp = get_imgmetadata(
             imgdata, imgformat, default_dpi, colorspace, rawdata, rot
         )
-        streamdata = rawdata[13:-22] # Strip file header and footer
+        streamdata = rawdata[13:-22]  # Strip file header and footer
         return [
             (
                 color,
