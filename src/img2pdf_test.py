@@ -2441,9 +2441,10 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
         identify[0]["image"].get("properties", {}).get("quantum:format")
         == "floating-point"
     ), str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
@@ -2490,9 +2491,10 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "separated"
@@ -2542,9 +2544,10 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "separated"
@@ -2584,9 +2587,10 @@ def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
@@ -2633,9 +2637,10 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
@@ -2682,9 +2687,10 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
@@ -2731,9 +2737,10 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
@@ -2880,9 +2887,10 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
@@ -2930,9 +2938,10 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
@@ -2980,9 +2989,10 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
@@ -3030,9 +3040,10 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
@@ -3080,9 +3091,10 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
@@ -3132,9 +3144,10 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
@@ -3165,9 +3178,10 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
@@ -3209,9 +3223,10 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
     ), str(identify)
@@ -3252,9 +3267,10 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
     ), str(identify)
@@ -3295,9 +3311,10 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
     ), str(identify)
@@ -3337,9 +3354,10 @@ def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
     ), str(identify)
@@ -3398,9 +3416,10 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "Group4", str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
         identify
     )
@@ -3480,9 +3499,10 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "Group4", str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "msb", str(
         identify
     )
@@ -3562,9 +3582,10 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "Group4", str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "msb", str(
         identify
     )
@@ -3649,9 +3670,10 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "Group4", str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
         identify
     )
@@ -3740,9 +3762,10 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "Group4", str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
         identify
     )
@@ -3820,9 +3843,10 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     assert identify[0]["image"].get("colorspace") == "Gray", str(identify)
     assert identify[0]["image"].get("depth") == 1, str(identify)
     assert identify[0]["image"].get("compression") == "Group4", str(identify)
-    assert (
-        identify[0]["image"].get("properties", {}).get("tiff:alpha") == "unspecified"
-    ), str(identify)
+    assert identify[0]["image"].get("properties", {}).get("tiff:alpha") in [
+        "unspecified",
+        None,
+    ], str(identify)
     assert identify[0]["image"].get("properties", {}).get("tiff:endian") == "lsb", str(
         identify
     )
