@@ -2,6 +2,13 @@
 CHANGES
 =======
 
+0.6.0 (2025-02-15)
+------------------
+
+ - Add support for JBIG2 (generic coding)
+ - Add convert_to_docobject() broken out from convert()
+ - Add pil_get_dpi() broken out from get_imgmetadata()
+
 0.5.1 (2023-11-26)
 ------------------
 
