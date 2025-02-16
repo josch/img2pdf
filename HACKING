@@ -31,6 +31,10 @@ Making a new release
     $ python3 setup.py sdist
     $ twine upload dist/*
 
+ - Push everything to git forge
+
+    $ git push
+
 Using debbisect to find regressions
 -----------------------------------
 
