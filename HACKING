@@ -35,6 +35,18 @@ Making a new release
 
     $ git push
 
+ - Push to github
+
+    $ git push github
+
+ - Obtain img2pdf.exe from appveyor:
+
+    https://ci.appveyor.com/project/josch/img2pdf/
+
+ - Create new release:
+
+    https://gitlab.mister-muffin.de/josch/img2pdf/releases/new
+
 Using debbisect to find regressions
 -----------------------------------
 
