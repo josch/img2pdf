@@ -1111,6 +1111,7 @@ def jpg_rot_img(tmp_path_factory, tmp_normal_png):
             "-Orientation=6",
             "-XResolution=96",
             "-YResolution=96",
+            "-ResolutionUnit=2",
             "-n",
             str(in_img),
         ]
