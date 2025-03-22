@@ -21,6 +21,7 @@ import json
 import pathlib
 import itertools
 import xml.etree.ElementTree as ET
+import platform
 
 img2pdfprog = os.getenv("img2pdfprog", default="src/img2pdf.py")
 
@@ -5951,6 +5952,10 @@ def test_gif_animation(tmp_path_factory, gif_animation_img, gif_animation_pdf):
 @pytest.mark.skipif(
     sys.platform in ["darwin", "win32"],
     reason="test utilities not available on Windows and MacOS",
+)
+@pytest.mark.skipif(
+    platform.machine() == "s390x",
+    reason="https://github.com/ImageMagick/ImageMagick/issues/8054",
 )
 @pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_float(tmp_path_factory, tiff_float_img, engine):
