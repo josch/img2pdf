@@ -6443,6 +6443,10 @@ def test_miff_cmyk8(tmp_path_factory, miff_cmyk8_img, tiff_cmyk8_img, miff_cmyk8
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
+@pytest.mark.skipif(
+    platform.machine() == "s390x",
+    reason="https://github.com/ImageMagick/ImageMagick/issues/8055",
+)
 def test_miff_cmyk16(
     tmp_path_factory, miff_cmyk16_img, tiff_cmyk16_img, miff_cmyk16_pdf
 ):
