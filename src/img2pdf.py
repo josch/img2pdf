@@ -3465,10 +3465,10 @@ def gui():
                 f.seek(0)
                 doc = fitz.open(stream=f, filetype="pdf")
             for page in doc:
-                if page.getDisplayList().rect.width > maxpagewidth:
-                    maxpagewidth = page.getDisplayList().rect.width
-                if page.getDisplayList().rect.height > maxpageheight:
-                    maxpageheight = page.getDisplayList().rect.height
+                if page.get_displaylist().rect.width > maxpagewidth:
+                    maxpagewidth = page.get_displaylist().rect.width
+                if page.get_displaylist().rect.height > maxpageheight:
+                    maxpageheight = page.get_displaylist().rect.height
         draw()
 
     def save_pdf(stream):
@@ -3620,9 +3620,9 @@ def gui():
         mat_0 = fitz.Matrix(zoom, zoom)
         canvas.image = tkinter.PhotoImage(
             data=doc[pagenum]
-            .getDisplayList()
-            .getPixmap(matrix=mat_0, alpha=False)
-            .getImageData("ppm")
+            .get_displaylist()
+            .get_pixmap(matrix=mat_0, alpha=False)
+            .tobytes("ppm")
         )
         canvas.create_image(
             (canvas.size[0] - maxpagewidth * zoom) / 2,
