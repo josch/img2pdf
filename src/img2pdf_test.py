@@ -768,8 +768,7 @@ def tmp_alpha_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_alpha_png.read_bytes()).hexdigest()
         == "600bb4cffb039a022cec6ed55537deba"
     )
-    yield tmp_alpha_png
-    tmp_alpha_png.unlink()
+    return tmp_alpha_png
 
 
 @pytest.fixture(scope="session")
@@ -787,8 +786,7 @@ def tmp_gray1_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_gray1_png.read_bytes()).hexdigest()
         == "dd2c528152d34324747355b73495a115"
     )
-    yield tmp_gray1_png
-    tmp_gray1_png.unlink()
+    return tmp_gray1_png
 
 
 @pytest.fixture(scope="session")
@@ -806,8 +804,7 @@ def tmp_gray2_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_gray2_png.read_bytes()).hexdigest()
         == "68e614f4e6a85053d47098dad0ca3976"
     )
-    yield tmp_gray2_png
-    tmp_gray2_png.unlink()
+    return tmp_gray2_png
 
 
 @pytest.fixture(scope="session")
@@ -825,8 +822,7 @@ def tmp_gray4_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_gray4_png.read_bytes()).hexdigest()
         == "ff04a6fea88133eb77bbb748692ae0fd"
     )
-    yield tmp_gray4_png
-    tmp_gray4_png.unlink()
+    return tmp_gray4_png
 
 
 @pytest.fixture(scope="session")
@@ -839,8 +835,7 @@ def tmp_gray8_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_gray8_png.read_bytes()).hexdigest()
         == "90b4ed9123f295dda7fde499744dede7"
     )
-    yield tmp_gray8_png
-    tmp_gray8_png.unlink()
+    return tmp_gray8_png
 
 
 @pytest.fixture(scope="session")
@@ -853,8 +848,7 @@ def tmp_gray16_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_gray16_png.read_bytes()).hexdigest()
         == "f76153d2e72fada11d934c32c8168a57"
     )
-    yield tmp_gray16_png
-    tmp_gray16_png.unlink()
+    return tmp_gray16_png
 
 
 @pytest.fixture(scope="session")
@@ -866,16 +860,14 @@ def tmp_inverse_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_inverse_png.read_bytes()).hexdigest()
         == "0a7d57dc09c4d8fd1ad3511b116c7dfa"
     )
-    yield tmp_inverse_png
-    tmp_inverse_png.unlink()
+    return tmp_inverse_png
 
 
 @pytest.fixture(scope="session")
 def tmp_icc_profile(tmp_path_factory):
     tmp_icc_profile = tmp_path_factory.mktemp("icc_profile") / "fake.icc"
     tmp_icc_profile.write_bytes(icc_profile())
-    yield tmp_icc_profile
-    tmp_icc_profile.unlink()
+    return tmp_icc_profile
 
 
 @pytest.fixture(scope="session")
@@ -893,8 +885,7 @@ def tmp_icc_png(tmp_path_factory, alpha, tmp_icc_profile):
         hashlib.md5(tmp_icc_png.read_bytes()).hexdigest()
         == "bf25f673c1617f5f9353b2a043747655"
     )
-    yield tmp_icc_png
-    tmp_icc_png.unlink()
+    return tmp_icc_png
 
 
 @pytest.fixture(scope="session")
@@ -906,8 +897,7 @@ def tmp_normal16_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_normal16_png.read_bytes()).hexdigest()
         == "820dd30a2566775fc64c110e8ac65c7e"
     )
-    yield tmp_normal16_png
-    tmp_normal16_png.unlink()
+    return tmp_normal16_png
 
 
 @pytest.fixture(scope="session")
@@ -919,8 +909,7 @@ def tmp_normal_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_normal_png.read_bytes()).hexdigest()
         == "bc30c705f455991cd04be1c298063002"
     )
-    yield tmp_normal_png
-    tmp_normal_png.unlink()
+    return tmp_normal_png
 
 
 @pytest.fixture(scope="session")
@@ -947,8 +936,7 @@ def tmp_palette1_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_palette1_png.read_bytes()).hexdigest()
         == "3d065f731540e928fb730b3233e4e8a7"
     )
-    yield tmp_palette1_png
-    tmp_palette1_png.unlink()
+    return tmp_palette1_png
 
 
 @pytest.fixture(scope="session")
@@ -974,8 +962,7 @@ def tmp_palette2_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_palette2_png.read_bytes()).hexdigest()
         == "0b0d4412c28da26163a622d218ee02ca"
     )
-    yield tmp_palette2_png
-    tmp_palette2_png.unlink()
+    return tmp_palette2_png
 
 
 @pytest.fixture(scope="session")
@@ -1017,8 +1004,7 @@ def tmp_palette4_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_palette4_png.read_bytes()).hexdigest()
         == "163f6d7964b80eefa0dc6a48cb7315dd"
     )
-    yield tmp_palette4_png
-    tmp_palette4_png.unlink()
+    return tmp_palette4_png
 
 
 @pytest.fixture(scope="session")
@@ -1052,8 +1038,7 @@ def tmp_palette8_png(tmp_path_factory, alpha):
         hashlib.md5(tmp_palette8_png.read_bytes()).hexdigest()
         == "8847bb734eba0e2d85e3f97fc2849dd4"
     )
-    yield tmp_palette8_png
-    tmp_palette8_png.unlink()
+    return tmp_palette8_png
 
 
 @pytest.fixture(scope="session")
@@ -1094,8 +1079,7 @@ def jpg_img(tmp_path_factory, tmp_normal_png):
     assert (
         identify[0]["image"].get("properties", {}).get("jpeg:colorspace") == "2"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -1146,8 +1130,7 @@ def jpg_rot_img(tmp_path_factory, tmp_normal_png):
     }, str(identify)
     assert identify[0]["image"].get("compression") == "JPEG", str(identify)
     assert identify[0]["image"].get("orientation") == "RightTop", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -1182,8 +1165,7 @@ def jpg_cmyk_img(tmp_path_factory, tmp_normal_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "JPEG", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -1216,8 +1198,7 @@ def jpg_2000_img(tmp_path_factory, tmp_normal_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "JPEG2000", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -1250,8 +1231,7 @@ def jpg_2000_rgba8_img(tmp_path_factory, tmp_alpha_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "JPEG2000", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -1284,8 +1264,7 @@ def jpg_2000_rgba16_img(tmp_path_factory, tmp_alpha_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "JPEG2000", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -1436,8 +1415,7 @@ def png_rgba8_img(tmp_path_factory, tmp_alpha_png):
         identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
         == "0 (Not interlaced)"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -1552,8 +1530,7 @@ def png_gray8a_img(tmp_path_factory, tmp_alpha_png):
         identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
         == "0 (Not interlaced)"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -1615,8 +1592,7 @@ def png_gray16a_img(tmp_path_factory, tmp_alpha_png):
         identify[0]["image"]["properties"]["png:IHDR.interlace_method"]
         == "0 (Not interlaced)"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -1675,8 +1651,7 @@ def png_interlaced_img(tmp_path_factory, tmp_normal_png):
         identify[0]["image"].get("properties", {}).get("png:IHDR.interlace_method")
         == "1 (Adam7 method)"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2161,8 +2136,7 @@ def gif_transparent_img(tmp_path_factory, tmp_alpha_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "LZW", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2196,8 +2170,7 @@ def gif_palette1_img(tmp_path_factory, tmp_palette1_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "LZW", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2231,8 +2204,7 @@ def gif_palette2_img(tmp_path_factory, tmp_palette2_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "LZW", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2266,8 +2238,7 @@ def gif_palette4_img(tmp_path_factory, tmp_palette4_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "LZW", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2301,8 +2272,7 @@ def gif_palette8_img(tmp_path_factory, tmp_palette8_png):
         "y": 0,
     }, str(identify)
     assert identify[0]["image"].get("compression") == "LZW", str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2395,8 +2365,7 @@ def gif_animation_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
     assert identify[0]["image"].get("scene") == 1, str(identify)
     colormap_frame1 = identify[0]["image"].get("colormap")
     assert colormap_frame0 == colormap_frame1
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2450,8 +2419,7 @@ def tiff_float_img(tmp_path_factory, tmp_normal_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2501,8 +2469,7 @@ def tiff_cmyk8_img(tmp_path_factory, tmp_normal_png):
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "separated"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2554,8 +2521,7 @@ def tiff_cmyk16_img(tmp_path_factory, tmp_normal_png):
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "separated"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2596,8 +2562,7 @@ def tiff_rgb8_img(tmp_path_factory, tmp_normal_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2646,8 +2611,7 @@ def tiff_rgb12_img(tmp_path_factory, tmp_normal16_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2696,8 +2660,7 @@ def tiff_rgb14_img(tmp_path_factory, tmp_normal16_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2746,8 +2709,7 @@ def tiff_rgb16_img(tmp_path_factory, tmp_normal16_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2796,8 +2758,7 @@ def tiff_rgba8_img(tmp_path_factory, tmp_alpha_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2846,8 +2807,7 @@ def tiff_rgba16_img(tmp_path_factory, tmp_alpha_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2897,8 +2857,7 @@ def tiff_gray1_img(tmp_path_factory, tmp_gray1_png):
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2948,8 +2907,7 @@ def tiff_gray2_img(tmp_path_factory, tmp_gray2_png):
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -2999,8 +2957,7 @@ def tiff_gray4_img(tmp_path_factory, tmp_gray4_png):
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3050,8 +3007,7 @@ def tiff_gray8_img(tmp_path_factory, tmp_gray8_png):
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3101,8 +3057,7 @@ def tiff_gray16_img(tmp_path_factory, tmp_gray16_png):
         identify[0]["image"].get("properties", {}).get("tiff:photometric")
         == "min-is-black"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3188,8 +3143,7 @@ def tiff_multipage_img(tmp_path_factory, tmp_normal_png, tmp_inverse_png):
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "RGB"
     ), str(identify)
     assert identify[0]["image"].get("scene") == 1, str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3232,8 +3186,7 @@ def tiff_palette1_img(tmp_path_factory, tmp_palette1_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3276,8 +3229,7 @@ def tiff_palette2_img(tmp_path_factory, tmp_palette2_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3320,8 +3272,7 @@ def tiff_palette4_img(tmp_path_factory, tmp_palette4_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3363,8 +3314,7 @@ def tiff_palette8_img(tmp_path_factory, tmp_palette8_png):
     assert (
         identify[0]["image"].get("properties", {}).get("tiff:photometric") == "palette"
     ), str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3446,8 +3396,7 @@ def tiff_ccitt_lsb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
             "utf8"
         )
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3529,8 +3478,7 @@ def tiff_ccitt_msb_m2l_white_img(tmp_path_factory, tmp_gray1_png):
         assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
             "utf8"
         )
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3612,8 +3560,7 @@ def tiff_ccitt_msb_l2m_white_img(tmp_path_factory, tmp_gray1_png):
         assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
             "utf8"
         )
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3700,8 +3647,7 @@ def tiff_ccitt_lsb_m2l_black_img(tmp_path_factory, tmp_gray1_png):
         assert re.search(e, tiffinfo.decode("utf8"), re.MULTILINE), identify.decode(
             "utf8"
         )
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3792,8 +3738,7 @@ def tiff_ccitt_nometa1_img(tmp_path_factory, tmp_gray1_png):
     unexpected = [" Bits/Sample: ", " FillOrder: ", " Samples/Pixel: "]
     for e in unexpected:
         assert e not in tiffinfo.decode("utf8")
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3873,8 +3818,7 @@ def tiff_ccitt_nometa2_img(tmp_path_factory, tmp_gray1_png):
     unexpected = [" Rows/Strip: "]
     for e in unexpected:
         assert e not in tiffinfo.decode("utf8")
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3915,8 +3859,7 @@ def miff_cmyk8_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3960,8 +3903,7 @@ def miff_cmyk16_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -3994,8 +3936,7 @@ def miff_rgb8_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    yield in_img
-    in_img.unlink()
+    return in_img
 
 
 @pytest.fixture(scope="session")
@@ -4075,8 +4016,7 @@ def jpg_pdf(tmp_path_factory, jpg_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/DCTDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4103,8 +4043,7 @@ def jpg_rot_pdf(tmp_path_factory, jpg_rot_img, request):
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
         assert p.pages[0].Rotate == 90
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4133,8 +4072,7 @@ def jpg_cmyk_pdf(tmp_path_factory, jpg_cmyk_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/DCTDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4160,8 +4098,7 @@ def jpg_2000_pdf(tmp_path_factory, jpg_2000_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/JPXDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4187,8 +4124,7 @@ def jpg_2000_rgba8_pdf(tmp_path_factory, jpg_2000_rgba8_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/JPXDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4214,8 +4150,7 @@ def jpg_2000_rgba16_pdf(tmp_path_factory, jpg_2000_rgba16_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/JPXDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4244,8 +4179,7 @@ def png_rgb8_pdf(tmp_path_factory, png_rgb8_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4284,8 +4218,7 @@ def png_rgba8_pdf(tmp_path_factory, png_rgba8_img, request):
         assert p.pages[0].Resources.XObject.Im0.SMask.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.SMask.Height == 60
         assert p.pages[0].Resources.XObject.Im0.SMask.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4325,8 +4258,7 @@ def gif_transparent_pdf(tmp_path_factory, gif_transparent_img, request):
         assert p.pages[0].Resources.XObject.Im0.SMask.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.SMask.Height == 60
         assert p.pages[0].Resources.XObject.Im0.SMask.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4355,8 +4287,7 @@ def png_rgb16_pdf(tmp_path_factory, png_rgb16_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4385,8 +4316,7 @@ def png_interlaced_pdf(tmp_path_factory, png_interlaced_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4415,8 +4345,7 @@ def png_gray1_pdf(tmp_path_factory, tmp_gray1_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4445,8 +4374,7 @@ def png_gray2_pdf(tmp_path_factory, tmp_gray2_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4475,8 +4403,7 @@ def png_gray4_pdf(tmp_path_factory, tmp_gray4_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4505,8 +4432,7 @@ def png_gray8_pdf(tmp_path_factory, tmp_gray8_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4545,8 +4471,7 @@ def png_gray8a_pdf(tmp_path_factory, png_gray8a_img, request):
         assert p.pages[0].Resources.XObject.Im0.SMask.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.SMask.Height == 60
         assert p.pages[0].Resources.XObject.Im0.SMask.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4575,8 +4500,7 @@ def png_gray16_pdf(tmp_path_factory, tmp_gray16_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4606,8 +4530,7 @@ def png_palette1_pdf(tmp_path_factory, tmp_palette1_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4637,8 +4560,7 @@ def png_palette2_pdf(tmp_path_factory, tmp_palette2_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4668,8 +4590,7 @@ def png_palette4_pdf(tmp_path_factory, tmp_palette4_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4699,8 +4620,7 @@ def png_palette8_pdf(tmp_path_factory, tmp_palette8_png, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4735,8 +4655,7 @@ def png_icc_pdf(tmp_path_factory, tmp_icc_png, tmp_icc_profile, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4766,8 +4685,7 @@ def gif_palette1_pdf(tmp_path_factory, gif_palette1_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4797,8 +4715,7 @@ def gif_palette2_pdf(tmp_path_factory, gif_palette2_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4828,8 +4745,7 @@ def gif_palette4_pdf(tmp_path_factory, gif_palette4_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4859,8 +4775,7 @@ def gif_palette8_pdf(tmp_path_factory, gif_palette8_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4899,8 +4814,7 @@ def gif_animation_pdf(tmp_path_factory, gif_animation_img, request):
             assert p.pages[0].Resources.XObject.Im0.Height == 60
             assert p.pages[0].Resources.XObject.Im0.Width == 60
         gif_animation_pdf_nr.unlink()
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4926,8 +4840,7 @@ def tiff_cmyk8_pdf(tmp_path_factory, tiff_cmyk8_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4956,8 +4869,7 @@ def tiff_rgb8_pdf(tmp_path_factory, tiff_rgb8_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -4987,8 +4899,7 @@ def tiff_gray1_pdf(tmp_path_factory, tiff_gray1_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5017,8 +4928,7 @@ def tiff_gray2_pdf(tmp_path_factory, tiff_gray2_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5047,8 +4957,7 @@ def tiff_gray4_pdf(tmp_path_factory, tiff_gray4_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5077,8 +4986,7 @@ def tiff_gray8_pdf(tmp_path_factory, tiff_gray8_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5116,8 +5024,7 @@ def tiff_multipage_pdf(tmp_path_factory, tiff_multipage_img, request):
             assert p.pages[0].Resources.XObject.Im0.Height == 60
             assert p.pages[0].Resources.XObject.Im0.Width == 60
         tiff_multipage_pdf_nr.unlink()
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5147,8 +5054,7 @@ def tiff_palette1_pdf(tmp_path_factory, tiff_palette1_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5178,8 +5084,7 @@ def tiff_palette2_pdf(tmp_path_factory, tiff_palette2_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5209,8 +5114,7 @@ def tiff_palette4_pdf(tmp_path_factory, tiff_palette4_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5240,8 +5144,7 @@ def tiff_palette8_pdf(tmp_path_factory, tiff_palette8_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5273,8 +5176,7 @@ def tiff_ccitt_lsb_m2l_white_pdf(
         assert p.pages[0].Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5306,8 +5208,7 @@ def tiff_ccitt_msb_m2l_white_pdf(
         assert p.pages[0].Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5339,8 +5240,7 @@ def tiff_ccitt_msb_l2m_white_pdf(
         assert p.pages[0].Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5372,8 +5272,7 @@ def tiff_ccitt_lsb_m2l_black_pdf(
         assert p.pages[0].Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5403,8 +5302,7 @@ def tiff_ccitt_nometa1_pdf(tmp_path_factory, tiff_ccitt_nometa1_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5434,8 +5332,7 @@ def tiff_ccitt_nometa2_pdf(tmp_path_factory, tiff_ccitt_nometa2_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter[0] == "/CCITTFaxDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5461,8 +5358,7 @@ def miff_cmyk8_pdf(tmp_path_factory, miff_cmyk8_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5488,8 +5384,7 @@ def miff_cmyk16_pdf(tmp_path_factory, miff_cmyk16_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
@@ -5518,8 +5413,7 @@ def miff_rgb8_pdf(tmp_path_factory, miff_rgb8_img, request):
         assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
         assert p.pages[0].Resources.XObject.Im0.Height == 60
         assert p.pages[0].Resources.XObject.Im0.Width == 60
-    yield out_pdf
-    out_pdf.unlink()
+    return out_pdf
 
 
 ###############################################################################
