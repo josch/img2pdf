@@ -73,6 +73,7 @@ def parse_res(data):
         if boxType == b"resc":
             hdpi, vdpi = parse_resc(boxContents)
             break
+        byteStart = byteEnd
     return hdpi, vdpi
 
 
