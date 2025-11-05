@@ -2,6 +2,12 @@
 CHANGES
 =======
 
+0.6.3 (2025-11-06)
+------------------
+
+ - add pyproject.toml
+ - merge jp2 module into img2pdf
+
 0.6.2 (2025-11-05)
 ------------------
 

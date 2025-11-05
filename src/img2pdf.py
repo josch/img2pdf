@@ -21,7 +21,7 @@
 """
 Lossless conversion of raster images to PDF.
 """
-__version__ = "0.6.2"
+__version__ = "0.6.3"
 
 import sys
 import os
