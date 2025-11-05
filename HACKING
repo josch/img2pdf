@@ -76,8 +76,10 @@ Using debbisect cache
 Bisecting imagemagick
 ---------------------
 
+Imagemagick can be built with minimal dependencies. To build with support for
+jpeg images, installing build-essential, pkgconf and libjpeg-dev is sufficient.
+
     $ git clean -fdx && git reset --hard
-    $ ./configure --prefix=$(pwd)/prefix
-    $ make -j$(nproc)
-    $ make install
-    $ LD_LIBRARY_PATH=$(pwd)/prefix/lib prefix/bin/compare ...
+    $ ./configure
+    $ make -j$(nproc) utilities/magick
+    $ ./magick.sh magick compare ...
