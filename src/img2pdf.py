@@ -1406,6 +1406,20 @@ def get_imgmetadata(
                 raise AlphaChannelError(
                     "Refusing to work with multiple >8bit channels."
                 )
+    elif (
+        imgformat == ImageFormat.TIFF
+        and imgdata is not None
+        and (ics in ["RGBA", "LA"] or "transparency" in imgdata.info)
+    ):
+        depth = max(imgdata.tag_v2.get(TiffImagePlugin.BITSPERSAMPLE, [1]))
+        if depth > 8:
+            logger.warning("Image with transparency and a bit depth of %d." % depth)
+            logger.warning("This is unsupported due to PIL limitations.")
+            logger.warning(
+                "If you accept a lossy conversion, you can manually convert "
+                "your images to 8 bit using `convert -depth 8` from imagemagick"
+            )
+            raise AlphaChannelError("Refusing to work with multiple >8bit channels.")
     elif ics in ["LA", "PA", "RGBA"] or (
         imgdata is not None and "transparency" in imgdata.info
     ):

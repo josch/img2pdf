@@ -4890,6 +4890,45 @@ def tiff_rgb8_pdf(tmp_path_factory, tiff_rgb8_img, request):
 
 
 @pytest.fixture(scope="session", params=["internal", "pikepdf"])
+def tiff_rgba8_pdf(tmp_path_factory, tiff_rgba8_img, request):
+    out_pdf = tmp_path_factory.mktemp("tiff_rgba8_pdf") / "out.pdf"
+    subprocess.check_call(
+        [
+            img2pdfprog,
+            "--producer=",
+            "--nodate",
+            "--engine=" + request.param,
+            "--output=" + str(out_pdf),
+            str(tiff_rgba8_img),
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert (
+            p.pages[0].Contents.read_bytes()
+            == b"q\n45.0000 0 0 45.0000 0.0000 0.0000 cm\n/Im0 Do\nQ"
+        )
+        assert p.pages[0].Resources.XObject.Im0.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.ColorSpace == "/DeviceRGB"
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Colors == 3
+        assert p.pages[0].Resources.XObject.Im0.DecodeParms.Predictor == 15
+        assert p.pages[0].Resources.XObject.Im0.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.Width == 60
+        assert p.pages[0].Resources.XObject.Im0.SMask is not None
+
+        assert p.pages[0].Resources.XObject.Im0.SMask.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.SMask.ColorSpace == "/DeviceGray"
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.BitsPerComponent == 8
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.Colors == 1
+        assert p.pages[0].Resources.XObject.Im0.SMask.DecodeParms.Predictor == 15
+        assert p.pages[0].Resources.XObject.Im0.SMask.Filter == "/FlateDecode"
+        assert p.pages[0].Resources.XObject.Im0.SMask.Height == 60
+        assert p.pages[0].Resources.XObject.Im0.SMask.Width == 60
+    return out_pdf
+
+
+@pytest.fixture(scope="session", params=["internal", "pikepdf"])
 def tiff_gray1_pdf(tmp_path_factory, tiff_gray1_img, request):
     out_pdf = tmp_path_factory.mktemp("tiff_gray1_pdf") / "out.pdf"
     subprocess.check_call(
@@ -6019,23 +6058,12 @@ def test_tiff_rgb16(tmp_path_factory, tiff_rgb16_img, engine):
     sys.platform in ["win32"],
     reason="test utilities not available on Windows and MacOS",
 )
-@pytest.mark.parametrize("engine", ["internal", "pikepdf"])
-def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, engine):
-    out_pdf = tmp_path_factory.mktemp("tiff_rgba8") / "out.pdf"
-    assert (
-        0
-        != subprocess.run(
-            [
-                img2pdfprog,
-                "--producer=",
-                "--nodate",
-                "--engine=" + engine,
-                "--output=" + str(out_pdf),
-                str(tiff_rgba8_img),
-            ]
-        ).returncode
-    )
-    out_pdf.unlink()
+def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, tiff_rgba8_pdf):
+    tmpdir = tmp_path_factory.mktemp("tiff_rgba8")
+    # compare_ghostscript(tmpdir, tiff_rgba8_img, tiff_rgba8_pdf, gsdevice="tiff24nc")
+    # compare_poppler(tmpdir, tiff_rgba8_img, tiff_rgba8_pdf)
+    # compare_mupdf(tmpdir, tiff_rgba8_img, tiff_rgba8_pdf)
+    compare_pdfimages_tiff(tmpdir, tiff_rgba8_img, tiff_rgba8_pdf)
 
 
 @pytest.mark.skipif(
@@ -6045,6 +6073,7 @@ def test_tiff_rgba8(tmp_path_factory, tiff_rgba8_img, engine):
 @pytest.mark.parametrize("engine", ["internal", "pikepdf"])
 def test_tiff_rgba16(tmp_path_factory, tiff_rgba16_img, engine):
     out_pdf = tmp_path_factory.mktemp("tiff_rgba16") / "out.pdf"
+    # PIL is unable to preserve more than 8 bits per sample
     assert (
         0
         != subprocess.run(
