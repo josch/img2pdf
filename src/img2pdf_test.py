@@ -467,6 +467,22 @@ def compare_pdfimages_jp2(tmpdir, img, pdf):
 
 def compare_pdfimages_tiff(tmpdir, img, pdf):
     subprocess.check_call(["pdfimages", "-tiff", str(pdf), str(tmpdir / "images")])
+    if os.path.isfile(tmpdir / "images-001.tif"):
+        # if images-001.tif exists, then it should be the smask for transparency
+        subprocess.check_call(
+            CONVERT
+            + [
+                str(tmpdir / "images-000.tif"),
+                str(tmpdir / "images-001.tif"),
+                "-compose",
+                "copy-opacity",
+                "-composite",
+                str(tmpdir / "composite.tif"),
+            ]
+        )
+        (tmpdir / "images-000.tif").unlink()
+        (tmpdir / "images-001.tif").unlink()
+        os.rename(tmpdir / "composite.tif", tmpdir / "images-000.tif")
     subprocess.check_call(
         COMPARE
         + [
@@ -484,6 +500,7 @@ def compare_pdfimages_png(tmpdir, img, pdf, exact=True, icc=False):
     subprocess.check_call(["pdfimages", "-png", str(pdf), str(tmpdir / "images")])
     # images-001.png is the grayscale SMask image (the original alpha channel)
     if os.path.isfile(tmpdir / "images-001.png"):
+        # if images-001.png exists, then it should be the smask for transparency
         subprocess.check_call(
             CONVERT
             + [
