@@ -1323,7 +1323,12 @@ def pil_get_dpi(imgdata, imgformat, default_dpi):
     if ndpi is None:
         # the PNG plugin of PIL adds the undocumented "aspect" field instead of
         # the "dpi" field if the PNG pHYs chunk unit is not set to meters
-        if imgformat == ImageFormat.PNG and imgdata.info.get("aspect") is not None:
+        if (
+            imgformat == ImageFormat.PNG
+            and imgdata.info.get("aspect") is not None
+            and imgdata.info["aspect"][0] != 0
+            and imgdata.info["aspect"][1] != 0
+        ):
             aspect = imgdata.info["aspect"]
             # make sure not to go below the default dpi
             if aspect[0] > aspect[1]:
