@@ -276,7 +276,7 @@ def compress(data):
 
 def write_png(data, path, bitdepth, colortype, palette=None, iccp=None):
     with open(str(path), "wb") as f:
-        f.write(b"\x89PNG\r\n\x1A\n")
+        f.write(b"\x89PNG\r\n\x1a\n")
         # PNG image type        Colour type Allowed bit depths
         # Greyscale             0           1, 2, 4, 8, 16
         # Truecolour            2           8, 16
@@ -6802,7 +6802,7 @@ f_enlarge = img2pdf.FitMode.enlarge
                                        (972, 504),  (864, 432)),
     (poster, None, None, f_fill,    0, (97200, 50400), (151200, 50400),
                                        (97200, 50400), (100800, 50400)),
-    ]
+    ],
     # fmt: on
 )
 def test_layout(layout_test_cases):

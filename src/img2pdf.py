@@ -772,19 +772,27 @@ class pdfdoc(object):
 
 <?xpacket end='w'?>
 """ % (
-            b" pdf:Producer='%s'" % producer.encode("ascii")
-            if producer is not None
-            else b"",
-            b""
-            if creationdate is None and nodate
-            else b"<xmp:ModifyDate>%s</xmp:ModifyDate>"
-            % datetime_to_xmpdate(now if creationdate is None else creationdate).encode(
-                "ascii"
+            (
+                b" pdf:Producer='%s'" % producer.encode("ascii")
+                if producer is not None
+                else b""
             ),
-            b""
-            if moddate is None and nodate
-            else b"<xmp:CreateDate>%s</xmp:CreateDate>"
-            % datetime_to_xmpdate(now if moddate is None else moddate).encode("ascii"),
+            (
+                b""
+                if creationdate is None and nodate
+                else b"<xmp:ModifyDate>%s</xmp:ModifyDate>"
+                % datetime_to_xmpdate(
+                    now if creationdate is None else creationdate
+                ).encode("ascii")
+            ),
+            (
+                b""
+                if moddate is None and nodate
+                else b"<xmp:CreateDate>%s</xmp:CreateDate>"
+                % datetime_to_xmpdate(now if moddate is None else moddate).encode(
+                    "ascii"
+                )
+            ),
         )
 
         if engine != Engine.pikepdf:
@@ -881,14 +889,16 @@ class pdfdoc(object):
                 PdfName.Indexed,
                 PdfName.DeviceRGB,
                 (len(palette) // 3) - 1,
-                bytes(palette)
-                if self.engine == Engine.pikepdf
-                else PdfString.encode(
-                    [
-                        int.from_bytes(palette[i : i + 3], "big")
-                        for i in range(0, len(palette), 3)
-                    ],
-                    hextype=True,
+                (
+                    bytes(palette)
+                    if self.engine == Engine.pikepdf
+                    else PdfString.encode(
+                        [
+                            int.from_bytes(palette[i : i + 3], "big")
+                            for i in range(0, len(palette), 3)
+                        ],
+                        hextype=True,
+                    )
                 ),
             ]
         else:
@@ -1909,7 +1919,7 @@ def read_images(
         imgdata = Image.open(im)
     except IOError as e:
         # test if it is a jpeg2000 image
-        if rawdata[:12] == b"\x00\x00\x00\x0C\x6A\x50\x20\x20\x0D\x0A\x87\x0A":
+        if rawdata[:12] == b"\x00\x00\x00\x0c\x6a\x50\x20\x20\x0d\x0a\x87\x0a":
             # image is jpeg2000
             imgformat = ImageFormat.JPEG2000
         elif rawdata[:8] == b"\x97\x4a\x42\x32\x0d\x0a\x1a\x0a":
@@ -3562,9 +3572,9 @@ def gui():
             author=args["author"].get() if args["author"].get() else None,
             creator=args["creator"].get() if args["creator"].get() else None,
             producer=args["producer"].get() if args["producer"].get() else None,
-            creationdate=args["creationdate"].get()
-            if args["creationdate"].get()
-            else None,
+            creationdate=(
+                args["creationdate"].get() if args["creationdate"].get() else None
+            ),
             moddate=args["moddate"].get() if args["moddate"].get() else None,
             subject=args["subject"].get() if args["subject"].get() else None,
             keywords=args["keywords"].get() if args["keywords"].get() else None,
@@ -3572,9 +3582,11 @@ def gui():
             nodate=args["nodate"].get(),
             layout_fun=layout_fun,
             viewer_panes=viewer_panesarg,
-            viewer_initial_page=args["viewer_initial_page"].get()
-            if args["viewer_initial_page"].get() > 1
-            else None,
+            viewer_initial_page=(
+                args["viewer_initial_page"].get()
+                if args["viewer_initial_page"].get() > 1
+                else None
+            ),
             viewer_magnification=viewer_magnificationarg,
             viewer_page_layout=viewer_page_layoutarg,
             viewer_fit_window=(args["viewer_fit_window"].get() or None),
