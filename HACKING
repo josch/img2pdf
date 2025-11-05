@@ -27,9 +27,9 @@ Making a new release
 
  - Build and upload to pypi:
 
-    $ rm -rf dist/*
-    $ python3 setup.py sdist
-    $ twine upload dist/*
+    $ git clean -fdx
+    $ flit build
+    $ flit publish
 
  - Push everything to git forge
 

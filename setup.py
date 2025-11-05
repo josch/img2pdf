@@ -36,7 +36,7 @@ setup(
     download_url="https://gitlab.mister-muffin.de/josch/img2pdf/repository/"
     "archive.tar.gz?ref=" + VERSION,
     package_dir={"": "src"},
-    py_modules=["img2pdf", "jp2"],
+    py_modules=["img2pdf"],
     include_package_data=True,
     zip_safe=True,
     install_requires=INSTALL_REQUIRES,

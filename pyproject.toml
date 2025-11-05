@@ -1,0 +1,25 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "img2pdf"
+authors = [{name = "Johannes Schauer Marin Rodrigues", email = "josch@mister-muffin.de"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.5"
+classifiers = ["License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)"]
+dynamic = ["version", "description"]
+dependencies = [
+  "Pillow",
+  "pikepdf"
+]
+
+[project.urls]
+Home = "https://gitlab.mister-muffin.de/josch/img2pdf"
+
+[project.scripts]
+img2pdf = "img2pdf:main"
+
+[project.gui-scripts]
+img2pdf-gui = "img2pdf:gui"

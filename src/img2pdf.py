@@ -42,7 +42,6 @@ if hasattr(GifImagePlugin, "LoadingStrategy"):
 # TiffImagePlugin.DEBUG = True
 from PIL.ExifTags import TAGS
 from datetime import datetime, timezone
-import jp2
 from enum import Enum
 from io import BytesIO
 import logging
@@ -436,6 +435,132 @@ class AlphaChannelError(Exception):
 
 class ExifOrientationError(Exception):
     pass
+
+
+class jp2:
+    def __init__(self, data):
+        self.data = data
+
+    @staticmethod
+    def getBox(data, byteStart, noBytes):
+        boxLengthValue = struct.unpack(">I", data[byteStart : byteStart + 4])[0]
+        boxType = data[byteStart + 4 : byteStart + 8]
+        contentsStartOffset = 8
+        if boxLengthValue == 1:
+            boxLengthValue = struct.unpack(">Q", data[byteStart + 8 : byteStart + 16])[
+                0
+            ]
+            contentsStartOffset = 16
+        if boxLengthValue == 0:
+            boxLengthValue = noBytes - byteStart
+        byteEnd = byteStart + boxLengthValue
+        boxContents = data[byteStart + contentsStartOffset : byteEnd]
+        return (boxLengthValue, boxType, byteEnd, boxContents)
+
+    @staticmethod
+    def parse_ihdr(data):
+        height, width, channels, bpp = struct.unpack(">IIHB", data[:11])
+        return width, height, channels, bpp + 1
+
+    @staticmethod
+    def parse_colr(data):
+        meth = struct.unpack(">B", data[0:1])[0]
+        if meth != 1:
+            raise Exception("only enumerated color method supported")
+        enumCS = struct.unpack(">I", data[3:])[0]
+        if enumCS == 16:
+            return "RGB"
+        elif enumCS == 17:
+            return "L"
+        else:
+            raise Exception(
+                "only sRGB and greyscale color space is supported, " "got %d" % enumCS
+            )
+
+    @staticmethod
+    def parse_resc(data):
+        hnum, hden, vnum, vden, hexp, vexp = struct.unpack(">HHHHBB", data)
+        hdpi = ((hnum / hden) * (10**hexp) * 100) / 2.54
+        vdpi = ((vnum / vden) * (10**vexp) * 100) / 2.54
+        return hdpi, vdpi
+
+    @staticmethod
+    def parse_res(data):
+        hdpi, vdpi = None, None
+        noBytes = len(data)
+        byteStart = 0
+        boxLengthValue = 1  # dummy value for while loop condition
+        while byteStart < noBytes and boxLengthValue != 0:
+            boxLengthValue, boxType, byteEnd, boxContents = jp2.getBox(
+                data, byteStart, noBytes
+            )
+            if boxType == b"resc":
+                hdpi, vdpi = jp2.parse_resc(boxContents)
+                break
+        return hdpi, vdpi
+
+    @staticmethod
+    def parse_jp2h(data):
+        width, height, colorspace, hdpi, vdpi = None, None, None, None, None
+        noBytes = len(data)
+        byteStart = 0
+        boxLengthValue = 1  # dummy value for while loop condition
+        while byteStart < noBytes and boxLengthValue != 0:
+            boxLengthValue, boxType, byteEnd, boxContents = jp2.getBox(
+                data, byteStart, noBytes
+            )
+            if boxType == b"ihdr":
+                width, height, channels, bpp = jp2.parse_ihdr(boxContents)
+            elif boxType == b"colr":
+                colorspace = jp2.parse_colr(boxContents)
+            elif boxType == b"res ":
+                hdpi, vdpi = jp2.parse_res(boxContents)
+            byteStart = byteEnd
+        return (width, height, colorspace, hdpi, vdpi, channels, bpp)
+
+    def parsejp2(self):
+        noBytes = len(self.data)
+        byteStart = 0
+        boxLengthValue = 1  # dummy value for while loop condition
+        width, height, colorspace, hdpi, vdpi = None, None, None, None, None
+        while byteStart < noBytes and boxLengthValue != 0:
+            boxLengthValue, boxType, byteEnd, boxContents = jp2.getBox(
+                self.data, byteStart, noBytes
+            )
+            if boxType == b"jp2h":
+                width, height, colorspace, hdpi, vdpi, channels, bpp = jp2.parse_jp2h(
+                    boxContents
+                )
+                break
+            byteStart = byteEnd
+        if not width:
+            raise Exception("no width in jp2 header")
+        if not height:
+            raise Exception("no height in jp2 header")
+        if not colorspace:
+            raise Exception("no colorspace in jp2 header")
+        # retrieving the dpi is optional so we do not error out if not present
+        return (width, height, colorspace, hdpi, vdpi, channels, bpp)
+
+    def parsej2k(self):
+        lsiz, rsiz, xsiz, ysiz, xosiz, yosiz, _, _, _, _, csiz = struct.unpack(
+            ">HHIIIIIIIIH", self.data[4:42]
+        )
+        ssiz = [None] * csiz
+        xrsiz = [None] * csiz
+        yrsiz = [None] * csiz
+        for i in range(csiz):
+            ssiz[i], xrsiz[i], yrsiz[i] = struct.unpack(
+                "BBB", self.data[42 + 3 * i : 42 + 3 * (i + 1)]
+            )
+        assert ssiz == [7, 7, 7]
+        return xsiz - xosiz, ysiz - yosiz, None, None, None, csiz, 8
+
+    def parse(self):
+        if self.data[:4] == b"\xff\x4f\xff\x51":
+            return self.parsej2k()
+        else:
+            return self.parsejp2()
 
 
 # temporary change the attribute of an object using a context manager
@@ -1369,7 +1494,7 @@ def get_imgmetadata(
     if imgformat == ImageFormat.JPEG2000 and rawdata is not None and imgdata is None:
         # this codepath gets called if the PIL installation is not able to
         # handle JPEG2000 files
-        imgwidthpx, imgheightpx, ics, hdpi, vdpi, channels, bpp = jp2.parse(rawdata)
+        imgwidthpx, imgheightpx, ics, hdpi, vdpi, channels, bpp = jp2(rawdata).parse()
 
         if hdpi is None:
             hdpi = default_dpi
@@ -2015,7 +2140,7 @@ def read_images(
         cleanup()
         depth = 8
         if imgformat == ImageFormat.JPEG2000:
-            *_, depth = jp2.parse(rawdata)
+            *_, depth = jp2(rawdata).parse()
         return [
             (
                 color,
