@@ -2,6 +2,12 @@
 CHANGES
 =======
 
+0.6.2 (2025-11-05)
+------------------
+
+ - Add support for TIFF images with alpha channel
+ - Avoid division by zero aspect ratio
+
 0.6.1 (2025-04-27)
 ------------------
 
