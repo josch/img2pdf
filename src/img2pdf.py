@@ -18,6 +18,11 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+"""
+Lossless conversion of raster images to PDF.
+"""
+__version__ = "0.6.1"
+
 import sys
 import os
 import zlib
@@ -62,7 +67,6 @@ try:
 except ImportError:
     have_pikepdf = False
 
-__version__ = "0.6.1"
 default_dpi = 96.0
 papersizes = {
     "letter": "8.5inx11in",
