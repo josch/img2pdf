@@ -1078,7 +1078,11 @@ def jpg_img(tmp_path_factory, tmp_normal_png):
         "x": 0,
         "y": 0,
     }, str(identify)
-    assert "resolution" not in identify[0]["image"]
+    # Starting with imagemagick commit d9890211607c7a9eee8fd0a4dbc533ceab10ea46
+    # the resolution field will always be populated
+    assert "resolution" not in identify[0]["image"] or identify[0]["image"][
+        "resolution"
+    ] == {"x": 1, "y": 1}, identify[0]["image"]["resolution"]
     assert identify[0]["image"].get("units") == "Undefined", str(identify)
     assert identify[0]["image"].get("type") == "TrueColor", str(identify)
     endian = "endianess" if identify[0].get("version", "0") < "1.0" else "endianness"
