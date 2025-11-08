@@ -51,6 +51,7 @@ import hashlib
 from itertools import chain
 import re
 import io
+from packaging.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -1416,7 +1417,7 @@ class pdfdoc(object):
         # this assumes that finalize() has been invoked beforehand by the caller
         if self.engine == Engine.pikepdf:
             kwargs = {}
-            if pikepdf.__version__ >= "6.2.0":
+            if Version(pikepdf.__version__) >= Version("6.2.0"):
                 kwargs["deterministic_id"] = True
             self.writer.save(
                 outputstream, min_version=self.output_version, linearize=True, **kwargs
