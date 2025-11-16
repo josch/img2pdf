@@ -1828,8 +1828,9 @@ def transcode_monochrome(imgdata):
 
 
 def parse_png(rawdata):
-    pngidat = b""
-    palette = b""
+    # Use lists to accumulate chunks - O(n) instead of O(n²)
+    pngidat_chunks = []
+    palette_chunks = []
     i = 16
     while i < len(rawdata):
         # once we can require Python >= 3.2 we can use int.from_bytes() instead
@@ -1837,12 +1838,12 @@ def parse_png(rawdata):
         if i + n > len(rawdata):
             raise Exception("invalid png: %d %d %d" % (i, n, len(rawdata)))
         if rawdata[i - 4 : i] == b"IDAT":
-            pngidat += rawdata[i : i + n]
+            pngidat_chunks.append(rawdata[i : i + n])
         elif rawdata[i - 4 : i] == b"PLTE":
-            palette += rawdata[i : i + n]
+            palette_chunks.append(rawdata[i : i + n])
         i += n
         i += 12
-    return pngidat, palette
+    return b"".join(pngidat_chunks), b"".join(palette_chunks)
 
 
 miff_re = re.compile(
