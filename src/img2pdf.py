@@ -3099,10 +3099,15 @@ def convert_to_docobject(*images, **kwargs):
 # images.
 def convert(*images, outputstream=None, **kwargs):
     pdf = convert_to_docobject(*images, **kwargs)
-    if outputstream:
-        pdf.tostream(outputstream)
-        return
-    return pdf.tostring()
+    try:
+        if outputstream:
+            pdf.tostream(outputstream)
+            return
+        return pdf.tostring()
+    finally:
+        close = getattr(pdf.writer, "close", None)
+        if close is not None:
+            close()
 
 
 def parse_num(num, name):
