@@ -3100,10 +3100,14 @@ def convert_to_docobject(*images, **kwargs):
 # images.
 def convert(*images, outputstream=None, **kwargs):
     pdf = convert_to_docobject(*images, **kwargs)
+    result = None
     if outputstream:
         pdf.tostream(outputstream)
-        return
-    return pdf.tostring()
+    else:
+        result = pdf.tostring()
+    if pdf.engine == Engine.pikepdf:
+        pdf.writer.close()
+    return result
 
 
 def parse_num(num, name):
