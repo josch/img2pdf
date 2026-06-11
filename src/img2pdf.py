@@ -438,6 +438,9 @@ class ExifOrientationError(Exception):
     pass
 
 
+# this class is heavily based upon jpylyzer which is
+# KB / National Library of the Netherlands, Open Planets Foundation
+# and released under the same license conditions
 class jp2:
     def __init__(self, data):
         self.data = data
@@ -465,18 +468,18 @@ class jp2:
 
     @staticmethod
     def parse_colr(data):
-        meth = struct.unpack(">B", data[0:1])[0]
-        if meth != 1:
-            raise Exception("only enumerated color method supported")
-        enumCS = struct.unpack(">I", data[3:])[0]
-        if enumCS == 16:
-            return "RGB"
-        elif enumCS == 17:
-            return "L"
-        else:
-            raise Exception(
-                "only sRGB and greyscale color space is supported, " "got %d" % enumCS
-            )
+        (meth,) = struct.unpack(">B", data[:1])
+        if meth == 1:
+            (enumCS,) = struct.unpack(">I", data[3:])
+            mapping = {0: "1", 12: "CMYK", 16: "RGB", 17: "L"}
+            if enumCS in mapping:
+                return (mapping[enumCS], None)
+            raise Exception(f"color space is not supported, got {enumCS}")
+        elif meth == 2:
+            return (None, data[3:])
+        raise Exception(
+            f"only enumerated color method and restricted ICC supported, got {meth}"
+        )
 
     @staticmethod
     def parse_resc(data):
@@ -502,7 +505,7 @@ class jp2:
 
     @staticmethod
     def parse_jp2h(data):
-        width, height, colorspace, hdpi, vdpi = None, None, None, None, None
+        width, height, colorspace, iccp, hdpi, vdpi = (None,) * 6
         noBytes = len(data)
         byteStart = 0
         boxLengthValue = 1  # dummy value for while loop condition
@@ -513,24 +516,24 @@ class jp2:
             if boxType == b"ihdr":
                 width, height, channels, bpp = jp2.parse_ihdr(boxContents)
             elif boxType == b"colr":
-                colorspace = jp2.parse_colr(boxContents)
+                colorspace, iccp = jp2.parse_colr(boxContents)
             elif boxType == b"res ":
                 hdpi, vdpi = jp2.parse_res(boxContents)
             byteStart = byteEnd
-        return (width, height, colorspace, hdpi, vdpi, channels, bpp)
+        return (width, height, colorspace, iccp, hdpi, vdpi, channels, bpp)
 
     def parsejp2(self):
         noBytes = len(self.data)
         byteStart = 0
         boxLengthValue = 1  # dummy value for while loop condition
-        width, height, colorspace, hdpi, vdpi = None, None, None, None, None
+        width, height, colorspace, iccp, hdpi, vdpi = (None,) * 6
         while byteStart < noBytes and boxLengthValue != 0:
             boxLengthValue, boxType, byteEnd, boxContents = jp2.getBox(
                 self.data, byteStart, noBytes
             )
             if boxType == b"jp2h":
-                width, height, colorspace, hdpi, vdpi, channels, bpp = jp2.parse_jp2h(
-                    boxContents
+                width, height, colorspace, iccp, hdpi, vdpi, channels, bpp = (
+                    jp2.parse_jp2h(boxContents)
                 )
                 break
             byteStart = byteEnd
@@ -538,10 +541,10 @@ class jp2:
             raise Exception("no width in jp2 header")
         if not height:
             raise Exception("no height in jp2 header")
-        if not colorspace:
-            raise Exception("no colorspace in jp2 header")
+        if not colorspace and not iccp:
+            raise Exception("neither colorspace nor ICC profile in jp2 header")
         # retrieving the dpi is optional so we do not error out if not present
-        return (width, height, colorspace, hdpi, vdpi, channels, bpp)
+        return (width, height, colorspace, iccp, hdpi, vdpi, channels, bpp)
 
     def parsej2k(self):
         lsiz, rsiz, xsiz, ysiz, xosiz, yosiz, _, _, _, _, csiz = struct.unpack(
@@ -1492,10 +1495,13 @@ def pil_get_dpi(imgdata, imgformat, default_dpi):
 def get_imgmetadata(
     imgdata, imgformat, default_dpi, colorspace, rawdata=None, rotreq=None
 ):
+    iccp = None
     if imgformat == ImageFormat.JPEG2000 and rawdata is not None and imgdata is None:
         # this codepath gets called if the PIL installation is not able to
         # handle JPEG2000 files
-        imgwidthpx, imgheightpx, ics, hdpi, vdpi, channels, bpp = jp2(rawdata).parse()
+        imgwidthpx, imgheightpx, ics, iccp, hdpi, vdpi, channels, bpp = jp2(
+            rawdata
+        ).parse()
 
         if hdpi is None:
             hdpi = default_dpi
@@ -1688,7 +1694,6 @@ def get_imgmetadata(
                 color = Colorspace["CMYK;I"]
         logger.debug("input colorspace = %s", color.name)
 
-    iccp = None
     if imgdata is not None and "icc_profile" in imgdata.info:
         iccp = imgdata.info.get("icc_profile")
     # GIMP saves bilevel TIFF images and palette PNG images with only black and
@@ -2142,7 +2147,7 @@ def read_images(
         cleanup()
         depth = 8
         if imgformat == ImageFormat.JPEG2000:
-            *_, depth = jp2(rawdata).parse()
+            _, _, _, iccp, _, _, _, depth = jp2(rawdata).parse()
         return [
             (
                 color,
