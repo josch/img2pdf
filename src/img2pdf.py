@@ -4159,6 +4159,9 @@ def get_default_icc_profile():
         "/usr/share/color/icc/sRGB.icc",
         "/usr/share/color/icc/OpenICC/sRGB.icc",
         "/usr/share/color/icc/colord/sRGB.icc",
+
+        # macOS
+        "/System/Library/ColorSync/Profiles/sRGB Profile.icc",
     ]:
         if not os.path.exists(profile):
             continue
