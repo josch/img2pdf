@@ -2,6 +2,17 @@
 CHANGES
 =======
 
+unreleased
+----------
+
+ - Add tagged PDF (PDF/UA) output: passing alternative texts for the
+   input images (command line option --alt, library keyword argument
+   "alt") and a document language (--lang or "lang") writes a structure
+   tree with a Figure element with the given alternative text per page,
+   marked content in the page content streams, a /ParentTree, /MarkInfo,
+   /Lang and the pdfuaid XMP identifier. Without alternative texts, the
+   output is unchanged and untagged.
+
 0.6.3 (2025-11-06)
 ------------------
 
