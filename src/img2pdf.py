@@ -827,6 +827,7 @@ class pdfdoc(object):
         center_window=False,
         fullscreen=False,
         pdfa=None,
+        lang=None,
     ):
         if engine is None:
             if have_pikepdf:
@@ -942,6 +943,14 @@ class pdfdoc(object):
         self.engine = engine
         self.output_version = version
         self.pdfa = pdfa
+        self.title = title
+        self.lang = lang
+        # Pages for which an alternative text was given to add_imagepage(),
+        # in the order the pages were added. Each entry is a tuple of the
+        # page object, its alternative text and the bounding box of the
+        # image on the page. finalize() turns this into a structure tree.
+        self.tagged_pages = []
+        self.numpages = 0
 
     def add_imagepage(
         self,
@@ -967,6 +976,7 @@ class pdfdoc(object):
         trimborder=None,
         artborder=None,
         iccp=None,
+        alt=None,
     ):
         assert (
             color not in [Colorspace.RGBA, Colorspace.LA]
@@ -1143,6 +1153,12 @@ class pdfdoc(object):
             % (imgwidthpdf, imgheightpdf, imgxpdf, imgypdf)
         ).encode("ascii")
 
+        if alt is not None:
+            # Wrap the only content of the page (the image) into a marked
+            # content sequence so that finalize() can reference it from the
+            # structure tree via its marked-content identifier (MCID) 0.
+            text = b"/Figure <</MCID 0>> BDC\n" + text + b"\nEMC"
+
         if self.engine == Engine.pikepdf:
             content = self.writer.make_stream(text)
         else:
@@ -1207,6 +1223,27 @@ class pdfdoc(object):
                 self.output_version = "1.6"
             page[PdfName.UserUnit] = userunit
 
+        if alt is not None:
+            # /StructParents is the key of this page in the /ParentTree of
+            # the structure tree root. We use the index of the page in the
+            # document. /Tabs /S requests the tab order to follow the
+            # structure order.
+            page[PdfName.StructParents] = self.numpages
+            page[PdfName.Tabs] = PdfName.S
+            self.tagged_pages.append(
+                (
+                    page.obj if self.engine == Engine.pikepdf else page,
+                    alt,
+                    [
+                        imgxpdf,
+                        imgypdf,
+                        imgxpdf + imgwidthpdf,
+                        imgypdf + imgheightpdf,
+                    ],
+                )
+            )
+        self.numpages += 1
+
         if self.engine != Engine.pikepdf:
             self.writer.addpage(page)
 
@@ -1229,13 +1266,14 @@ class pdfdoc(object):
             PdfDict = pikepdf.Dictionary
             PdfName = pikepdf.Name
         elif self.engine == Engine.pdfrw:
-            from pdfrw import PdfDict, PdfName, PdfArray, PdfObject
+            from pdfrw import PdfDict, PdfName, PdfArray, PdfObject, PdfString
             from pdfrw.py23_diffs import convert_load
         elif self.engine == Engine.internal:
             PdfDict = MyPdfDict
             PdfName = MyPdfName
             PdfObject = MyPdfObject
             PdfArray = MyPdfArray
+            PdfString = MyPdfString
             convert_load = my_convert_load
         else:
             raise ValueError("unknown engine: %s" % self.engine)
@@ -1384,6 +1422,113 @@ class pdfdoc(object):
             pass
         else:
             raise ValueError("unknown page layout: %s" % self.page_layout)
+
+        if self.tagged_pages:
+            if len(self.tagged_pages) != self.numpages:
+                raise ValueError(
+                    "alternative text must be given for every page of a "
+                    "tagged document (%d of %d pages have one)"
+                    % (len(self.tagged_pages), self.numpages)
+                )
+            # tagged PDF (PDF/UA) is based on PDF 1.7
+            if self.output_version < "1.7":
+                self.output_version = "1.7"
+
+            def pdfstr(s):
+                if self.engine == Engine.pikepdf:
+                    return s
+                return PdfString.encode(s)
+
+            def new_struct_dict():
+                # structure elements are referenced from several places
+                # (the structure tree, the parent tree and the pages), so
+                # they have to be indirect objects
+                if self.engine == Engine.pikepdf:
+                    return self.writer.make_indirect(PdfDict())
+                return PdfDict(indirect=True)
+
+            structroot = new_struct_dict()
+            docelem = new_struct_dict()
+            figures = []
+            parenttreenums = []
+            for i, (pageobj, alt, bbox) in enumerate(self.tagged_pages):
+                fig = new_struct_dict()
+                fig[PdfName.Type] = PdfName.StructElem
+                fig[PdfName.S] = PdfName.Figure
+                fig[PdfName.P] = docelem
+                fig[PdfName.Alt] = pdfstr(alt)
+                fig[PdfName.Pg] = pageobj
+                # the marked-content identifier of the image on its page,
+                # as written by add_imagepage()
+                fig[PdfName.K] = 0
+                fig[PdfName.BBox] = PdfArray(bbox)
+                figures.append(fig)
+                parenttreenums += [i, PdfArray([fig])]
+            docelem[PdfName.Type] = PdfName.StructElem
+            docelem[PdfName.S] = PdfName.Document
+            docelem[PdfName.P] = structroot
+            docelem[PdfName.K] = PdfArray(figures)
+            structroot[PdfName.Type] = PdfName.StructTreeRoot
+            structroot[PdfName.K] = docelem
+            structroot[PdfName.ParentTree] = PdfDict(Nums=PdfArray(parenttreenums))
+            structroot[PdfName.ParentTreeNextKey] = self.numpages
+            catalog[PdfName.StructTreeRoot] = structroot
+            catalog[PdfName.MarkInfo] = PdfDict(Marked=TrueObject)
+            if self.lang is not None:
+                catalog[PdfName.Lang] = pdfstr(self.lang)
+            if self.title is not None:
+                if PdfName.ViewerPreferences not in catalog:
+                    catalog[PdfName.ViewerPreferences] = PdfDict()
+                catalog[PdfName.ViewerPreferences][
+                    PdfName.DisplayDocTitle
+                ] = TrueObject
+
+            # Extend the XMP metadata with the PDF/UA identifier and, if a
+            # title was given, with the dc:title whose presence PDF/UA
+            # requires. If PDF/A output was not requested, drop the PDF/A
+            # conformance claim from the template because no PDF/A output
+            # intent will be written below.
+            xmpadd = b""
+            if self.title is not None:
+                title_esc = (
+                    self.title.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                )
+                xmpadd += (
+                    b"  <rdf:Description rdf:about='' "
+                    b"xmlns:dc='http://purl.org/dc/elements/1.1/'>"
+                    b"<dc:title><rdf:Alt><rdf:li xml:lang='x-default'>"
+                    + title_esc.encode("utf-8")
+                    + b"</rdf:li></rdf:Alt></dc:title></rdf:Description>\n"
+                )
+            xmpadd += (
+                b"  <rdf:Description rdf:about='' "
+                b"xmlns:pdfuaid='http://www.aiim.org/pdfua/ns/id/' "
+                b"pdfuaid:part='1'/>\n"
+            )
+            self.xmp = self.xmp.replace(b"</rdf:RDF>", xmpadd + b"</rdf:RDF>")
+            if self.pdfa is None:
+                self.xmp = self.xmp.replace(
+                    b"  <rdf:Description rdf:about='' "
+                    b"xmlns:pdfaid='http://www.aiim.org/pdfa/ns/id/' "
+                    b"pdfaid:part='1' pdfaid:conformance='B'/>\n",
+                    b"",
+                )
+                if self.engine == Engine.pikepdf:
+                    metadata = self.writer.make_stream(self.xmp)
+                else:
+                    metadata = PdfDict(stream=convert_load(self.xmp))
+                metadata[PdfName.Type] = PdfName.Metadata
+                metadata[PdfName.Subtype] = PdfName.XML
+                catalog[PdfName.Metadata] = metadata
+                if self.engine == Engine.internal:
+                    self.writer.addobj(metadata)
+            if self.engine == Engine.internal:
+                self.writer.addobj(structroot)
+                self.writer.addobj(docelem)
+                for fig in figures:
+                    self.writer.addobj(fig)
 
         if self.pdfa is not None:
             if self.engine == Engine.pikepdf:
@@ -2939,6 +3084,8 @@ def convert_to_docobject(*images, **kwargs):
         pdfa=None,
         rotation=None,
         include_thumbnails=False,
+        alt=None,
+        lang=None,
     )
     for kwname, default in _default_kwargs.items():
         if kwname not in kwargs:
@@ -2964,6 +3111,7 @@ def convert_to_docobject(*images, **kwargs):
         kwargs["viewer_center_window"],
         kwargs["viewer_fullscreen"],
         kwargs["pdfa"],
+        lang=kwargs["lang"],
     )
 
     # backwards compatibility with older img2pdf versions where the first
@@ -2979,7 +3127,21 @@ def convert_to_docobject(*images, **kwargs):
         if len(images) == 0:
             raise ValueError("Unable to process empty list")
 
-    for img in images:
+    alts = kwargs["alt"]
+    if isinstance(alts, str):
+        alts = [alts]
+    if alts is not None and len(alts) != len(images):
+        raise ValueError(
+            "got %d alternative texts for %d input images"
+            % (len(alts), len(images))
+        )
+    if alts is not None and kwargs["lang"] is None:
+        logger.warning(
+            "writing a tagged PDF without a document language: "
+            "consider passing a language (for example lang='en')"
+        )
+
+    for imgidx, img in enumerate(images):
         # img is allowed to be a path, a binary string representing image data
         # or a file-like object (really anything that implements read())
         # or a pathlib.Path object (really anything that implements read_bytes())
@@ -3090,6 +3252,7 @@ def convert_to_docobject(*images, **kwargs):
                 kwargs["trimborder"],
                 kwargs["artborder"],
                 iccp,
+                alt=None if alts is None else alts[imgidx],
             )
 
     pdf.finalize()
@@ -4694,6 +4857,26 @@ and left/right, respectively. It is not possible to specify asymmetric borders.
         nargs="+",
         help="Sets the keywords metadata value (can be given multiple times)",
     )
+    metaargs.add_argument(
+        "--alt",
+        metavar="text",
+        type=str,
+        action="append",
+        default=None,
+        help="Sets the alternative text of an input image and makes the "
+        "output a tagged PDF (PDF/UA) with a structure tree in which every "
+        "page contains a Figure with this alternative text. Can be given "
+        "once per input image, in the order of the input images. Without "
+        "this option, the output is not tagged.",
+    )
+    metaargs.add_argument(
+        "--lang",
+        metavar="language",
+        type=str,
+        help="Sets the document language (a language tag like 'en' or "
+        "'en-US') in the PDF catalog. PDF/UA requires a document language, "
+        "so this should be given together with --alt.",
+    )
 
     viewerargs = parser.add_argument_group(
         title="PDF viewer arguments",
@@ -4847,6 +5030,8 @@ def main(argv=sys.argv):
             pdfa=args.pdfa,
             rotation=args.rotation,
             include_thumbnails=args.include_thumbnails,
+            alt=args.alt,
+            lang=args.lang,
         )
     except Exception as e:
         logger.error("error: " + str(e))

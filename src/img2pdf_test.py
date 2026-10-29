@@ -7144,6 +7144,105 @@ def test_return_engine_doc(tmp_path_factory):
     assert os.path.isfile(outputf)
 
 
+@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+def test_tagged_alt_text(jpg_img, png_rgb8_img, engine):
+    engine = getattr(img2pdf.Engine, engine)
+    alts = [
+        "alternative text of the first image",
+        "alternative text of the second image",
+    ]
+    output = img2pdf.convert(
+        [jpg_img, png_rgb8_img],
+        engine=engine,
+        nodate=True,
+        title="two images",
+        lang="en",
+        alt=alts,
+    )
+    x = pikepdf.open(BytesIO(output))
+    # the document must be marked as tagged, carry a document language and
+    # instruct the viewer to display the document title
+    assert x.Root.MarkInfo.Marked == True
+    assert x.Root.Lang == "en"
+    assert x.Root.ViewerPreferences.DisplayDocTitle == True
+    # the structure tree must consist of a single Document element with one
+    # Figure element per page, each carrying its alternative text
+    root = x.Root.StructTreeRoot
+    assert root.Type == "/StructTreeRoot"
+    assert root.K.Type == "/StructElem"
+    assert root.K.S == "/Document"
+    figs = list(root.K.K)
+    assert len(figs) == 2
+    for fig, alt in zip(figs, alts):
+        assert fig.Type == "/StructElem"
+        assert fig.S == "/Figure"
+        assert str(fig.Alt) == alt
+        # the marked-content identifier of the image on its page
+        assert fig.K == 0
+        assert fig.BBox is not None
+    assert [fig.Pg.objgen for fig in figs] == [p.obj.objgen for p in x.pages]
+    # the parent tree must map the /StructParents key of each page to the
+    # Figure element of that page
+    nums = list(root.ParentTree.Nums)
+    assert nums[0::2] == [0, 1]
+    assert [list(v) for v in nums[1::2]] == [[figs[0]], [figs[1]]]
+    assert root.ParentTreeNextKey == 2
+    for i, page in enumerate(x.pages):
+        assert page.StructParents == i
+        assert page.Tabs == "/S"
+        content = page.Contents.read_bytes()
+        assert content.startswith(b"/Figure <</MCID 0>> BDC\nq\n")
+        assert content.endswith(b"\nEMC")
+    # the XMP metadata must carry the PDF/UA identifier and the title
+    # (the pikepdf engine re-serializes the XMP packet on save and thereby
+    # changes the quoting style, so do not match the quotes)
+    xmp = x.Root.Metadata.read_bytes()
+    assert re.search(rb"pdfuaid:part=.1.", xmp)
+    assert b"<dc:title>" in xmp
+    assert b"two images" in xmp
+    # the image data of the JPEG input must be passed through verbatim
+    with open(jpg_img, "rb") as f:
+        orig_imgdata = f.read()
+    assert x.pages[0].Resources.XObject.Im0.read_raw_bytes() == orig_imgdata
+
+
+@pytest.mark.parametrize("engine", ["internal", "pikepdf", "pdfrw"])
+def test_default_not_tagged(jpg_img, engine):
+    # without alternative texts, the output must not contain any tagging
+    engine = getattr(img2pdf.Engine, engine)
+    output = img2pdf.convert(jpg_img, engine=engine, nodate=True)
+    x = pikepdf.open(BytesIO(output))
+    assert "/StructTreeRoot" not in x.Root
+    assert "/MarkInfo" not in x.Root
+    assert "/Metadata" not in x.Root
+    assert "/StructParents" not in x.pages[0]
+    assert x.pages[0].Contents.read_bytes().startswith(b"q\n")
+
+
+def test_alt_count_mismatch(jpg_img, png_rgb8_img):
+    # one alternative text for two input images must be rejected
+    with pytest.raises(ValueError):
+        img2pdf.convert([jpg_img, png_rgb8_img], alt=["only one"])
+
+
+def test_tagged_cli(tmp_path_factory, png_rgb8_img):
+    out_pdf = tmp_path_factory.mktemp("tagged_cli") / "out.pdf"
+    subprocess.check_call(
+        [
+            img2pdfprog,
+            "--nodate",
+            "--title=a title",
+            "--lang=en",
+            "--alt=the alternative text",
+            "--output=" + str(out_pdf),
+            str(png_rgb8_img),
+        ]
+    )
+    with pikepdf.open(str(out_pdf)) as p:
+        assert p.Root.Lang == "en"
+        assert str(p.Root.StructTreeRoot.K.K[0].Alt) == "the alternative text"
+
+
 def main():
     normal16 = alpha_value()[:, :, 0:3]
     pathlib.Path("test.icc").write_bytes(icc_profile())
