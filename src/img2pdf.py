@@ -3322,7 +3322,7 @@ def input_images(path_expr):
     if path_expr == "-":
         # we slurp in all data from stdin because we need to seek in it later
         result = [sys.stdin.buffer.read()]
-        if len(result) == 0:
+        if len(result[0]) == 0:
             raise argparse.ArgumentTypeError('"%s" is empty' % path_expr)
     else:
         result = []
